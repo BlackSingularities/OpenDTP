@@ -380,16 +380,42 @@ fn runs_xml(ctx: &mut Ctx, runs: &[Run], out: &mut String) {
                 }
                 continue;
             }
+            if let Field::Bookmark(id) = f {
+                let _ = write!(out, r#"<w:bookmarkStart w:id="{id}" w:name="_Ref{id}"/><w:bookmarkEnd w:id="{id}"/>"#);
+                continue;
+            }
+            if let Field::IndexMark(id) = f {
+                if let Some(e) = ctx.doc.index.iter().find(|e| e.id == id) {
+                    let t = if e.sub.is_empty() { e.term.clone() } else { format!("{}:{}", e.term, e.sub) };
+                    let _ = write!(out, r#"<w:fldSimple w:instr="{}"/>"#, esc(&format!("XE \"{}\"", t.replace('"', "'"))));
+                }
+                continue;
+            }
             let instr = match f {
-                Field::PageNumber => "PAGE",
-                Field::PageCount => "NUMPAGES",
-                Field::Date => r#"DATE \@ "dd.MM.yyyy""#,
-                Field::Time => r#"TIME \@ "HH:mm""#,
-                Field::Title => "TITLE",
-                Field::Author => "AUTHOR",
-                Field::Anchor(_) | Field::Footnote(_) => "",
+                Field::PageNumber => "PAGE".to_string(),
+                Field::PageCount => "NUMPAGES".to_string(),
+                Field::Date => r#"DATE \@ "dd.MM.yyyy""#.to_string(),
+                Field::Time => r#"TIME \@ "HH:mm""#.to_string(),
+                Field::Title => "TITLE".to_string(),
+                Field::Author => "AUTHOR".to_string(),
+                Field::Seq(_, kind) => format!(r#"SEQ {} \* ARABIC"#, kind.id()),
+                Field::Ref(id, RefKind::Page) => format!(r#"PAGEREF _Ref{id} \h"#),
+                Field::Ref(id, _) => format!(r#"REF _Ref{id} \h"#),
+                Field::Running(n) => format!(r#"STYLEREF "heading {}""#, n.clamp(1, 3)),
+                Field::Anchor(_) | Field::Footnote(_) | Field::Bookmark(_) | Field::IndexMark(_) => String::new(),
             };
-            let _ = write!(out, r#"<w:fldSimple w:instr="{}"><w:r>{rp}<w:t>1</w:t></w:r></w:fldSimple>"#, esc(instr));
+            // Podpis jest celem odsyłaczy – numer otaczamy zakładką.
+            let mark = match f {
+                Field::Seq(id, _) => Some(id),
+                _ => None,
+            };
+            if let Some(id) = mark {
+                let _ = write!(out, r#"<w:bookmarkStart w:id="{id}" w:name="_Ref{id}"/>"#);
+            }
+            let _ = write!(out, r#"<w:fldSimple w:instr="{}"><w:r>{rp}<w:t>1</w:t></w:r></w:fldSimple>"#, esc(&instr));
+            if let Some(id) = mark {
+                let _ = write!(out, r#"<w:bookmarkEnd w:id="{id}"/>"#);
+            }
             continue;
         }
         let mut inner = String::new();
@@ -984,9 +1010,9 @@ pub fn export(doc: &Document, layout: &Layout, opts: &DocxOpts) -> Result<Vec<u8
     // Nagłówki i stopki.
     let mut hf_parts: Vec<(String, String)> = Vec::new();
     let mut sect_refs = String::new();
-    for (story, kind, typ) in [(&doc.header, "header", "default"), (&doc.footer, "footer", "default"), (&doc.header_first, "header", "first"), (&doc.footer_first, "footer", "first")] {
+    for (story, kind, typ) in [(&doc.header, "header", "default"), (&doc.footer, "footer", "default"), (&doc.header_first, "header", "first"), (&doc.footer_first, "footer", "first"), (&doc.header_even, "header", "even"), (&doc.footer_even, "footer", "even")] {
         let Some(s) = story else { continue };
-        if typ == "first" && !doc.page.different_first {
+        if (typ == "first" && !doc.page.different_first) || (typ == "even" && !doc.page.odd_even) {
             continue;
         }
         let content = story_xml(&mut ctx, s);
@@ -1118,9 +1144,10 @@ pub fn export(doc: &Document, layout: &Layout, opts: &DocxOpts) -> Result<Vec<u8
         put("word/styles.xml", styles_xml(doc).as_bytes())?;
         put("word/numbering.xml", numbering_xml().as_bytes())?;
         let bg_setting = if ps.color != Color::WHITE { "<w:displayBackgroundShape/>" } else { "" };
+        let even_setting = if doc.page.odd_even { "<w:evenAndOddHeaders/>" } else { "" };
         put(
             "word/settings.xml",
-            format!(r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">{bg_setting}<w:defaultTabStop w:val="720"/><w:characterSpacingControl w:val="doNotCompress"/><w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/></w:compat></w:settings>"#).as_bytes(),
+            format!(r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">{bg_setting}<w:defaultTabStop w:val="720"/>{even_setting}<w:characterSpacingControl w:val="doNotCompress"/><w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/></w:compat></w:settings>"#).as_bytes(),
         )?;
         for (name, xml) in &hf_parts {
             put(&format!("word/{name}"), xml.as_bytes())?;

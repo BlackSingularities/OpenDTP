@@ -128,6 +128,33 @@ pub fn defaults() -> Vec<Style> {
             None,
         ),
         st(
+            "index-letter",
+            "Indeks – litera",
+            Some("normal"),
+            Some("index1"),
+            ParaFmt { space_before: Some(10.0), space_after: Some(3.0), keep_next: Some(true), ..Default::default() },
+            CharFmt { bold: Some(true), size: Some(13.0), ..Default::default() },
+            None,
+        ),
+        st(
+            "index1",
+            "Indeks 1",
+            Some("normal"),
+            Some("index1"),
+            ParaFmt { space_after: Some(1.0), tabs: Some(vec![-1.0]), ..Default::default() },
+            CharFmt { size: Some(10.0), ..Default::default() },
+            None,
+        ),
+        st(
+            "index2",
+            "Indeks 2",
+            Some("normal"),
+            Some("index2"),
+            ParaFmt { space_after: Some(1.0), indent_left: Some(12.0), tabs: Some(vec![-1.0]), ..Default::default() },
+            CharFmt { size: Some(9.5), ..Default::default() },
+            None,
+        ),
+        st(
             "header",
             "Nagłówek strony",
             Some("normal"),
@@ -148,7 +175,7 @@ pub fn defaults() -> Vec<Style> {
     ]
     .into_iter()
     .map(|mut s| {
-        if s.id.starts_with("toc") || s.id == "header" || s.id == "footer" || s.id == "list" {
+        if s.id.starts_with("toc") || s.id.starts_with("index") || s.id == "header" || s.id == "footer" || s.id == "list" {
             s.gallery = false;
         }
         s

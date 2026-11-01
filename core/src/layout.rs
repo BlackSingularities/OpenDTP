@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use crate::geom::{self, Pt};
 use crate::model::*;
-use crate::text::{self, FieldValues, GKind, SGlyph, ShapedPara};
+use crate::text::{self, FieldExtra, FieldValues, GKind, SGlyph, ShapedPara};
 
 #[derive(Clone, Copy, Debug)]
 pub struct PGlyph {
@@ -348,7 +348,7 @@ fn page_excl(doc: &Document, page: usize, above: Option<usize>, skip: &[u64]) ->
         doc.objects
             .iter()
             .enumerate()
-            .filter(|(i, o)| o.page == page && o.wrap.mode.excludes() && !skip.contains(&o.id) && above.is_none_or(|a| *i > a))
+            .filter(|(i, o)| o.on_page(page, doc.page.first_number) && o.wrap.mode.excludes() && !skip.contains(&o.id) && above.is_none_or(|a| *i > a))
             .map(|(_, o)| Excl { polys: wrap_polys(o), dist: o.wrap.dist, mode: o.wrap.mode })
             .collect(),
     )
@@ -951,14 +951,18 @@ impl<'a> Flow<'a> {
 pub struct Engine {
     cache: HashMap<u64, (u64, Arc<ShapedPara>)>,
     gen: u64,
+    /// Strony celów odsyłaczy z poprzedniego składu.
+    targets: HashMap<u64, (u32, String)>,
+    /// Trwa powtórny skład po zmianie stron celów.
+    again: bool,
 }
 
 fn key(p: &Paragraph, base: &CharProps, fv: Option<&FieldValues>, orphans: bool) -> u64 {
     let mut h = std::collections::hash_map::DefaultHasher::new();
     format!("{:?}{:?}{:?}", p.runs, base, orphans).hash(&mut h);
     if let Some(fv) = fv {
-        if p.runs.iter().any(|r| r.field.is_some()) {
-            (fv.page, fv.pages, fv.title, fv.author, crate::util::today(), fv.notes).hash(&mut h);
+        for f in p.runs.iter().filter_map(|r| r.field) {
+            fv.text(f).hash(&mut h);
         }
     }
     h.finish()
@@ -1103,7 +1107,8 @@ impl Engine {
 
         // Treść główna – kilka przebiegów, aż miejsce na przypisy dolne przestanie się zmieniać.
         let notes = doc.note_numbers();
-        let fv = FieldValues { page: doc.page.first_number, pages: 0, title: &title, author: &author, notes: &notes };
+        let ext = FieldExtra { seqs: doc.seq_numbers(), targets: self.targets.clone() };
+        let fv = FieldValues { page: doc.page.first_number, pages: 0, title: &title, author: &author, notes: &notes, ext: Some(&ext), running: "" };
         let prep = self.prep(doc, &doc.body, &fv);
         let mut reserve: HashMap<usize, f32> = HashMap::new();
         let mut heights: HashMap<(u64, u32), f32> = HashMap::new();
@@ -1185,6 +1190,19 @@ impl Engine {
                 }
             }
         }
+        // Cele odsyłaczy: gdy zmieniły się ich strony, składamy jeszcze raz (pola mają inną treść).
+        let targets = ref_targets(doc, &out.body_pages);
+        if targets != self.targets {
+            let has_refs = doc.body.paras.iter().any(|p| p.runs.iter().any(|r| matches!(r.field, Some(Field::Ref(..)))));
+            self.targets = targets;
+            if has_refs && !self.again {
+                self.again = true;
+                let l = self.layout(doc);
+                self.again = false;
+                return l;
+            }
+        }
+        let running = running_heads(doc, &out.body_pages, pages);
         let push = |out: &mut Layout, lines: Vec<Line>| {
             for l in lines {
                 let i = out.lines.len();
@@ -1218,11 +1236,32 @@ impl Engine {
         for page in 0..pages {
             let ps = &out.pages[page].setup.clone();
             let first = page == 0 && ps.different_first;
-            let fvp = FieldValues { page: page as u32 + ps.first_number, pages: pages as u32 + ps.first_number - 1, title: &title, author: &author, notes: &notes };
-            let (hs, hr) = if first { (doc.header_first.as_ref(), StoryRef::HeaderFirst) } else { (doc.header.as_ref(), StoryRef::Header) };
-            let (fs, fr) = if first { (doc.footer_first.as_ref(), StoryRef::FooterFirst) } else { (doc.footer.as_ref(), StoryRef::Footer) };
+            let even = !first && doc.page.odd_even && (page as u32 + ps.first_number) % 2 == 0;
+            let empty = [String::new(), String::new(), String::new()];
+            let rh = running.get(page).unwrap_or(&empty);
+            let mut fvp = FieldValues { page: page as u32 + ps.first_number, pages: pages as u32 + ps.first_number - 1, title: &title, author: &author, notes: &notes, ext: Some(&ext), running: "" };
+            let (hs, hr) = if first {
+                (doc.header_first.as_ref(), StoryRef::HeaderFirst)
+            } else if even && doc.header_even.is_some() {
+                (doc.header_even.as_ref(), StoryRef::HeaderEven)
+            } else {
+                (doc.header.as_ref(), StoryRef::Header)
+            };
+            let (fs, fr) = if first {
+                (doc.footer_first.as_ref(), StoryRef::FooterFirst)
+            } else if even && doc.footer_even.is_some() {
+                (doc.footer_even.as_ref(), StoryRef::FooterEven)
+            } else {
+                (doc.footer.as_ref(), StoryRef::Footer)
+            };
             for (story, sref, footer) in [(hs, hr, false), (fs, fr, true)] {
                 let Some(story) = story else { continue };
+                // Żywa pagina: poziom z pierwszego pola `Running` w tym tekście.
+                let lvl = story.paras.iter().flat_map(|p| &p.runs).find_map(|r| match r.field {
+                    Some(Field::Running(n)) => Some(n.clamp(1, 3) as usize - 1),
+                    _ => None,
+                });
+                fvp.running = lvl.map(|i| rh[i].as_str()).unwrap_or("");
                 let prep = self.prep(doc, story, &fvp);
                 let region = Region {
                     page,
@@ -1256,7 +1295,7 @@ impl Engine {
 
         // Ramki tekstowe (łańcuchy) i tekst na ścieżce.
         let ps = &doc.page;
-        let fvo = FieldValues { page: 1, pages: pages as u32, title: &title, author: &author, notes: &notes };
+        let fvo = FieldValues { page: 1, pages: pages as u32, title: &title, author: &author, notes: &notes, ext: Some(&ext), running: "" };
         let heads: Vec<u64> = doc.objects.iter().filter(|o| matches!(o.kind, ObjKind::Text { .. }) && doc.chain_head(o.id) == o.id).map(|o| o.id).collect();
         for head in heads {
             let chain = doc.chain(head);
@@ -1456,6 +1495,139 @@ pub fn anchor_ref(doc: &Document, lay: &Layout, id: u64) -> Option<(usize, f32)>
     })
 }
 
+/// Cele odsyłaczy (zakładki i podpisy w treści głównej): id → (strona, tekst akapitu).
+fn ref_targets(doc: &Document, body_pages: &[usize]) -> HashMap<u64, (u32, String)> {
+    let mut out = HashMap::new();
+    for (i, p) in doc.body.paras.iter().enumerate() {
+        for r in &p.runs {
+            if let Some(Field::Bookmark(id) | Field::Seq(id, _)) = r.field {
+                let page = body_pages.get(i).copied().unwrap_or(0) as u32 + doc.page.first_number;
+                out.insert(id, (page, para_plain(p)));
+            }
+        }
+    }
+    out
+}
+
+/// Tekst akapitu bez pól (do żywej paginy, odsyłaczy i spisów).
+fn para_plain(p: &Paragraph) -> String {
+    p.runs.iter().filter(|r| r.field.is_none()).map(|r| r.text.as_str()).collect::<String>().trim().to_string()
+}
+
+/// Żywa pagina każdej strony dla poziomów 1–3: pierwszy nagłówek zaczynający się na stronie,
+/// a gdy go nie ma – ostatni nagłówek z wcześniejszych stron (jak w słownikach i encyklopediach).
+fn running_heads(doc: &Document, body_pages: &[usize], pages: usize) -> Vec<[String; 3]> {
+    let mut heads: Vec<(usize, usize, String)> = Vec::new();
+    for (i, p) in doc.body.paras.iter().enumerate() {
+        if p.style.starts_with("toc") || p.style.starts_with("index") {
+            continue;
+        }
+        let Some(level) = doc.outline_level(p) else { continue };
+        let text = para_plain(p);
+        if level == 0 || level > 3 || text.is_empty() {
+            continue;
+        }
+        heads.push((body_pages.get(i).copied().unwrap_or(0), level as usize, text));
+    }
+    let mut out = vec![[String::new(), String::new(), String::new()]; pages];
+    let mut last = [String::new(), String::new(), String::new()];
+    let mut k = 0;
+    for (page, slot) in out.iter_mut().enumerate() {
+        let mut first: [Option<String>; 3] = [None, None, None];
+        while k < heads.len() && heads[k].0 <= page {
+            let (pg, level, text) = &heads[k];
+            // Nagłówek wyższego rzędu zastępuje też paginę niższych poziomów.
+            for l in level - 1..3 {
+                if *pg == page && first[l].is_none() {
+                    first[l] = Some(text.clone());
+                }
+                last[l] = text.clone();
+            }
+            k += 1;
+        }
+        for l in 0..3 {
+            slot[l] = first[l].clone().unwrap_or_else(|| last[l].clone());
+        }
+    }
+    out
+}
+
+/// Skorowidz z haseł indeksu: litery działowe, hasła i podhasła z numerami stron.
+pub fn index(doc: &Document, layout: &Layout) -> Vec<Paragraph> {
+    use std::collections::BTreeMap;
+    // (hasło, podhasło) → strony
+    let mut map: BTreeMap<(String, String), (String, String, Vec<u32>)> = BTreeMap::new();
+    for (i, p) in doc.body.paras.iter().enumerate() {
+        if p.style.starts_with("index") {
+            continue;
+        }
+        for r in &p.runs {
+            let Some(Field::IndexMark(id)) = r.field else { continue };
+            let Some(e) = doc.index.iter().find(|e| e.id == id) else { continue };
+            if e.term.trim().is_empty() {
+                continue;
+            }
+            let page = layout.body_pages.get(i).copied().unwrap_or(0) as u32 + doc.page.first_number;
+            let key = (sort_key(&e.term), sort_key(&e.sub));
+            let v = map.entry(key).or_insert_with(|| (e.term.trim().to_string(), e.sub.trim().to_string(), Vec::new()));
+            if !v.2.contains(&page) {
+                v.2.push(page);
+            }
+        }
+    }
+    let mut out = Vec::new();
+    let mut letter = String::new();
+    let mut main = String::new();
+    for ((tk, _), (term, sub, mut pages)) in map {
+        pages.sort_unstable();
+        let first: String = term.chars().next().map(|c| c.to_uppercase().collect()).unwrap_or_default();
+        if first != letter {
+            letter = first.clone();
+            out.push(Paragraph { style: "index-letter".into(), fmt: ParaFmt::default(), runs: vec![Run { text: first, ..Default::default() }] });
+        }
+        if sub.is_empty() {
+            main = tk;
+            out.push(Paragraph { style: "index1".into(), fmt: ParaFmt::default(), runs: vec![Run { text: format!("{term}\t{}", page_ranges(&pages)), ..Default::default() }] });
+        } else {
+            if main != tk {
+                main = tk;
+                out.push(Paragraph { style: "index1".into(), fmt: ParaFmt::default(), runs: vec![Run { text: term.clone(), ..Default::default() }] });
+            }
+            out.push(Paragraph { style: "index2".into(), fmt: ParaFmt::default(), runs: vec![Run { text: format!("{sub}\t{}", page_ranges(&pages)), ..Default::default() }] });
+        }
+    }
+    out
+}
+
+/// Klucz sortowania z polskim porządkiem liter (ą po a, ł po l…).
+fn sort_key(s: &str) -> String {
+    const ORDER: &str = "0123456789aąbcćdeęfghijklłmnńoópqrsśtuvwxyzźż";
+    let mut k = String::new();
+    for c in s.trim().to_lowercase().chars() {
+        match ORDER.chars().position(|o| o == c) {
+            Some(i) => k.push(char::from(b'0' + i as u8)),
+            None if c.is_alphanumeric() => k.push(c),
+            None => {}
+        }
+    }
+    k
+}
+
+/// „3, 4, 5, 9” → „3–5, 9”.
+fn page_ranges(p: &[u32]) -> String {
+    let mut parts = Vec::new();
+    let mut i = 0;
+    while i < p.len() {
+        let mut j = i;
+        while j + 1 < p.len() && p[j + 1] == p[j] + 1 {
+            j += 1;
+        }
+        parts.push(if j >= i + 2 { format!("{}–{}", p[i], p[j]) } else if j == i + 1 { format!("{}, {}", p[i], p[j]) } else { p[i].to_string() });
+        i = j + 1;
+    }
+    parts.join(", ")
+}
+
 /// Spis treści z nagłówków (z numerami stron bieżącego składu).
 pub fn toc(doc: &Document, layout: &Layout) -> Vec<Paragraph> {
     let mut out = Vec::new();
@@ -1475,4 +1647,23 @@ pub fn toc(doc: &Document, layout: &Layout) -> Vec<Paragraph> {
         out.push(Paragraph { style: format!("toc{level}"), fmt: ParaFmt::default(), runs: vec![Run { text: format!("{}\t{}", text.trim(), page), ..Default::default() }] });
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn index_page_ranges() {
+        assert_eq!(page_ranges(&[3, 4, 5, 9]), "3–5, 9");
+        assert_eq!(page_ranges(&[1, 2]), "1, 2");
+        assert_eq!(page_ranges(&[7]), "7");
+    }
+
+    #[test]
+    fn index_polish_order() {
+        let mut w = vec!["łódź", "lato", "ząb", "żaba", "źródło", "zebra"];
+        w.sort_by_key(|s| sort_key(s));
+        assert_eq!(w, ["lato", "łódź", "ząb", "zebra", "źródło", "żaba"]);
+    }
 }

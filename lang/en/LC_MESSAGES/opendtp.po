@@ -3263,3 +3263,153 @@ msgstr "Find the selected text"
 
 msgid "Właściwości ramki…"
 msgstr "Frame properties…"
+
+msgid "Rysunek"
+msgstr "Figure"
+
+msgid "Wzór"
+msgstr "Equation"
+
+msgid "Zakładki i hasła indeksu wstawia się w treści głównej"
+msgstr "Bookmarks and index entries go in the main text"
+
+msgid "Zakładka {}"
+msgstr "Bookmark {}"
+
+msgid "Dodano zakładkę „{}”"
+msgstr "Bookmark “{}” added"
+
+msgid "Zaznacz wyraz albo wyrażenie, które ma trafić do indeksu"
+msgstr "Select the word or phrase to add to the index"
+
+msgid "Hasło „{}” dodane do indeksu"
+msgstr "Entry “{}” added to the index"
+
+msgid "Oznaczono wystąpienia: {}"
+msgstr "Occurrences marked: {}"
+
+msgid "Brak haseł – zaznacz wyraz i wybierz „Oznacz hasło”"
+msgstr "No entries – select a word and choose “Mark entry”"
+
+msgid "W dokumencie nie ma indeksu"
+msgstr "The document has no index"
+
+msgid "Indeks zaktualizowany"
+msgstr "Index updated"
+
+msgid "Na wszystkich stronach można powtarzać obrazy, kształty i wykresy"
+msgstr "Only images, shapes and charts can repeat on every page"
+
+msgid "numer"
+msgstr "number"
+
+msgid "strona"
+msgstr "page"
+
+msgid "treść"
+msgstr "text"
+
+msgid "Indeks – litera"
+msgstr "Index – letter"
+
+msgid "Indeks 1"
+msgstr "Index 1"
+
+msgid "Indeks 2"
+msgstr "Index 2"
+
+msgid "Żywa pagina – rozdział"
+msgstr "Running head – chapter"
+
+msgid "Żywa pagina – podrozdział"
+msgstr "Running head – section"
+
+msgid "Tylko na tej stronie"
+msgstr "This page only"
+
+msgid "Na wszystkich stronach"
+msgstr "On every page"
+
+msgid "Na stronach nieparzystych"
+msgstr "On odd pages"
+
+msgid "Na stronach parzystych"
+msgstr "On even pages"
+
+msgid "Inne parzyste"
+msgstr "Different even"
+
+msgid "Osobny nagłówek i stopka stron parzystych – układ lustrzany jak w książce"
+msgstr "Separate header and footer on even pages – mirrored like a book"
+
+msgid "Żywa pagina"
+msgstr "Running head"
+
+msgid "Tytuł bieżącego rozdziału w nagłówku każdej strony"
+msgstr "Current chapter title in every page header"
+
+msgid "Rozdział (Nagłówek 1)"
+msgstr "Chapter (Heading 1)"
+
+msgid "Podrozdział (Nagłówek 2)"
+msgstr "Section (Heading 2)"
+
+msgid "Hasło (Nagłówek 3)"
+msgstr "Entry (Heading 3)"
+
+msgid "Odsyłacze"
+msgstr "Cross-references"
+
+msgid "Zakładka"
+msgstr "Bookmark"
+
+msgid "Oznacz to miejsce jako cel odsyłaczy (nazwa z zaznaczenia albo akapitu)"
+msgstr "Mark this spot as a cross-reference target (named after the selection or paragraph)"
+
+msgid "Odsyłacz"
+msgstr "Cross-reference"
+
+msgid "„zob. s. 12”, „rys. 3” – numer i strona aktualizują się same"
+msgstr "“see p. 12”, “fig. 3” – numbers and pages update automatically"
+
+msgid "Indeks"
+msgstr "Index"
+
+msgid "Oznacz hasło"
+msgstr "Mark entry"
+
+msgid "Dodaj zaznaczony wyraz do indeksu („hasło: podhasło” tworzy podhasło)"
+msgstr "Add the selected word to the index (“entry: subentry” makes a subentry)"
+
+msgid "Oznacz wszystkie"
+msgstr "Mark all"
+
+msgid "Dodaj do indeksu każde wystąpienie zaznaczonego wyrazu"
+msgstr "Add every occurrence of the selected word to the index"
+
+msgid "Wstaw albo odśwież skorowidz alfabetyczny z numerami stron"
+msgstr "Insert or refresh the alphabetical index with page numbers"
+
+msgid "Podpis rysunku, tabeli albo wzoru z automatycznym numerem"
+msgstr "Figure, table or equation caption with automatic numbering"
+
+msgid "Element strony wzorcowej: powtarzaj obiekt na wszystkich, nieparzystych albo parzystych stronach"
+msgstr "Master page element: repeat the object on all, odd or even pages"
+
+msgid "Wstaw zakładkę (cel odsyłaczy)"
+msgstr "Insert bookmark (cross-reference target)"
+
+msgid "Oznacz hasło indeksu"
+msgstr "Mark index entry"
+
+msgid "Oznacz wszystkie wystąpienia w indeksie"
+msgstr "Mark all occurrences in the index"
+
+msgid "Wstaw albo odśwież indeks"
+msgstr "Insert or refresh index"
+
+msgid "Inne nagłówki stron parzystych"
+msgstr "Different headers on even pages"
+
+msgid "Żywa pagina w nagłówku"
+msgstr "Running head in header"

@@ -60,6 +60,19 @@ pub struct FieldValues<'a> {
     pub author: &'a str,
     /// Numery przypisów: (id, numer, końcowy).
     pub notes: &'a [(u64, u32, bool)],
+    /// Numery podpisów i strony celów odsyłaczy (brak – pola pokazują „?”).
+    pub ext: Option<&'a FieldExtra>,
+    /// Tekst żywej paginy na tej stronie.
+    pub running: &'a str,
+}
+
+/// Wartości zależne od całego składu: numery podpisów i położenie celów odsyłaczy.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct FieldExtra {
+    /// (id podpisu, numer).
+    pub seqs: Vec<(u64, u32)>,
+    /// Cel odsyłacza: id → (numer strony, tekst akapitu celu).
+    pub targets: std::collections::HashMap<u64, (u32, String)>,
 }
 
 /// Numeracja rzymska (małe litery) – przypisy końcowe.
@@ -76,6 +89,10 @@ pub fn roman(mut n: u32) -> String {
 }
 
 impl FieldValues<'_> {
+    fn seq(&self, id: u64) -> Option<u32> {
+        self.ext?.seqs.iter().find(|s| s.0 == id).map(|s| s.1)
+    }
+
     pub fn text(&self, f: Field) -> String {
         match f {
             Field::PageNumber => self.page.to_string(),
@@ -84,7 +101,18 @@ impl FieldValues<'_> {
             Field::Time => crate::util::now_time(),
             Field::Title => self.title.to_string(),
             Field::Author => self.author.to_string(),
-            Field::Anchor(_) => String::new(),
+            Field::Anchor(_) | Field::Bookmark(_) | Field::IndexMark(_) => String::new(),
+            Field::Running(_) => self.running.to_string(),
+            Field::Seq(id, _) => self.seq(id).map(|n| n.to_string()).unwrap_or_else(|| "?".into()),
+            Field::Ref(id, kind) => {
+                let t = self.ext.and_then(|e| e.targets.get(&id));
+                match kind {
+                    RefKind::Page => t.map(|t| t.0.to_string()),
+                    RefKind::Number => self.seq(id).map(|n| n.to_string()).or_else(|| t.map(|t| t.0.to_string())),
+                    RefKind::Text => t.map(|t| t.1.clone()),
+                }
+                .unwrap_or_else(|| "?".into())
+            }
             Field::Footnote(id) => match self.notes.iter().find(|n| n.0 == id) {
                 Some((_, k, true)) => roman(*k),
                 Some((_, k, false)) => k.to_string(),
@@ -346,7 +374,7 @@ fn shape_chunk(chars: &[DChar], font: FontId, fake_bold: bool, fake_italic: bool
 /// Szerokość tekstu w jednym stylu (znaczniki list, wykresy, etykiety).
 pub fn measure(text: &str, props: &CharProps) -> (Vec<SGlyph>, f32) {
     let p = Paragraph { style: String::new(), fmt: ParaFmt::default(), runs: vec![Run { text: text.into(), fmt: CharFmt::default(), field: None }] };
-    let fv = FieldValues { page: 1, pages: 1, title: "", author: "", notes: &[] };
+    let fv = FieldValues { page: 1, pages: 1, title: "", author: "", notes: &[], ext: None, running: "" };
     let sp = shape(&p, props, &fv, false);
     let w = sp.glyphs.iter().map(|g| g.adv).sum();
     (sp.glyphs, w)

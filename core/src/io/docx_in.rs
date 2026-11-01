@@ -539,6 +539,7 @@ pub fn import(bytes: &[u8]) -> Result<Document, String> {
             locked: false,
             anchor_dy: 4.0,
             cont_of: None,
+            repeat: Default::default(),
         });
     }
     Ok(doc)

@@ -328,7 +328,7 @@ fn down(st: &mut State, page: usize, px: f32, py: f32, x: f32, y: f32, button: i
     st.ed.node_mode = false;
     if let Some((s, p, off)) = hit {
         // Nagłówek i stopka tylko dwuklikiem (jak w Wordzie), chyba że już je edytujemy.
-        let hf = matches!(s, StoryRef::Header | StoryRef::Footer | StoryRef::HeaderFirst | StoryRef::FooterFirst);
+        let hf = matches!(s, StoryRef::Header | StoryRef::Footer | StoryRef::HeaderFirst | StoryRef::FooterFirst | StoryRef::HeaderEven | StoryRef::FooterEven);
         if hf && st.ed.story != s && n < 2 {
             if let Some((bs, bp, boff)) = st.ed.layout.hit(page, px, py, Some(StoryRef::Body)) {
                 text_click(st, bs, At::new(bp, boff), 1, shift, ctrl);
@@ -1055,7 +1055,7 @@ pub fn key(st: &mut State, text: &str, ctrl: bool, shift: bool, alt: bool) -> bo
             st.ed.multi.clear();
         } else if matches!(st.ed.story, StoryRef::Note(_)) {
             crate::actions::run(st, "note-back", "");
-        } else if matches!(st.ed.story, StoryRef::Header | StoryRef::Footer | StoryRef::HeaderFirst | StoryRef::FooterFirst) {
+        } else if matches!(st.ed.story, StoryRef::Header | StoryRef::Footer | StoryRef::HeaderFirst | StoryRef::FooterFirst | StoryRef::HeaderEven | StoryRef::FooterEven) {
             st.ed.set_caret(StoryRef::Body, At::new(0, 0), false);
         } else if a.get_right_panel() != "" {
             a.set_right_panel("".into());

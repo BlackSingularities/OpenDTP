@@ -526,6 +526,86 @@ pub enum Field {
     Anchor(u64),
     /// Odsyłacz do przypisu (dolnego albo końcowego) o tym identyfikatorze.
     Footnote(u64),
+    /// Zakładka – niewidoczny cel odsyłaczy (nazwa w `Document::bookmarks`).
+    Bookmark(u64),
+    /// Odsyłacz do zakładki albo numerowanego podpisu: strona, numer albo tekst celu.
+    Ref(u64, RefKind),
+    /// Kolejny numer podpisu danego rodzaju (rysunek, tabela, wzór); id jest celem odsyłaczy.
+    Seq(u64, SeqKind),
+    /// Hasło indeksu (skorowidza) – niewidoczne, treść w `Document::index`.
+    IndexMark(u64),
+    /// Żywa pagina: nagłówek rozdziału (poziom 1–3) obowiązujący na danej stronie.
+    Running(u8),
+}
+
+/// Co pokazuje odsyłacz.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum RefKind {
+    Page,
+    Number,
+    Text,
+}
+
+/// Rodzaj numerowanego podpisu.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum SeqKind {
+    Figure,
+    Table,
+    Equation,
+}
+
+impl SeqKind {
+    pub const ALL: [SeqKind; 3] = [SeqKind::Figure, SeqKind::Table, SeqKind::Equation];
+
+    pub fn id(self) -> &'static str {
+        match self {
+            SeqKind::Figure => "figure",
+            SeqKind::Table => "table",
+            SeqKind::Equation => "equation",
+        }
+    }
+
+    pub fn from_id(s: &str) -> Option<SeqKind> {
+        SeqKind::ALL.into_iter().find(|k| k.id() == s)
+    }
+
+    /// Słowo przed numerem w podpisie.
+    pub fn label(self) -> String {
+        match self {
+            SeqKind::Figure => crate::lang::tr("Rysunek").to_string(),
+            SeqKind::Table => crate::lang::tr("Tabela").to_string(),
+            SeqKind::Equation => crate::lang::tr("Wzór").to_string(),
+        }
+    }
+}
+
+/// Zakładka: nazwany cel odsyłaczy.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Bookmark {
+    pub id: u64,
+    pub name: String,
+}
+
+/// Hasło indeksu; `sub` – podhasło (puste – hasło główne).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IndexEntry {
+    pub id: u64,
+    pub term: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub sub: String,
+}
+
+/// Obiekt powtarzany na wielu stronach (element strony wzorcowej).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Repeat {
+    #[default]
+    None,
+    All,
+    Odd,
+    Even,
 }
 
 /// Przypis: osobny tekst wyświetlany u dołu strony albo na końcu dokumentu.
@@ -1038,6 +1118,13 @@ pub struct Object {
     /// Kontynuacja tabeli dzielonej na strony (tworzona przez skład, nie edytowana).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cont_of: Option<u64>,
+    /// Powtarzanie na innych stronach (element strony wzorcowej; bez ramek tekstu i tabel).
+    #[serde(default, skip_serializing_if = "is_no_repeat")]
+    pub repeat: Repeat,
+}
+
+fn is_no_repeat(r: &Repeat) -> bool {
+    *r == Repeat::None
 }
 
 fn anchor_dy() -> f32 {
@@ -1049,6 +1136,23 @@ fn full() -> f32 {
 }
 
 impl Object {
+    /// Czy obiekt rysuje się na stronie `page` (własnej albo jako powtórzenie).
+    pub fn on_page(&self, page: usize, first_number: u32) -> bool {
+        if self.page == page {
+            return true;
+        }
+        if matches!(self.kind, ObjKind::Text { .. } | ObjKind::PathText { .. } | ObjKind::Table { .. }) {
+            return false;
+        }
+        let n = page as u32 + first_number;
+        match self.repeat {
+            Repeat::None => false,
+            Repeat::All => true,
+            Repeat::Odd => n % 2 == 1,
+            Repeat::Even => n % 2 == 0,
+        }
+    }
+
     pub fn story(&self) -> Option<&Story> {
         match &self.kind {
             ObjKind::Text { story, .. } | ObjKind::PathText { story, .. } => Some(story),
@@ -1100,6 +1204,9 @@ pub struct PageSetup {
     pub footer_dist: f32,
     #[serde(default)]
     pub different_first: bool,
+    /// Osobne nagłówki i stopki stron parzystych (układ lustrzany).
+    #[serde(default)]
+    pub odd_even: bool,
     #[serde(default = "white")]
     pub color: Color,
     /// Numeracja stron od tej liczby.
@@ -1146,6 +1253,7 @@ impl Default for PageSetup {
             header_dist: default_hd(),
             footer_dist: default_hd(),
             different_first: false,
+            odd_even: false,
             color: Color::WHITE,
             first_number: 1,
             watermark: String::new(),
@@ -1260,6 +1368,10 @@ pub struct Document {
     pub header_first: Option<Story>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub footer_first: Option<Story>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub header_even: Option<Story>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub footer_even: Option<Story>,
     #[serde(default)]
     pub objects: Vec<Object>,
     #[serde(default)]
@@ -1274,6 +1386,10 @@ pub struct Document {
     /// Przypisy dolne i końcowe (odsyłacze to pola `Field::Footnote` w treści głównej).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub notes: Vec<Note>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub bookmarks: Vec<Bookmark>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub index: Vec<IndexEntry>,
 }
 
 fn format_version() -> u32 {
@@ -1292,6 +1408,8 @@ pub enum StoryRef {
     Footer,
     HeaderFirst,
     FooterFirst,
+    HeaderEven,
+    FooterEven,
     Obj(u64),
     Note(u64),
 }
@@ -1314,12 +1432,16 @@ impl Document {
             footer: None,
             header_first: None,
             footer_first: None,
+            header_even: None,
+            footer_even: None,
             objects: Vec::new(),
             settings: DocSettings::default(),
             min_pages: 0,
             assets: BTreeMap::new(),
             next_id: 1,
             notes: Vec::new(),
+            bookmarks: Vec::new(),
+            index: Vec::new(),
         }
     }
 
@@ -1348,6 +1470,8 @@ impl Document {
             StoryRef::Footer => self.footer.as_ref(),
             StoryRef::HeaderFirst => self.header_first.as_ref(),
             StoryRef::FooterFirst => self.footer_first.as_ref(),
+            StoryRef::HeaderEven => self.header_even.as_ref(),
+            StoryRef::FooterEven => self.footer_even.as_ref(),
             StoryRef::Obj(id) => self.object(id).and_then(|o| o.story()),
             StoryRef::Note(id) => self.notes.iter().find(|n| n.id == id).map(|n| &n.story),
         }
@@ -1360,6 +1484,8 @@ impl Document {
             StoryRef::Footer => self.footer.as_mut(),
             StoryRef::HeaderFirst => self.header_first.as_mut(),
             StoryRef::FooterFirst => self.footer_first.as_mut(),
+            StoryRef::HeaderEven => self.header_even.as_mut(),
+            StoryRef::FooterEven => self.footer_even.as_mut(),
             StoryRef::Obj(id) => self.object_mut(id).and_then(|o| o.story_mut()),
             StoryRef::Note(id) => self.notes.iter_mut().find(|n| n.id == id).map(|n| &mut n.story),
         }
@@ -1451,6 +1577,45 @@ impl Document {
                         foot
                     };
                     out.push((id, k, n.end));
+                }
+            }
+        }
+        out
+    }
+
+    /// Numery podpisów w kolejności w treści (każdy rodzaj liczony osobno): (id, numer).
+    pub fn seq_numbers(&self) -> Vec<(u64, u32)> {
+        let mut counts = [0u32; 3];
+        let mut out = Vec::new();
+        for p in &self.body.paras {
+            for r in &p.runs {
+                if let Some(Field::Seq(id, kind)) = r.field {
+                    let i = SeqKind::ALL.iter().position(|k| *k == kind).unwrap_or(0);
+                    counts[i] += 1;
+                    out.push((id, counts[i]));
+                }
+            }
+        }
+        out
+    }
+
+    /// Cele odsyłaczy (zakładki i podpisy) do wyboru: (id, opis).
+    pub fn ref_targets(&self) -> Vec<(u64, String)> {
+        let nums = self.seq_numbers();
+        let mut out = Vec::new();
+        for p in &self.body.paras {
+            for r in &p.runs {
+                match r.field {
+                    Some(Field::Bookmark(id)) => {
+                        let name = self.bookmarks.iter().find(|b| b.id == id).map(|b| b.name.clone()).unwrap_or_default();
+                        out.push((id, name));
+                    }
+                    Some(Field::Seq(id, kind)) => {
+                        let n = nums.iter().find(|x| x.0 == id).map(|x| x.1).unwrap_or(0);
+                        let text: String = p.text().replace(FIELD_CHAR, "").chars().take(48).collect();
+                        out.push((id, format!("{} {n} – {}", kind.label(), text.trim())));
+                    }
+                    _ => {}
                 }
             }
         }

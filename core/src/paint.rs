@@ -177,7 +177,7 @@ pub fn page_ops(doc: &Document, layout: &Layout, page: usize, o: &PaintOpts) -> 
         watermark_ops(&ps.watermark, ps, &mut ops);
     }
     let Some(info) = layout.pages.get(page) else { return ops };
-    let objs: Vec<&Object> = doc.objects.iter().filter(|ob| ob.page == page && Some(ob.id) != o.hide_obj).collect();
+    let objs: Vec<&Object> = doc.objects.iter().filter(|ob| ob.on_page(page, doc.page.first_number) && Some(ob.id) != o.hide_obj).collect();
 
     for ob in objs.iter().filter(|ob| ob.wrap.mode == WrapMode::Behind) {
         object_ops(doc, layout, ob, page, o, &mut ops);
@@ -776,7 +776,7 @@ struct CellText {
 /// Tekst komórki (z wyróżnieniami **, *, ==) złamany do szerokości `w`.
 fn cell_text(text: &str, base: &CharProps, w: f32) -> CellText {
     let p = Paragraph { style: String::new(), fmt: ParaFmt::default(), runs: crate::io::plain::md_inline(text) };
-    let fv = crate::text::FieldValues { page: 1, pages: 1, title: "", author: "", notes: &[] };
+    let fv = crate::text::FieldValues { page: 1, pages: 1, title: "", author: "", notes: &[], ext: None, running: "" };
     let sp = crate::text::shape(&p, base, &fv, true);
     let n = sp.glyphs.len();
     let mut starts = vec![0usize];

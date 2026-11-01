@@ -62,6 +62,7 @@ pub fn welcome() -> Document {
         locked: false,
         anchor_dy: 4.0,
         cont_of: None,
+        repeat: Default::default(),
     };
     d.objects.push(star);
     let chart = Object {
@@ -83,6 +84,7 @@ pub fn welcome() -> Document {
         locked: false,
         anchor_dy: 4.0,
         cont_of: None,
+        repeat: Default::default(),
     };
     d.objects.push(chart);
     let arc = Object {
@@ -111,6 +113,7 @@ pub fn welcome() -> Document {
         locked: false,
         anchor_dy: 4.0,
         cont_of: None,
+        repeat: Default::default(),
     };
     d.objects.push(arc);
     d.footer = Some(Story { paras: vec![Paragraph {
@@ -158,6 +161,7 @@ fn shape_obj(id: u64, page: usize, r: (f32, f32, f32, f32), shape: Shape, kind: 
         locked: false,
         anchor_dy: 4.0,
         cont_of: None,
+        repeat: Default::default(),
     }
 }
 

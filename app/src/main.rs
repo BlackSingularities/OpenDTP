@@ -238,6 +238,7 @@ fn sync(st: &mut State, ui: &AppWindow) {
     app.set_has_header(ed.doc.header.is_some());
     app.set_has_footer(ed.doc.footer.is_some());
     app.set_diff_first(ps.different_first);
+    app.set_odd_even(ps.odd_even);
     app.set_orphans(ed.doc.settings.orphans);
     app.set_baseline_grid(ed.doc.settings.baseline_grid > 0.0);
     app.set_doc_theme(st.doc_theme.clone().into());
@@ -304,6 +305,15 @@ fn sync(st: &mut State, ui: &AppWindow) {
             }
         }
         app.set_shadow(o.shadow);
+        app.set_obj_repeat(
+            match o.repeat {
+                Repeat::None => "none",
+                Repeat::All => "all",
+                Repeat::Odd => "odd",
+                Repeat::Even => "even",
+            }
+            .into(),
+        );
         app.set_obj_anchored(ed.anchored(o.id));
         app.set_opacity(o.opacity);
         app.set_corner(num(o.corner).into());
@@ -440,6 +450,20 @@ fn sync(st: &mut State, ui: &AppWindow) {
             });
         }
         app.set_nav(ModelRc::new(VecModel::from(items)));
+        // Cele odsyłaczy: zakładki i podpisy; podpis można przywołać numerem albo stroną.
+        let mut refs = Vec::new();
+        for (id, label) in ed.doc.ref_targets() {
+            let is_seq = ed.doc.body.paras.iter().any(|p| p.runs.iter().any(|r| matches!(r.field, Some(Field::Seq(s, _)) if s == id)));
+            let item = |kind: &str, hint: &str| ItemV { id: format!("{id}:{kind}").into(), label: label.clone().into(), hint: hint.into(), ..Default::default() };
+            if is_seq {
+                refs.push(item("number", opendtp_core::lang::tr("numer")));
+            }
+            refs.push(item("page", opendtp_core::lang::tr("strona")));
+            refs.push(item("text", opendtp_core::lang::tr("treść")));
+            refs.push(ItemV { id: "-".into(), ..Default::default() });
+        }
+        refs.pop();
+        app.set_ref_targets(ModelRc::new(VecModel::from(refs)));
     }
 }
 

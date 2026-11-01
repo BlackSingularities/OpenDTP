@@ -1140,6 +1140,8 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
                 "time" => Some(Field::Time),
                 "title" => Some(Field::Title),
                 "author" => Some(Field::Author),
+                "running-1" => Some(Field::Running(1)),
+                "running-2" => Some(Field::Running(2)),
                 _ => None,
             };
             match f {
@@ -1185,9 +1187,11 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             if base == "header-remove" {
                 st.ed.doc.header = None;
                 st.ed.doc.header_first = None;
+                st.ed.doc.header_even = None;
             } else {
                 st.ed.doc.footer = None;
                 st.ed.doc.footer_first = None;
+                st.ed.doc.footer_even = None;
             }
             if st.ed.story != StoryRef::Body && !matches!(st.ed.story, StoryRef::Obj(_)) {
                 st.ed.story = StoryRef::Body;
@@ -1242,11 +1246,207 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             }
         }
         "caption" => {
-            let n = st.ed.doc.body.paras.iter().filter(|p| p.style == "caption").count() + 1;
+            // Podpis z polem numeru – numery przeliczają się same po przestawieniu rysunków.
+            let kind = SeqKind::from_id(arg).unwrap_or(SeqKind::Figure);
+            if st.ed.story != StoryRef::Body {
+                st.ed.set_caret(StoryRef::Body, st.ed.head, false);
+            }
             st.ed.enter();
             st.ed.set_style("caption");
-            st.ed.insert(&opendtp_core::trf!("Rysunek {}. ", n));
+            st.ed.insert(&format!("{} ", kind.label()));
+            let id = st.ed.doc.new_id();
+            insert_field_at_caret(st, Field::Seq(id, kind));
+            st.ed.insert(". ");
             scroll = true;
+        }
+        "bookmark" => {
+            if st.ed.story != StoryRef::Body {
+                toast(st, tr("Zakładki i hasła indeksu wstawia się w treści głównej"));
+                return;
+            }
+            let sel: String = st.ed.fragment().iter().map(|p| p.text().replace(FIELD_CHAR, "")).collect::<Vec<_>>().join(" ");
+            let name = if sel.trim().is_empty() { st.ed.para_text(st.ed.head.para).replace(FIELD_CHAR, "") } else { sel };
+            let mut name: String = name.trim().chars().take(60).collect();
+            if name.is_empty() {
+                name = opendtp_core::trf!("Zakładka {}", st.ed.doc.bookmarks.len() + 1);
+            }
+            st.ed.begin(Kind::Other);
+            let id = st.ed.doc.new_id();
+            st.ed.doc.bookmarks.push(Bookmark { id, name: name.clone() });
+            let (a, _) = st.ed.range();
+            st.ed.anchor = a;
+            st.ed.head = a;
+            insert_field_at_caret(st, Field::Bookmark(id));
+            toast(st, &opendtp_core::trf!("Dodano zakładkę „{}”", name));
+        }
+        "xref" => {
+            // arg: „id:page|number|text”
+            let (id, kind) = arg.split_once(':').unwrap_or((arg, "page"));
+            let Ok(id) = id.parse::<u64>() else { return };
+            let kind = match kind {
+                "number" => RefKind::Number,
+                "text" => RefKind::Text,
+                _ => RefKind::Page,
+            };
+            insert_field_at_caret(st, Field::Ref(id, kind));
+            scroll = true;
+        }
+        "index-mark" => {
+            if st.ed.story != StoryRef::Body {
+                toast(st, tr("Zakładki i hasła indeksu wstawia się w treści głównej"));
+                return;
+            }
+            let sel: String = st.ed.fragment().iter().map(|p| p.text().replace(FIELD_CHAR, "")).collect::<Vec<_>>().join(" ");
+            let sel = sel.trim().to_string();
+            if sel.is_empty() {
+                toast(st, tr("Zaznacz wyraz albo wyrażenie, które ma trafić do indeksu"));
+                return;
+            }
+            // „hasło: podhasło” zapisuje podhasło.
+            let (term, sub) = match sel.split_once(':') {
+                Some((t, s)) if !t.trim().is_empty() && !s.trim().is_empty() => (t.trim().to_string(), s.trim().to_string()),
+                _ => (sel.clone(), String::new()),
+            };
+            st.ed.begin(Kind::Other);
+            let id = st.ed.doc.new_id();
+            st.ed.doc.index.push(IndexEntry { id, term: term.clone(), sub });
+            let (_, b) = st.ed.range();
+            st.ed.anchor = b;
+            st.ed.head = b;
+            insert_field_at_caret(st, Field::IndexMark(id));
+            toast(st, &opendtp_core::trf!("Hasło „{}” dodane do indeksu", term));
+        }
+        "index-mark-all" => {
+            // Oznacza każde wystąpienie zaznaczonego wyrazu w treści głównej.
+            let sel: String = st.ed.fragment().iter().map(|p| p.text().replace(FIELD_CHAR, "")).collect::<Vec<_>>().join(" ");
+            let term = sel.trim().to_string();
+            if term.is_empty() || st.ed.story != StoryRef::Body {
+                toast(st, tr("Zaznacz wyraz albo wyrażenie, które ma trafić do indeksu"));
+                return;
+            }
+            st.ed.begin(Kind::Other);
+            let mut spots = Vec::new();
+            for (pi, p) in st.ed.doc.body.paras.iter().enumerate() {
+                if p.style.starts_with("index") || p.style.starts_with("toc") {
+                    continue;
+                }
+                let text = p.text();
+                let mut from = 0;
+                while let Some(i) = text[from..].find(term.as_str()) {
+                    let end = from + i + term.len();
+                    let word_end = text[end..].chars().next().is_none_or(|c| !c.is_alphanumeric());
+                    let word_start = text[..from + i].chars().next_back().is_none_or(|c| !c.is_alphanumeric());
+                    if word_start && word_end {
+                        spots.push(At::new(pi, end));
+                    }
+                    from = end;
+                }
+            }
+            // Od końca, żeby wcześniejsze położenia się nie przesuwały.
+            let n = spots.len();
+            for at in spots.into_iter().rev() {
+                let id = st.ed.doc.new_id();
+                st.ed.doc.index.push(IndexEntry { id, term: term.clone(), sub: String::new() });
+                opendtp_core::edit::insert_field(&mut st.ed.doc.body, at, Field::IndexMark(id), &CharFmt::default());
+            }
+            st.ed.fix_selection();
+            st.ed.changed();
+            toast(st, &opendtp_core::trf!("Oznaczono wystąpienia: {}", n));
+        }
+        "index" | "index-update" => {
+            let paras = opendtp_core::layout::index(&st.ed.doc, &st.ed.layout);
+            if paras.is_empty() {
+                toast(st, tr("Brak haseł – zaznacz wyraz i wybierz „Oznacz hasło”"));
+                return;
+            }
+            // Starsze dokumenty nie mają stylów indeksu – dokładamy brakujące.
+            for s in styles::defaults().into_iter().filter(|s| s.id.starts_with("index")) {
+                if st.ed.doc.style(&s.id).is_none() {
+                    st.ed.doc.styles.push(s);
+                }
+            }
+            let is_idx = |p: &Paragraph| p.style.starts_with("index");
+            let first = st.ed.doc.body.paras.iter().position(is_idx);
+            if base == "index-update" || first.is_some() {
+                let Some(f) = first else {
+                    toast(st, tr("W dokumencie nie ma indeksu"));
+                    return;
+                };
+                st.ed.begin(Kind::Other);
+                let mut last = f;
+                while last + 1 < st.ed.doc.body.paras.len() && is_idx(&st.ed.doc.body.paras[last + 1]) {
+                    last += 1;
+                }
+                st.ed.doc.body.paras.splice(f..=last, paras);
+                st.ed.fix_selection();
+                st.ed.changed();
+                toast(st, tr("Indeks zaktualizowany"));
+            } else {
+                if st.ed.story != StoryRef::Body {
+                    st.ed.set_caret(StoryRef::Body, st.ed.head, false);
+                }
+                st.ed.insert_paragraphs_at_caret(paras);
+            }
+        }
+        "odd-even" => {
+            st.ed.begin(Kind::Other);
+            let on = !st.ed.doc.page.odd_even;
+            st.ed.doc.page.odd_even = on;
+            if on {
+                // Strony parzyste zaczynają od kopii nieparzystych z wyrównaniem lustrzanym.
+                // Nagłówek bez własnego wyrównania przechodzi na prawo; stopka (zwykle wyśrodkowana) zostaje.
+                let mirror = |s: &Story, header: bool| {
+                    let mut s = s.clone();
+                    for p in s.paras.iter_mut() {
+                        p.fmt.align = match p.fmt.align {
+                            Some(Align::Right) => Some(Align::Left),
+                            Some(Align::Left) => Some(Align::Right),
+                            None if header => Some(Align::Right),
+                            a => a,
+                        };
+                    }
+                    s
+                };
+                if st.ed.doc.header_even.is_none() {
+                    st.ed.doc.header_even = st.ed.doc.header.as_ref().map(|h| mirror(h, true));
+                }
+                if st.ed.doc.footer_even.is_none() {
+                    st.ed.doc.footer_even = st.ed.doc.footer.as_ref().map(|f| mirror(f, false));
+                }
+            }
+            st.ed.changed();
+        }
+        "running-head" => {
+            // Nagłówek strony z żywą paginą (tytuł rozdziału) – tworzony w razie potrzeby.
+            let level: u8 = arg.parse().unwrap_or(1);
+            st.ed.begin(Kind::Other);
+            if st.ed.doc.header.is_none() {
+                st.ed.doc.header = Some(Story { paras: vec![Paragraph::with_text("header", "")] });
+            }
+            st.ed.changed();
+            let r = if matches!(st.ed.story, StoryRef::Header | StoryRef::HeaderFirst | StoryRef::HeaderEven) { st.ed.story } else { StoryRef::Header };
+            if r != st.ed.story {
+                let len = st.ed.doc.story(r).map(|s| s.paras[0].len()).unwrap_or(0);
+                st.ed.obj = None;
+                st.ed.set_caret(r, At::new(0, len), false);
+            }
+            insert_field_at_caret(st, Field::Running(level.clamp(1, 3)));
+            scroll = true;
+        }
+        "repeat" => {
+            let r = match arg {
+                "all" => Repeat::All,
+                "odd" => Repeat::Odd,
+                "even" => Repeat::Even,
+                _ => Repeat::None,
+            };
+            if let Some(o) = st.ed.object() {
+                if r != Repeat::None && matches!(o.kind, ObjKind::Text { .. } | ObjKind::PathText { .. } | ObjKind::Table { .. }) {
+                    toast(st, tr("Na wszystkich stronach można powtarzać obrazy, kształty i wykresy"));
+                    return;
+                }
+            }
+            st.ed.edit_obj(&move |o| o.repeat = r);
         }
 
         // ---------------------------------------------------------- projekt i strona
@@ -2249,6 +2449,20 @@ fn anchor_new(st: &mut State, id: u64) {
 }
 
 /// Komórka pod punktem (pt) w tabeli obiektu.
+/// Pole w miejscu kursora (bieżący tekst), kursor za polem.
+fn insert_field_at_caret(st: &mut State, f: Field) {
+    st.ed.begin(Kind::Other);
+    let fmt = st.ed.caret_fmt();
+    let h = st.ed.head;
+    let story = st.ed.story;
+    if let Some(s) = st.ed.doc.story_mut(story) {
+        let end = opendtp_core::edit::insert_field(s, h, f, &fmt);
+        st.ed.anchor = end;
+        st.ed.head = end;
+    }
+    st.ed.changed();
+}
+
 pub fn cell_at(o: &Object, x: f32, y: f32) -> Option<(usize, usize, opendtp_core::geom::Rect)> {
     let ObjKind::Table { table } = &o.kind else { return None };
     opendtp_core::paint::table_cells(table, opendtp_core::geom::Rect::new(o.x, o.y, o.w, o.h)).into_iter().find(|(_, _, r)| r.contains(x, y))
@@ -2498,6 +2712,7 @@ fn new_obj(page: usize, x: f32, y: f32, w: f32, h: f32, shape: Shape, kind: ObjK
         locked: false,
         anchor_dy: 4.0,
         cont_of: None,
+        repeat: Default::default(),
     }
 }
 

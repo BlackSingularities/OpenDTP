@@ -610,8 +610,21 @@ export global Menus {
         { id: "time", label: @tr("Godzina"), icon: Icons.clock },
         { id: "title", label: @tr("Tytuł dokumentu") },
         { id: "author", label: @tr("Autor") },
+        { id: "running-1", label: @tr("Żywa pagina – rozdział"), icon: Icons.panel-top },
+        { id: "running-2", label: @tr("Żywa pagina – podrozdział") },
         { id: "-" },
         { id: "date-text", label: @tr("Dzisiejsza data jako tekst") },
+    ];
+    out property <[ItemV]> captions: [
+        { id: "figure", label: @tr("Rysunek"), icon: Icons.image },
+        { id: "table", label: @tr("Tabela"), icon: Icons.rows-3 },
+        { id: "equation", label: @tr("Wzór"), icon: Icons.sigma },
+    ];
+    out property <[ItemV]> repeats: [
+        { id: "none", label: @tr("Tylko na tej stronie") },
+        { id: "all", label: @tr("Na wszystkich stronach"), icon: Icons.layers },
+        { id: "odd", label: @tr("Na stronach nieparzystych") },
+        { id: "even", label: @tr("Na stronach parzystych") },
     ];
     out property <[ItemV]> page-sizes: [
         { id: "A4", label: "A4  ·  210 × 297 mm" }, { id: "A5", label: "A5  ·  148 × 210 mm" }, { id: "A3", label: "A3  ·  297 × 420 mm" },
@@ -1193,6 +1206,31 @@ component InsertTab inherits HorizontalLayout {
                 enabled: App.has-footer;
                 clicked => {
                     App.cmd("footer-remove", "");
+                }
+            }
+            RowButton {
+                icon: Icons.book-a;
+                label: @tr("Inne parzyste");
+                tip: @tr("Osobny nagłówek i stopka stron parzystych – układ lustrzany jak w książce");
+                active: App.odd-even;
+                clicked => {
+                    App.cmd("odd-even", "");
+                }
+            }
+        }
+        Col {
+            MenuButton {
+                icon: Icons.panel-top;
+                label: @tr("Żywa pagina");
+                tip: @tr("Tytuł bieżącego rozdziału w nagłówku każdej strony");
+                items: [
+                    { id: "1", label: @tr("Rozdział (Nagłówek 1)") },
+                    { id: "2", label: @tr("Podrozdział (Nagłówek 2)") },
+                    { id: "3", label: @tr("Hasło (Nagłówek 3)") },
+                ];
+                menu-w: 240px;
+                picked(id) => {
+                    App.cmd("running-head", id);
                 }
             }
         }
@@ -2015,6 +2053,17 @@ component ShapesTab inherits HorizontalLayout {
                     App.cmd("shadow", "");
                 }
             }
+            MenuButton {
+                icon: Icons.layers;
+                label: @tr("Strony");
+                tip: @tr("Element strony wzorcowej: powtarzaj obiekt na wszystkich, nieparzystych albo parzystych stronach");
+                items: Menus.repeats;
+                current: App.obj-repeat;
+                menu-w: 240px;
+                picked(id) => {
+                    App.cmd("repeat", id);
+                }
+            }
             Spin {
                 label: @tr("Narożniki");
                 tip: @tr("Zaokrąglenie narożników prostokąta (pt)");
@@ -2103,14 +2152,65 @@ component RefsTab inherits HorizontalLayout {
         }
     }
     Group {
+        title: @tr("Odsyłacze");
+        BigButton {
+            icon: Icons.pin;
+            label: @tr("Zakładka");
+            tip: @tr("Oznacz to miejsce jako cel odsyłaczy (nazwa z zaznaczenia albo akapitu)");
+            clicked => {
+                App.cmd("bookmark", "");
+            }
+        }
+        BigMenuButton {
+            icon: Icons.link-2;
+            label: @tr("Odsyłacz");
+            tip: @tr("„zob. s. 12”, „rys. 3” – numer i strona aktualizują się same");
+            items: App.ref-targets;
+            menu-w: 320px;
+            picked(id) => {
+                App.cmd("xref", id);
+            }
+        }
+    }
+    Group {
+        title: @tr("Indeks");
+        Col {
+            RowButton {
+                icon: Icons.hash;
+                label: @tr("Oznacz hasło");
+                tip: @tr("Dodaj zaznaczony wyraz do indeksu („hasło: podhasło” tworzy podhasło)");
+                clicked => {
+                    App.cmd("index-mark", "");
+                }
+            }
+            RowButton {
+                icon: Icons.whole-word;
+                label: @tr("Oznacz wszystkie");
+                tip: @tr("Dodaj do indeksu każde wystąpienie zaznaczonego wyrazu");
+                clicked => {
+                    App.cmd("index-mark-all", "");
+                }
+            }
+        }
+        BigButton {
+            icon: Icons.book-a;
+            label: @tr("Indeks");
+            tip: @tr("Wstaw albo odśwież skorowidz alfabetyczny z numerami stron");
+            clicked => {
+                App.cmd("index", "");
+            }
+        }
+    }
+    Group {
         title: @tr("Podpisy i nawigacja");
         last: true;
-        BigButton {
+        BigMenuButton {
             icon: Icons.captions;
             label: @tr("Podpis");
-            tip: @tr("Wstaw podpis rysunku z kolejnym numerem");
-            clicked => {
-                App.cmd("caption", "");
+            tip: @tr("Podpis rysunku, tabeli albo wzoru z automatycznym numerem");
+            items: Menus.captions;
+            picked(id) => {
+                App.cmd("caption", id);
             }
         }
         BigButton {
