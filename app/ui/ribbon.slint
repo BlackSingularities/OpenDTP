@@ -309,6 +309,7 @@ export component FontBox inherits Rectangle {
                 padding: 8px;
                 spacing: 6px;
                 search := Field {
+                    tip: @tr("Wpisz część nazwy czcionki, aby zawęzić listę");
                     init => {
                         self.focus-input();
                     }
@@ -1177,6 +1178,7 @@ component InsertTab inherits HorizontalLayout {
         }
         Col {
             RowButton {
+                tip: @tr("Usuń nagłówek z tej sekcji");
                 icon: Icons.trash-2;
                 label: @tr("Usuń nagłówek");
                 enabled: App.has-header;
@@ -1185,6 +1187,7 @@ component InsertTab inherits HorizontalLayout {
                 }
             }
             RowButton {
+                tip: @tr("Usuń stopkę z tej sekcji");
                 icon: Icons.trash-2;
                 label: @tr("Usuń stopkę");
                 enabled: App.has-footer;
@@ -1583,6 +1586,7 @@ component LayoutTab inherits HorizontalLayout {
         }
         Col {
             RowButton {
+                tip: @tr("Przenieś obiekt nad wszystkie inne");
                 icon: Icons.bring-to-front;
                 label: @tr("Na wierzch");
                 enabled: App.obj-sel;
@@ -1591,6 +1595,7 @@ component LayoutTab inherits HorizontalLayout {
                 }
             }
             RowButton {
+                tip: @tr("Przenieś obiekt o jedną warstwę wyżej");
                 icon: Icons.arrow-up-from-line;
                 label: @tr("Do przodu");
                 enabled: App.obj-sel;
@@ -1599,6 +1604,7 @@ component LayoutTab inherits HorizontalLayout {
                 }
             }
             RowButton {
+                tip: @tr("Przenieś obiekt o jedną warstwę niżej");
                 icon: Icons.arrow-down-to-line;
                 label: @tr("Do tyłu");
                 enabled: App.obj-sel;
@@ -1609,6 +1615,7 @@ component LayoutTab inherits HorizontalLayout {
         }
         Col {
             RowButton {
+                tip: @tr("Przenieś obiekt pod wszystkie inne");
                 icon: Icons.send-to-back;
                 label: @tr("Na spód");
                 enabled: App.obj-sel;
@@ -1807,6 +1814,7 @@ component ShapesTab inherits HorizontalLayout {
         }
         Col {
             RowButton {
+                tip: @tr("Zostaw tylko część wspólną zaznaczonych kształtów");
                 icon: Icons.squares-intersect;
                 label: @tr("Część wspólna");
                 enabled: App.multi-count >= 2;
@@ -1874,6 +1882,7 @@ component ShapesTab inherits HorizontalLayout {
                 }
             }
             RowButton {
+                tip: @tr("Rozłącz ramkę – tekst przestanie płynąć do następnej");
                 icon: Icons.unlink;
                 label: @tr("Rozłącz");
                 enabled: App.linked;
@@ -1889,7 +1898,7 @@ component ShapesTab inherits HorizontalLayout {
             Row {
                 for m[i] in [Icons.x, Icons.wrap-text, Icons.align-start-vertical, Icons.align-end-vertical, Icons.move-horizontal, Icons.between-horizontal-start, Icons.layers]: IconButton {
                     icon: m;
-                    size: 26px;
+                    size: 24px;
                     active: App.obj-sel && App.wrap-mode == i;
                     enabled: App.obj-sel;
                     tip: i == 0 ? @tr("Bez opływania") : i == 1 ? @tr("Z obu stron") : i == 2 ? @tr("Tekst po lewej") : i == 3 ? @tr("Tekst po prawej") : i == 4 ? @tr("Po większej stronie") : i == 5 ? @tr("Nad i pod") : @tr("Za tekstem");
@@ -2199,6 +2208,7 @@ component ViewTab inherits HorizontalLayout {
         }
         Col {
             RowButton {
+                tip: @tr("Powiększenie 100% – rzeczywisty rozmiar");
                 icon: Icons.scan;
                 label: "100%";
                 clicked => {
@@ -2206,6 +2216,7 @@ component ViewTab inherits HorizontalLayout {
                 }
             }
             RowButton {
+                tip: @tr("Dopasuj powiększenie do szerokości strony");
                 icon: Icons.move-horizontal;
                 label: @tr("Szerokość strony");
                 clicked => {
@@ -2213,6 +2224,7 @@ component ViewTab inherits HorizontalLayout {
                 }
             }
             RowButton {
+                tip: @tr("Pokaż całą stronę w oknie");
                 icon: Icons.file;
                 label: @tr("Cała strona");
                 clicked => {
@@ -2225,6 +2237,7 @@ component ViewTab inherits HorizontalLayout {
         title: @tr("Pokaż");
         Col {
             Switch {
+                tip: @tr("Pokaż znaki niedrukowane: spacje, akapity, tabulatory");
                 label: @tr("Znaki formatowania");
                 on: App.marks;
                 toggled => {
@@ -2248,6 +2261,7 @@ component ViewTab inherits HorizontalLayout {
                 }
             }
             Switch {
+                tip: @tr("Panel nawigatora z nagłówkami dokumentu");
                 label: @tr("Nawigator");
                 on: App.left-panel == "nav";
                 toggled => {
@@ -2269,6 +2283,7 @@ component ViewTab inherits HorizontalLayout {
                 }
             }
             Switch {
+                tip: @tr("Zwiń wstążkę – karty rozwijają się po kliknięciu");
                 label: @tr("Zwinięta wstążka");
                 on: App.ribbon-collapsed;
                 toggled => {
@@ -2286,6 +2301,7 @@ component ViewTab inherits HorizontalLayout {
             }
         }
         BigButton {
+            tip: @tr("Otwórz ustawienia programu");
             icon: Icons.settings;
             label: @tr("Ustawienia");
             clicked => {
@@ -2296,11 +2312,12 @@ component ViewTab inherits HorizontalLayout {
 }
 
 component CustomTab inherits HorizontalLayout {
+    in property <int> index;
     alignment: start;
     Group {
-        title: @tr("Moje polecenia");
+        title: App.custom-tabs[root.index].name;
         last: true;
-        for c in App.custom-tab: BigButton {
+        for c in App.custom-tabs[root.index].items: BigButton {
             icon: c.icon;
             label: c.label;
             tip: c.hint != "" ? c.label + " (" + c.hint + ")" : c.label;
@@ -2311,9 +2328,52 @@ component CustomTab inherits HorizontalLayout {
         BigButton {
             icon: Icons.plus;
             label: @tr("Dostosuj");
-            tip: @tr("Wybierz polecenia tej karty");
+            tip: @tr("Nazwa i polecenia tej karty");
             clicked => {
-                App.cmd("customize", "tab");
+                App.cmd("customize", root.index);
+            }
+        }
+    }
+}
+
+/// Przycisk karty wstążki z podkreśleniem aktywnej.
+component TabButton inherits Rectangle {
+    in property <string> label;
+    in property <int> index;
+    in property <bool> dot;
+    in property <string> tip;
+    width: tt.preferred-width + 22px;
+    tt := Text {
+        text: root.label;
+        font-family: Theme.font;
+        font-size: Theme.fs;
+        font-weight: App.tab == root.index ? 600 : 400;
+        color: App.tab == root.index ? Theme.text : tta.has-hover ? Theme.text : Theme.text-dim;
+    }
+    if root.dot: Rectangle {
+        x: parent.width - 9px;
+        y: 7px;
+        width: 5px;
+        height: 5px;
+        border-radius: 2.5px;
+        background: Theme.accent;
+    }
+    Rectangle {
+        y: parent.height - 3px;
+        height: 2px;
+        width: App.tab == root.index ? parent.width - 14px : 0;
+        border-radius: 1px;
+        background: Theme.accent;
+        animate width { duration: 140ms; easing: ease-out; }
+    }
+    tta := TipArea {
+        tip: root.tip;
+        clicked => {
+            if (App.ribbon-collapsed && App.tab == root.index) {
+                App.ribbon-peek = !App.ribbon-peek;
+            } else {
+                App.tab = root.index;
+                App.ribbon-peek = App.ribbon-collapsed;
             }
         }
     }
@@ -2346,42 +2406,17 @@ export component RibbonTabs inherits Rectangle {
                 }
             }
         }
-        for t[i] in [@tr("Narzędzia główne"), @tr("Wstawianie"), @tr("Projekt"), @tr("Układ"), @tr("Kształty tekstu"), @tr("Odwołania"), @tr("Recenzja"), @tr("Widok"), @tr("Moja karta")]: Rectangle {
-            width: tt.preferred-width + 22px;
-            tt := Text {
-                text: t;
-                font-family: Theme.font;
-                font-size: Theme.fs;
-                font-weight: App.tab == i ? 600 : 400;
-                color: App.tab == i ? Theme.text : tta.has-hover ? Theme.text : Theme.text-dim;
-            }
-            if i == 4: Rectangle {
-                x: parent.width - 9px;
-                y: 7px;
-                width: 5px;
-                height: 5px;
-                border-radius: 2.5px;
-                background: Theme.accent;
-            }
-            Rectangle {
-                y: parent.height - 3px;
-                height: 2px;
-                width: App.tab == i ? parent.width - 14px : 0;
-                border-radius: 1px;
-                background: Theme.accent;
-                animate width { duration: 140ms; easing: ease-out; }
-            }
-            tta := TipArea {
-                tip: i == 4 ? @tr("Kształty tekstu: tekst w dowolnym konturze z węzłów, opływanie, łączenie ramek") : "";
-                clicked => {
-                    if (App.ribbon-collapsed && App.tab == i) {
-                        App.ribbon-peek = !App.ribbon-peek;
-                    } else {
-                        App.tab = i;
-                        App.ribbon-peek = App.ribbon-collapsed;
-                    }
-                }
-            }
+        for t[i] in [@tr("Narzędzia główne"), @tr("Wstawianie"), @tr("Projekt"), @tr("Układ"), @tr("Kształty tekstu"), @tr("Odwołania"), @tr("Recenzja"), @tr("Widok")]: TabButton {
+            label: t;
+            index: i;
+            dot: i == 4;
+            tip: [@tr("Schowek, czcionka, akapit i style"), @tr("Strony, obrazy, kształty, tabele, wykresy, tekst i nagłówki"), @tr("Motyw dokumentu, kolory, znak wodny i obramowanie strony"), @tr("Marginesy, orientacja, kolumny, sekcje, podziały i układ obiektów"), @tr("Kształty tekstu: tekst w dowolnym konturze z węzłów, opływanie, łączenie ramek"), @tr("Spis treści, przypisy, podpisy i odsyłacze"), @tr("Pisownia, język, komentarze i statystyki"), @tr("Powiększenie, linijka, znaki formatowania i panele")][i];
+        }
+        // Karty skrótów (opcjonalne, do trzech) – po kartach stałych.
+        for c[j] in App.custom-tabs: TabButton {
+            label: c.name;
+            index: 8 + j;
+            tip: @tr("Karta skrótów – własny zestaw poleceń");
         }
     }
 }
@@ -2405,7 +2440,9 @@ export component RibbonBody inherits Rectangle {
             if App.tab == 5: RefsTab {}
             if App.tab == 6: ReviewTab {}
             if App.tab == 7: ViewTab {}
-            if App.tab == 8: CustomTab {}
+            if App.tab >= 8 && App.tab - 8 < App.custom-tabs.length: CustomTab {
+                index: App.tab - 8;
+            }
         }
     }
 }

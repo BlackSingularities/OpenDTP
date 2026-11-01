@@ -10,14 +10,18 @@ export global Theme {
     in-out property <int> corners: 1;
     in-out property <bool> dense: false;
     in-out property <string> font: "Segoe UI Variable Text";
+    // Wspólna przezroczystość pasków, paneli, menu i okien (0 – pełne krycie, 0.6 – najmocniejsza).
+    in-out property <float> clear: 0;
 
     out property <bool> dark: mode != 2;
     out property <color> bg: mode == 0 ? #000000 : mode == 1 ? #1b1c1f : #f2f2f5;
     out property <color> desk: mode == 0 ? #050505 : mode == 1 ? #141517 : #e3e3e8;
-    out property <color> panel: mode == 0 ? #000000 : mode == 1 ? #232428 : #ffffff;
+    // Jedno tło dla wszystkich powierzchni interfejsu: paski, wstążka, panele, menu, okna.
+    out property <color> surface: mode == 0 ? #0b0b0b : mode == 1 ? #232428 : #ffffff;
+    out property <color> panel: surface.with-alpha(1 - clear);
     out property <color> raised: mode == 0 ? #141414 : mode == 1 ? #2d2e33 : #ffffff;
     out property <color> higher: mode == 0 ? #1c1c1c : mode == 1 ? #36373d : #f7f7fa;
-    out property <color> popup: mode == 0 ? #0d0d0d : mode == 1 ? #2a2b30 : #ffffff;
+    out property <color> popup: surface.with-alpha(1 - clear);
     out property <color> line: mode == 0 ? #ffffff1a : mode == 1 ? #ffffff17 : #00000014;
     out property <color> line-strong: mode == 0 ? #ffffff33 : mode == 1 ? #ffffff2b : #00000026;
     out property <color> text: mode == 2 ? #18181c : #ffffff;
@@ -25,7 +29,7 @@ export global Theme {
     out property <color> text-faint: mode == 2 ? #18181c73 : #ffffff66;
     out property <color> hover: mode == 2 ? #0000000d : #ffffff12;
     out property <color> press: mode == 2 ? #0000001a : #ffffff21;
-    out property <color> glass: mode == 2 ? #ffffffd9 : #000000c7;
+    out property <color> glass: surface.with-alpha(1 - clear);
     out property <color> accent-soft: accent.with-alpha(0.18);
     out property <color> accent-text: (accent.red * 0.299 + accent.green * 0.587 + accent.blue * 0.114) > 165 ? #000000 : #ffffff;
     out property <color> danger: #ff4d5a;
@@ -39,5 +43,5 @@ export global Theme {
     out property <length> fs-small: 11px * scale;
     out property <length> fs-big: 15px * scale;
     out property <length> row: (dense ? 26px : 30px) * scale;
-    out property <length> ribbon-h: (dense ? 84px : 96px) * scale;
+    out property <length> ribbon-h: (dense ? 96px : 104px) * scale;
 }

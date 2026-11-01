@@ -12,6 +12,7 @@ component NavItem inherits Rectangle {
     in property <string> label;
     in property <image> icon;
     in property <bool> active;
+    in property <string> tip;
     callback clicked();
     height: 38px;
     border-radius: Theme.r-small;
@@ -35,6 +36,7 @@ component NavItem inherits Rectangle {
         }
     }
     ta := TipArea {
+        tip: root.tip;
         clicked => {
             root.clicked();
         }
@@ -170,6 +172,7 @@ component SettingRow inherits HorizontalLayout {
 component AccentSwatches inherits HorizontalLayout {
     spacing: 6px;
     for c in [#5b8cff, #3ccf7a, #ff9f0a, #ff4d5a, #bf5af2, #64d2ff, #ffd60a, #ffffff, #8e8e93]: Swatch {
+        tip: @tr("Kolor akcentu interfejsu – przyciski, zaznaczenia, wyróżnienia");
         swatch: c;
         size: 22px;
         selected: Theme.accent == c;
@@ -180,7 +183,7 @@ component AccentSwatches inherits HorizontalLayout {
 }
 
 export component Backstage inherits Rectangle {
-    background: Theme.bg;
+    background: Theme.glass;
     HorizontalLayout {
         Rectangle {
             width: 236px;
@@ -217,6 +220,7 @@ export component Backstage inherits Rectangle {
                 }
                 NavItem {
                     label: @tr("Nowy");
+                    tip: @tr("Nowy dokument z szablonu (Ctrl+N)");
                     icon: Icons.file-plus;
                     active: App.backstage-page == 0;
                     clicked => {
@@ -225,6 +229,7 @@ export component Backstage inherits Rectangle {
                 }
                 NavItem {
                     label: @tr("Otwórz");
+                    tip: @tr("Otwórz dokument z dysku lub z listy ostatnich (Ctrl+O)");
                     icon: Icons.folder-open;
                     active: App.backstage-page == 1;
                     clicked => {
@@ -233,6 +238,7 @@ export component Backstage inherits Rectangle {
                 }
                 NavItem {
                     label: @tr("Zapisz");
+                    tip: @tr("Zapisz dokument (Ctrl+S)");
                     icon: Icons.save;
                     clicked => {
                         App.cmd("save", "");
@@ -240,6 +246,7 @@ export component Backstage inherits Rectangle {
                 }
                 NavItem {
                     label: @tr("Zapisz jako");
+                    tip: @tr("Zapisz pod nową nazwą lub w innym miejscu (Ctrl+Shift+S)");
                     icon: Icons.save-all;
                     clicked => {
                         App.cmd("save-as", "");
@@ -247,6 +254,7 @@ export component Backstage inherits Rectangle {
                 }
                 NavItem {
                     label: @tr("Eksportuj");
+                    tip: @tr("Zapisz jako PDF, DOCX, HTML, Markdown, tekst lub obraz");
                     icon: Icons.file-output;
                     active: App.backstage-page == 3;
                     clicked => {
@@ -255,6 +263,7 @@ export component Backstage inherits Rectangle {
                 }
                 NavItem {
                     label: @tr("Drukuj");
+                    tip: @tr("Drukuj dokument (przez PDF, Ctrl+P)");
                     icon: Icons.printer;
                     clicked => {
                         App.cmd("print", "");
@@ -262,6 +271,7 @@ export component Backstage inherits Rectangle {
                 }
                 NavItem {
                     label: @tr("Informacje");
+                    tip: @tr("Właściwości dokumentu i statystyki");
                     icon: Icons.info;
                     active: App.backstage-page == 5;
                     clicked => {
@@ -274,6 +284,7 @@ export component Backstage inherits Rectangle {
                 }
                 NavItem {
                     label: @tr("Ustawienia");
+                    tip: @tr("Wygląd, edycja, zapis, AI i aktualizacje");
                     icon: Icons.settings;
                     active: App.backstage-page == 6;
                     clicked => {
@@ -282,6 +293,7 @@ export component Backstage inherits Rectangle {
                 }
                 NavItem {
                     label: @tr("O programie");
+                    tip: @tr("Wersja, autor i aktualizacje");
                     icon: Icons.badge-info;
                     active: App.backstage-page == 7;
                     clicked => {
@@ -539,6 +551,7 @@ export component Backstage inherits Rectangle {
                         icon: Icons.heading;
                         label: @tr("Tytuł");
                         tf := Field {
+                            tip: @tr("Tytuł dokumentu zapisywany we właściwościach pliku");
                             w: 360px;
                             text: App.doc-name;
                             accepted(t) => {
@@ -553,6 +566,7 @@ export component Backstage inherits Rectangle {
                         icon: Icons.pen-line;
                         label: @tr("Autor");
                         Field {
+                            tip: @tr("Autor dokumentu zapisywany we właściwościach pliku");
                             w: 360px;
                             text: App.s-author;
                             edited(t) => {
@@ -587,6 +601,7 @@ export component Backstage inherits Rectangle {
                         label: @tr("Język interfejsu");
                         hint: @tr("Zmiana po ponownym uruchomieniu");
                         Segmented {
+                            tip: @tr("Język menu i komunikatów; „Jak Windows” – według ustawień systemu");
                             items: [@tr("Jak Windows"), "Polski", "English"];
                             current: App.s-lang;
                             picked(i) => {
@@ -598,6 +613,7 @@ export component Backstage inherits Rectangle {
                         icon: Icons.contrast;
                         label: @tr("Motyw");
                         Segmented {
+                            tip: @tr("Motyw: AMOLED – czysta czerń, Grafit – ciemnoszary, Jasny – białe tło");
                             items: ["AMOLED", @tr("Grafit"), @tr("Jasny")];
                             current: Theme.mode;
                             picked(i) => {
@@ -623,6 +639,7 @@ export component Backstage inherits Rectangle {
                         icon: Icons.radius;
                         label: @tr("Zaokrąglenia");
                         Segmented {
+                            tip: @tr("Zaokrąglenie rogów przycisków, pól i okien");
                             items: [@tr("Ostre"), @tr("Zwykłe"), @tr("Mocne")];
                             current: Theme.corners;
                             picked(i) => {
@@ -646,9 +663,25 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.layers;
+                        label: @tr("Przezroczystość interfejsu");
+                        Slider {
+                            width: 200px;
+                            value: Theme.clear / 0.6;
+                            tip: @tr("Jedno ustawienie dla pasków, wstążki, paneli, menu i okien");
+                            moved(v) => {
+                                App.cmd("transparency", v * 60);
+                            }
+                        }
+                        Dim {
+                            text: round(Theme.clear * 100) + "%";
+                        }
+                    }
+                    SettingRow {
                         icon: Icons.rows-3;
                         label: @tr("Gęsty układ");
                         Switch {
+                            tip: @tr("Mniejsze odstępy i niższa wstążka – więcej miejsca na dokument");
                             on: Theme.dense;
                             toggled => {
                                 App.cmd("dense", "");
@@ -659,6 +692,7 @@ export component Backstage inherits Rectangle {
                         icon: Icons.ruler;
                         label: @tr("Jednostki");
                         Segmented {
+                            tip: @tr("Jednostki miar w polach położenia, rozmiaru i marginesów");
                             items: ["mm", "cm", @tr("cale"), "pt"];
                             current: App.s-unit;
                             picked(i) => {
@@ -673,6 +707,7 @@ export component Backstage inherits Rectangle {
                         icon: Icons.spell-check;
                         label: @tr("Sprawdzanie pisowni na bieżąco");
                         Switch {
+                            tip: @tr("Podkreślaj błędy pisowni na bieżąco podczas pisania");
                             on: App.spell-live;
                             toggled => {
                                 App.cmd("spell-live", "");
@@ -684,6 +719,7 @@ export component Backstage inherits Rectangle {
                         label: @tr("Inteligentne cudzysłowy");
                         hint: @tr("„polskie” i ’apostrofy’");
                         Switch {
+                            tip: @tr("Zamieniaj proste cudzysłowy na drukarskie („…”) podczas pisania");
                             on: App.s-smart-quotes;
                             toggled => {
                                 App.cmd("s-smart-quotes", "");
@@ -695,6 +731,7 @@ export component Backstage inherits Rectangle {
                         label: @tr("Autokorekta");
                         hint: @tr("-- → –, ... → …, (c) → ©, -> → →");
                         Switch {
+                            tip: @tr("Poprawiaj typowe literówki i zamieniaj skróty (np. -- na półpauzę)");
                             on: App.s-autocorrect;
                             toggled => {
                                 App.cmd("s-autocorrect", "");
@@ -705,6 +742,7 @@ export component Backstage inherits Rectangle {
                         icon: Icons.case-upper;
                         label: @tr("Wielka litera na początku zdania");
                         Switch {
+                            tip: @tr("Zaczynaj zdanie wielką literą automatycznie");
                             on: App.s-capitalize;
                             toggled => {
                                 App.cmd("s-capitalize", "");
@@ -716,6 +754,7 @@ export component Backstage inherits Rectangle {
                         label: @tr("Automatyczne listy");
                         hint: @tr("„- ” i „1. ” na początku akapitu");
                         Switch {
+                            tip: @tr("Rozpoczęcie wiersza od „-” lub „1.” tworzy listę");
                             on: App.s-autolist;
                             toggled => {
                                 App.cmd("s-autolist", "");
@@ -727,6 +766,7 @@ export component Backstage inherits Rectangle {
                         label: @tr("Przyciąganie obiektów");
                         hint: @tr("Do marginesów, środka strony i innych obiektów");
                         Switch {
+                            tip: @tr("Przyciągaj obiekty do krawędzi strony, marginesów i innych obiektów");
                             on: App.s-snap;
                             toggled => {
                                 App.cmd("s-snap", "");
@@ -737,6 +777,7 @@ export component Backstage inherits Rectangle {
                         icon: Icons.type;
                         label: @tr("Czcionka nowych dokumentów");
                         Field {
+                            tip: @tr("Czcionka nowych dokumentów");
                             w: 180px;
                             text: App.s-default-font;
                             accepted(t) => {
@@ -744,6 +785,7 @@ export component Backstage inherits Rectangle {
                             }
                         }
                         Field {
+                            tip: @tr("Rozmiar czcionki nowych dokumentów (pt)");
                             w: 50px;
                             text: App.s-default-size;
                             accepted(t) => {
@@ -755,6 +797,7 @@ export component Backstage inherits Rectangle {
                         icon: Icons.pen-line;
                         label: @tr("Autor dokumentów");
                         Field {
+                            tip: @tr("Autor wpisywany do nowych dokumentów i komentarzy");
                             w: 240px;
                             text: App.s-author;
                             accepted(t) => {
@@ -773,6 +816,7 @@ export component Backstage inherits Rectangle {
                         label: @tr("Autozapis kopii");
                         hint: @tr("Kopia do odzyskania po awarii");
                         Segmented {
+                            tip: @tr("Jak często zapisywać kopię roboczą na wypadek awarii");
                             items: [@tr("Wył."), "1 min", "2 min", "5 min", "10 min"];
                             current: App.s-autosave;
                             picked(i) => {
@@ -784,6 +828,7 @@ export component Backstage inherits Rectangle {
                         icon: Icons.history;
                         label: @tr("Przywracaj ostatni dokument");
                         Switch {
+                            tip: @tr("Na starcie otwieraj ostatnio edytowany dokument zamiast ekranu powitalnego");
                             on: App.s-restore;
                             toggled => {
                                 App.cmd("s-restore", "");
@@ -797,19 +842,33 @@ export component Backstage inherits Rectangle {
                         icon: Icons.star;
                         label: @tr("Pasek szybkiego dostępu");
                         Button {
+                            tip: @tr("Wybierz polecenia paska szybkiego dostępu nad wstążką");
                             label: @tr("Dostosuj…");
                             clicked => {
                                 App.cmd("customize", "qat");
                             }
                         }
                     }
-                    SettingRow {
+                    for c[j] in App.custom-tabs: SettingRow {
                         icon: Icons.layout-template;
-                        label: @tr("Karta „Moja karta”");
+                        label: c.name;
                         Button {
+                            tip: @tr("Zmień nazwę i polecenia tej karty skrótów");
                             label: @tr("Dostosuj…");
                             clicked => {
-                                App.cmd("customize", "tab");
+                                App.cmd("customize", j);
+                            }
+                        }
+                    }
+                    SettingRow {
+                        icon: Icons.plus;
+                        label: @tr("Karty skrótów (do trzech, z własną nazwą)");
+                        Button {
+                            tip: @tr("Dodaj kartę skrótów z wybranymi poleceniami (najwyżej trzy)");
+                            label: @tr("Dodaj kartę");
+                            enabled: App.custom-tabs.length < 3;
+                            clicked => {
+                                App.cmd("tab-add", "");
                             }
                         }
                     }
@@ -817,6 +876,7 @@ export component Backstage inherits Rectangle {
                         icon: Icons.book-a;
                         label: @tr("Słownik użytkownika");
                         Button {
+                            tip: @tr("Pokaż wyrazy dodane do słownika użytkownika");
                             label: @tr("Pokaż…");
                             clicked => {
                                 App.cmd("user-dict", "");
@@ -886,6 +946,7 @@ export component Backstage inherits Rectangle {
                         label: @tr("Adres API");
                         hint: @tr("Serwer zgodny z OpenAI, np. http://localhost:11434/v1");
                         Field {
+                            tip: @tr("Adres serwera zgodnego z API OpenAI (dla własnego lub lokalnego modelu)");
                             w: 300px;
                             text: App.ai-base;
                             placeholder: "https://…/v1";
@@ -926,6 +987,7 @@ export component Backstage inherits Rectangle {
                         label: @tr("Własny identyfikator modelu");
                         hint: @tr("Gdy modelu nie ma na liście");
                         Field {
+                            tip: @tr("Identyfikator modelu u wybranego dostawcy");
                             w: 300px;
                             text: App.ai-model;
                             placeholder: "np. anthropic/claude-sonnet-5.5";
@@ -953,6 +1015,7 @@ export component Backstage inherits Rectangle {
                     SettingRow {
                         label: App.ai-status;
                         Button {
+                            tip: @tr("Otwórz okno generowania dokumentu przez AI");
                             label: @tr("Generuj dokument…");
                             icon: Icons.wand-sparkles;
                             primary: true;
@@ -969,6 +1032,7 @@ export component Backstage inherits Rectangle {
                         label: @tr("Sprawdzaj w tle");
                         hint: @tr("Nowe wersje z redzikowski.com");
                         Switch {
+                            tip: @tr("Sprawdzaj nowe wersje na redzikowski.com");
                             on: App.s-update-check;
                             toggled => {
                                 App.cmd("s-update-check", "");
@@ -979,6 +1043,7 @@ export component Backstage inherits Rectangle {
                         icon: Icons.cloud-download;
                         label: @tr("Instaluj bez pytania");
                         Switch {
+                            tip: @tr("Pobieraj i instaluj aktualizacje automatycznie");
                             on: App.s-update-auto;
                             toggled => {
                                 App.cmd("s-update-auto", "");
@@ -988,6 +1053,7 @@ export component Backstage inherits Rectangle {
                     SettingRow {
                         label: App.update-status;
                         Button {
+                            tip: @tr("Sprawdź teraz, czy jest nowsza wersja");
                             label: @tr("Sprawdź teraz");
                             enabled: !App.update-busy;
                             icon: Icons.refresh-cw;
@@ -996,6 +1062,7 @@ export component Backstage inherits Rectangle {
                             }
                         }
                         if App.update-ready: Button {
+                            tip: @tr("Pobierz i zainstaluj nową wersję (program uruchomi się ponownie)");
                             label: @tr("Zaktualizuj");
                             primary: true;
                             enabled: !App.update-busy;
@@ -1064,6 +1131,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     Button {
+                        tip: @tr("Sprawdź teraz, czy jest nowsza wersja");
                         label: @tr("Sprawdź aktualizacje");
                         icon: Icons.refresh-cw;
                         clicked => {

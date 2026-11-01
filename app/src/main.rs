@@ -462,6 +462,9 @@ pub fn set_status(st: &State, msg: &str) {
     }
 }
 
+/// Liczba stałych kart wstążki; karty skrótów mają kolejne indeksy.
+pub const FIXED_TABS: i32 = 8;
+
 /// Modele list zależne od ustawień: pasek szybkiego dostępu, Moja karta, ostatnie pliki.
 pub fn sync_lists(st: &State) {
     let Some(ui) = st.ui.upgrade() else { return };
@@ -471,7 +474,16 @@ pub fn sync_lists(st: &State) {
         Some(ItemV { id: id.into(), label: commands::label(c).into(), hint: c.key.into(), icon: commands::icon(c.icon), checked: false, font: "".into() })
     };
     app.set_qat(ModelRc::new(VecModel::from(st.prefs.qat.iter().filter_map(|i| item(i)).collect::<Vec<_>>())));
-    app.set_custom_tab(ModelRc::new(VecModel::from(st.prefs.custom_tab.iter().filter_map(|i| item(i)).collect::<Vec<_>>())));
+    let tabs: Vec<TabV> = st
+        .prefs
+        .tabs()
+        .iter()
+        .map(|t| TabV {
+            name: if t.name.is_empty() { opendtp_core::lang::tr("Moja karta").into() } else { t.name.clone().into() },
+            items: ModelRc::new(VecModel::from(t.items.iter().filter_map(|i| item(i)).collect::<Vec<_>>())),
+        })
+        .collect();
+    app.set_custom_tabs(ModelRc::new(VecModel::from(tabs)));
     let recent: Vec<RecentV> = st
         .prefs
         .recent
@@ -499,6 +511,7 @@ pub fn apply_theme_prefs(st: &State, ui: &AppWindow) {
     th.set_corners(st.prefs.corners);
     th.set_scale(st.prefs.scale.clamp(0.8, 1.5));
     th.set_dense(st.prefs.dense);
+    th.set_clear(st.prefs.transparency.clamp(0, 60) as f32 / 100.0);
     let app = ui.global::<App>();
     app.set_accent_hex(st.prefs.accent.clone().into());
     app.set_s_unit(st.prefs.unit);
@@ -596,7 +609,7 @@ fn main() {
         app.set_author_line(opendtp_core::AUTHOR_LINE.into());
         app.set_portable(opendtp_core::paths::portable());
         app.set_pages(st.view.model());
-        app.set_tab(st.prefs.tab.clamp(0, 8));
+        app.set_tab(st.prefs.tab.clamp(0, FIXED_TABS - 1 + st.prefs.tabs().len() as i32));
         app.set_update_status(opendtp_core::trf!("Wersja {} · jeszcze nie sprawdzano", opendtp_core::version()).into());
     }
     apply_theme_prefs(&st, &ui);
@@ -605,20 +618,23 @@ fn main() {
     let shared: Shared = Rc::new(RefCell::new(st));
     STATE.with(|s| *s.borrow_mut() = Some(shared.clone()));
 
-    // Dokument startowy: plik z wiersza poleceń, kopia odzyskana, ostatni dokument albo przewodnik.
-    {
+    // Dokument startowy: plik z wiersza poleceń, kopia odzyskana albo (gdy włączone) ostatni dokument.
+    // W pozostałych przypadkach start od ekranu powitalnego: szablony i ostatnie pliki.
+    let welcome = {
         let mut st = shared.borrow_mut();
         let opened = args.iter().find(|a| !a.starts_with("--") && !a.ends_with(".png") && a.parse::<i32>().is_err()).map(|p| files::open_path(&mut st, p)).unwrap_or(false);
         if !opened && !files::recover(&mut st) {
             let last = st.prefs.last_doc.clone();
             let ok = st.prefs.restore && !last.is_empty() && std::path::Path::new(&last).exists() && files::open_path(&mut st, &last);
-            if !ok {
-                let first_run = st.prefs.recent.is_empty();
-                if first_run {
-                    st.ed = Editor::new(opendtp_core::sample::template("welcome"));
-                }
-            }
+            !ok
+        } else {
+            false
         }
+    };
+    if welcome {
+        let app = ui.global::<App>();
+        app.set_backstage_page(0);
+        app.set_backstage(true);
     }
 
     wire(&ui, &shared);

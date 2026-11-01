@@ -10,12 +10,17 @@ pub struct Prefs {
     pub corners: i32,
     pub scale: f32,
     pub dense: bool,
+    /// Przezroczystość interfejsu w procentach (0–60).
+    pub transparency: i32,
     /// Język interfejsu: "" – jak Windows, "pl", "en".
     pub lang: String,
     /// 0 – mm, 1 – cm, 2 – cale, 3 – punkty.
     pub unit: i32,
     /// Indeks: wył., 1, 2, 5, 10 minut.
     pub autosave: i32,
+    /// Otwieranie ostatniego dokumentu na starcie (domyślnie wyłączone – start od ekranu powitalnego).
+    /// Nowy klucz, żeby dawne „restore: true” nie omijało ekranu powitalnego.
+    #[serde(rename = "restore_last")]
     pub restore: bool,
     pub spell_live: bool,
     pub smart_quotes: bool,
@@ -29,7 +34,11 @@ pub struct Prefs {
     pub update_check: bool,
     pub update_auto: bool,
     pub qat: Vec<String>,
+    /// Dawna pojedyncza „Moja karta” – tylko do przeniesienia do `custom_tabs`.
+    #[serde(skip_serializing)]
     pub custom_tab: Vec<String>,
+    /// Karty skrótów (0–3): własna nazwa i polecenia z rejestru. `None` – jeszcze nie przeniesiono.
+    pub custom_tabs: Option<Vec<CustomTab>>,
     pub recent: Vec<(String, String)>,
     pub recent_fonts: Vec<String>,
     pub zoom: i32,
@@ -56,10 +65,11 @@ impl Default for Prefs {
             corners: 1,
             scale: 1.0,
             dense: false,
+            transparency: 0,
             lang: String::new(),
             unit: 0,
             autosave: 2,
-            restore: true,
+            restore: false,
             spell_live: true,
             smart_quotes: true,
             autocorrect: true,
@@ -72,7 +82,8 @@ impl Default for Prefs {
             update_check: true,
             update_auto: true,
             qat: default_qat(),
-            custom_tab: default_tab(),
+            custom_tab: Vec::new(),
+            custom_tabs: None,
             recent: Vec::new(),
             recent_fonts: Vec::new(),
             zoom: 100,
@@ -94,6 +105,17 @@ impl Default for Prefs {
 
 pub fn default_qat() -> Vec<String> {
     ["save", "undo", "redo", "export-pdf", "print"].iter().map(|s| s.to_string()).collect()
+}
+
+/// Najwięcej kart skrótów.
+pub const MAX_TABS: usize = 3;
+
+#[derive(Clone, Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct CustomTab {
+    /// Pusta – wyświetlamy przetłumaczone „Moja karta”.
+    pub name: String,
+    pub items: Vec<String>,
 }
 
 pub fn default_tab() -> Vec<String> {
@@ -145,7 +167,13 @@ fn file() -> std::path::PathBuf {
 
 impl Prefs {
     pub fn load() -> Prefs {
-        std::fs::read_to_string(file()).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or_default()
+        let mut p: Prefs = std::fs::read_to_string(file()).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or_default();
+        // Dotychczasowa „Moja karta” zostaje jako pierwsza karta skrótów; nowa instalacja startuje bez kart.
+        if p.custom_tabs.is_none() {
+            let old = std::mem::take(&mut p.custom_tab);
+            p.custom_tabs = Some(if old.is_empty() { Vec::new() } else { vec![CustomTab { name: String::new(), items: old }] });
+        }
+        p
     }
 
     pub fn save(&self) {
@@ -155,6 +183,14 @@ impl Prefs {
                 let _ = std::fs::rename(&tmp, file());
             }
         }
+    }
+
+    pub fn tabs(&self) -> &[CustomTab] {
+        self.custom_tabs.as_deref().unwrap_or(&[])
+    }
+
+    pub fn tabs_mut(&mut self) -> &mut Vec<CustomTab> {
+        self.custom_tabs.get_or_insert_with(Vec::new)
     }
 
     pub fn add_recent(&mut self, path: &str) {

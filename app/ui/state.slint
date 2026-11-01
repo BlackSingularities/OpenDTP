@@ -35,6 +35,23 @@ export struct ItemV {
     font: string,
 }
 
+/// Pozycja menu kontekstowego: 0 – polecenie, 1 – separator, 2 – nagłówek, 3 – rząd ikon z podpisem.
+export struct CtxV {
+    kind: int,
+    id: string,
+    label: string,
+    hint: string,
+    icon: image,
+    checked: bool,
+    row: [ItemV],
+}
+
+/// Karta skrótów: nazwa i polecenia.
+export struct TabV {
+    name: string,
+    items: [ItemV],
+}
+
 export struct StyleV {
     id: string,
     name: string,
@@ -100,6 +117,9 @@ export global App {
 
     // Wstążka.
     in-out property <int> tab;
+    // Szerokości pasków bocznych (zmieniane uchwytem przy krawędzi).
+    in-out property <length> left-w: 290px;
+    in-out property <length> right-w: 330px;
     in-out property <bool> ribbon-collapsed;
     in-out property <bool> ribbon-peek;
     in-out property <bool> in-frame;
@@ -207,7 +227,10 @@ export global App {
     in-out property <[NavV]> nav;
     in-out property <[ItemV]> qat;
     in-out property <[ItemV]> palette-items;
-    in-out property <[ItemV]> custom-tab;
+    in-out property <[TabV]> custom-tabs;
+    // Karta skrótów otwarta w oknie dostosowania i jej nazwa w polu edycji.
+    in-out property <int> custom-edit;
+    in-out property <string> custom-name;
     in-out property <[ItemV]> all-commands;
     in-out property <[RecentV]> recent;
     in-out property <[ItemV]> doc-themes;
@@ -239,7 +262,7 @@ export global App {
     in-out property <bool> ctx-open;
     in-out property <length> ctx-x;
     in-out property <length> ctx-y;
-    in-out property <[ItemV]> ctx-items;
+    in-out property <[CtxV]> ctx-items;
 
     // Okna dialogowe.
     in-out property <string> link-url;

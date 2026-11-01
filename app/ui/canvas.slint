@@ -151,7 +151,7 @@ component Ruler inherits Rectangle {
 }
 
 export component Canvas inherits Rectangle {
-    background: Theme.desk;
+    background: Theme.desk.with-alpha(1 - Theme.clear);
     property <int> fserial: App.focus-serial;
     changed fserial => {
         fs.focus();

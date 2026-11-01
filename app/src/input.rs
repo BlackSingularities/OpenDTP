@@ -11,7 +11,7 @@ use slint::platform::Key;
 
 use crate::editor::{Kind, Move};
 use crate::view::hit_object;
-use crate::{actions, refresh, refresh_scroll, tr, App, State};
+use crate::{actions, commands, refresh, refresh_scroll, tr, App, State};
 
 pub enum Drag {
     None,
@@ -753,48 +753,142 @@ pub fn pen_preview(st: &State, cursor: Option<(f32, f32)>) {
 
 // ---------------------------------------------------------------- menu kontekstowe
 
+/// Menu kontekstowe: zwykłe pozycje (ikona, skrót, znacznik), separatory, nagłówki i rzędy ikon
+/// z podpisem (np. opływanie, kolejność) – zwarte, a każda ikona ma podpowiedź.
+struct Menu(Vec<crate::CtxV>);
+
+/// Przycisk rzędu ikon: polecenie (puste – wyszarzony), podpowiedź, ikona, stan włączenia.
+type Btn<'a> = (&'a str, &'a str, &'a str, bool);
+
+impl Menu {
+    fn add(&mut self, id: &str, label: &str, icon: &str, hint: &str) -> &mut Self {
+        self.0.push(crate::CtxV { kind: 0, id: id.into(), label: label.into(), hint: hint.into(), icon: commands::icon(icon), ..Default::default() });
+        self
+    }
+    /// Pozycja dostępna tylko, gdy `on` – inaczej wyszarzona.
+    fn add_if(&mut self, on: bool, id: &str, label: &str, icon: &str, hint: &str) -> &mut Self {
+        self.add(if on { id } else { "" }, label, icon, hint)
+    }
+    /// Pozycja-przełącznik ze znacznikiem stanu.
+    fn check(&mut self, on: bool, id: &str, label: &str, icon: &str, hint: &str) -> &mut Self {
+        self.add(id, label, icon, hint);
+        self.0.last_mut().unwrap().checked = on;
+        self
+    }
+    fn row(&mut self, label: &str, btns: &[Btn]) -> &mut Self {
+        let row: Vec<crate::ItemV> = btns.iter().map(|&(id, tip, icon, on)| crate::ItemV { id: id.into(), label: tip.into(), icon: commands::icon(icon), checked: on, ..Default::default() }).collect();
+        self.0.push(crate::CtxV { kind: 3, label: label.into(), row: slint::ModelRc::new(slint::VecModel::from(row)), ..Default::default() });
+        self
+    }
+    fn head(&mut self, label: &str) -> &mut Self {
+        self.sep();
+        self.0.push(crate::CtxV { kind: 2, label: label.into(), ..Default::default() });
+        self
+    }
+    fn sep(&mut self) -> &mut Self {
+        if self.0.last().is_some_and(|i| i.kind != 1) {
+            self.0.push(crate::CtxV { kind: 1, ..Default::default() });
+        }
+        self
+    }
+}
+
 fn context(st: &mut State, page: usize, px: f32, py: f32) {
-    let mut items: Vec<(String, String, String)> = Vec::new();
+    let mut m = Menu(Vec::new());
     let on_obj = object_at(st, page, px, py, false).or_else(|| object_at(st, page, px, py, true));
     let in_frame_text = on_obj.and_then(|id| st.ed.doc.object(id)).is_some_and(|o| matches!(o.kind, ObjKind::Text { .. }) && !near_border(o, px, py, st.view.k()));
     if on_obj.is_some() && !in_frame_text {
         st.ed.obj = on_obj;
         refresh(st);
+        let linked = ui_flag(st, |a| a.get_linked());
         let o = st.ed.object().unwrap();
         st.ctx_cell = None;
-        if matches!(o.kind, ObjKind::Table { .. }) {
-            if let Some((row, col, _)) = actions::cell_at(o, px, py) {
-                st.ctx_cell = Some((o.id, row, col));
-                items.push(("tbl-row-above".into(), tr("Wstaw wiersz powyżej").into(), String::new()));
-                items.push(("tbl-row-below".into(), tr("Wstaw wiersz poniżej").into(), String::new()));
-                items.push(("tbl-col-left".into(), tr("Wstaw kolumnę z lewej").into(), String::new()));
-                items.push(("tbl-col-right".into(), tr("Wstaw kolumnę z prawej").into(), String::new()));
-                items.push(("tbl-merge-right".into(), tr("Scal z komórką z prawej").into(), String::new()));
-                items.push(("tbl-split".into(), tr("Rozdziel komórkę").into(), String::new()));
-                items.push(("tbl-row-del".into(), tr("Usuń wiersz").into(), String::new()));
-                items.push(("tbl-col-del".into(), tr("Usuń kolumnę").into(), String::new()));
-                items.push(("-".into(), String::new(), String::new()));
-            }
+        let anchored = st.ed.anchored(o.id);
+        let wrap = crate::wrap_index(o.wrap.mode);
+        let (is_table, is_image, is_chart, is_text) = (matches!(o.kind, ObjKind::Table { .. }), matches!(o.kind, ObjKind::Image { .. }), matches!(o.kind, ObjKind::Chart { .. }), matches!(o.kind, ObjKind::Text { .. }));
+        let locked = o.locked;
+        let cell = if is_table { actions::cell_at(o, px, py) } else { None };
+        let id = o.id;
+
+        // Polecenia zależne od rodzaju obiektu – na górze, bo najczęściej po nie sięgamy.
+        if let Some((row, col, _)) = cell {
+            st.ctx_cell = Some((id, row, col));
+            m.row(
+                tr("Wstaw"),
+                &[
+                    ("tbl-row-above", tr("Wstaw wiersz powyżej"), "arrow-up-from-line", false),
+                    ("tbl-row-below", tr("Wstaw wiersz poniżej"), "arrow-down-to-line", false),
+                    ("tbl-col-left", tr("Wstaw kolumnę z lewej"), "arrow-left-to-line", false),
+                    ("tbl-col-right", tr("Wstaw kolumnę z prawej"), "arrow-right-to-line", false),
+                ],
+            )
+            .row(
+                tr("Komórki"),
+                &[
+                    ("tbl-merge-right", tr("Scal z komórką z prawej"), "squares-unite", false),
+                    ("tbl-split", tr("Rozdziel komórkę"), "square-split-vertical", false),
+                    ("tbl-row-del", tr("Usuń wiersz"), "fold-vertical", false),
+                    ("tbl-col-del", tr("Usuń kolumnę"), "unfold-horizontal", false),
+                ],
+            )
+            .add("panel:props", tr("Dane i wygląd tabeli…"), "layout-template", "")
+            .sep();
         }
-        items.push(("anchor-toggle".into(), if st.ed.anchored(o.id) { tr("Przypnij do strony") } else { tr("Przesuwaj z tekstem") }.into(), String::new()));
-        items.push(("panel:props".into(), tr("Właściwości obiektu…").into(), String::new()));
-        if !matches!(o.kind, ObjKind::Chart { .. }) {
-            items.push(("node-mode".into(), tr("Edytuj węzły kształtu").into(), String::new()));
+        if is_image {
+            m.add("replace-image", tr("Zmień obraz…"), "image", "").add("detect-contour", tr("Wykryj kontur do opływania"), "scan", "").add("caption", tr("Dodaj podpis"), "captions", "").sep();
         }
-        if matches!(o.kind, ObjKind::Image { .. }) {
-            items.push(("detect-contour".into(), tr("Wykryj kontur do opływania").into(), String::new()));
+        if is_chart {
+            m.add("panel:props", tr("Dane i typ wykresu…"), "chart-column", "").sep();
         }
-        items.push(("-".into(), String::new(), String::new()));
-        items.push(("wrap:1".into(), tr("Opływanie z obu stron").into(), String::new()));
-        items.push(("wrap:5".into(), tr("Opływanie nad i pod").into(), String::new()));
-        items.push(("wrap:0".into(), tr("Przed tekstem").into(), String::new()));
-        items.push(("wrap:6".into(), tr("Za tekstem").into(), String::new()));
-        items.push(("-".into(), String::new(), String::new()));
-        items.push(("z-front".into(), tr("Na wierzch").into(), String::new()));
-        items.push(("z-back".into(), tr("Na spód").into(), String::new()));
-        items.push(("duplicate".into(), tr("Duplikuj").into(), "Ctrl+D".into()));
-        items.push(("lock".into(), if o.locked { tr("Odblokuj") } else { tr("Zablokuj położenie") }.into(), String::new()));
-        items.push(("delete-obj".into(), tr("Usuń").into(), "Delete".into()));
+        if is_text {
+            m.add("link-frame", tr("Połącz z następną ramką"), "link-2", "").add_if(linked, "unlink-frame", tr("Rozłącz ramki"), "unlink", "").sep();
+        }
+
+        m.add("cut", tr("Wytnij"), "scissors", "Ctrl+X")
+            .add("copy", tr("Kopiuj"), "copy", "Ctrl+C")
+            .add("paste", tr("Wklej"), "clipboard-paste", "Ctrl+V")
+            .add("duplicate", tr("Duplikuj"), "files", "Ctrl+D")
+            .add("delete-obj", tr("Usuń"), "trash-2", "Delete")
+            .sep();
+
+        if !is_chart && !is_table {
+            m.row(
+                tr("Kształt"),
+                &[
+                    ("node-mode", tr("Edytuj węzły kształtu"), "spline-pointer", false),
+                    ("flip-h", tr("Odbij w poziomie"), "flip-horizontal", false),
+                    ("flip-v", tr("Odbij w pionie"), "flip-vertical", false),
+                ],
+            );
+        }
+        m.row(
+            tr("Opływanie"),
+            &[
+                ("wrap:1", tr("Opływanie z obu stron"), "wrap-text", wrap == 1),
+                ("wrap:4", tr("Opływanie po większej stronie"), "move-horizontal", wrap == 4),
+                ("wrap:5", tr("Opływanie: nad i pod"), "between-horizontal-start", wrap == 5),
+                ("wrap:0", tr("Przed tekstem – bez opływania"), "x", wrap == 0),
+                ("wrap:6", tr("Za tekstem"), "layers", wrap == 6),
+            ],
+        )
+        .row(
+            tr("Kolejność"),
+            &[
+                ("z-front", tr("Na wierzch"), "bring-to-front", false),
+                ("z-forward", tr("O warstwę wyżej"), "arrow-up-from-line", false),
+                ("z-backward", tr("O warstwę niżej"), "arrow-down-to-line", false),
+                ("z-back", tr("Na spód"), "send-to-back", false),
+            ],
+        )
+        .row(
+            tr("Położenie"),
+            &[
+                ("anchor-toggle", tr("Przesuwaj z tekstem (zakotwiczenie w akapicie)"), "pin", anchored),
+                ("lock", if locked { tr("Odblokuj położenie") } else { tr("Zablokuj położenie") }, "lock", locked),
+            ],
+        )
+        .sep()
+        .add("panel:props", tr("Właściwości obiektu…"), "sliders-horizontal", "");
     } else {
         // Tekst: kursor w miejsce kliknięcia, chyba że klik w zaznaczenie.
         let only = if in_frame_text { on_obj.map(|id| StoryRef::Obj(st.ed.doc.chain_head(id))) } else { None };
@@ -811,42 +905,109 @@ fn context(st: &mut State, page: usize, px: f32, py: f32) {
                 st.ed.set_caret(s, at, false);
             }
         }
-        // Pisownia.
+        let sel = st.ed.has_sel();
+        let (cp, pp, _) = st.ed.caret_props();
+        let story = st.ed.story;
+
+        // Pisownia – podpowiedzi na samej górze.
         let h = st.ed.head;
         let t = st.ed.para_text(h.para);
         let (wa, wb) = opendtp_core::edit::word_at(&t, h.off);
         let word = t.get(wa..wb).unwrap_or("").to_string();
-        let lang = st.ed.caret_props().0.lang;
-        if !st.ed.has_sel() && word.chars().any(|c| c.is_alphabetic()) && opendtp_core::spell::misspelled(&word, &lang) {
-            let sugg = opendtp_core::spell::suggest(&word, &lang);
+        if !sel && word.chars().any(|c| c.is_alphabetic()) && opendtp_core::spell::misspelled(&word, &cp.lang) {
+            let sugg = opendtp_core::spell::suggest(&word, &cp.lang);
             if sugg.is_empty() {
-                items.push((String::new(), tr("(brak podpowiedzi)").into(), String::new()));
+                m.add("", tr("(brak podpowiedzi)"), "spell-check", "");
             }
             for s in sugg.into_iter().take(6) {
-                items.push((format!("spell-fix:{}:{}:{}", wa, wb, s), s, String::new()));
+                m.0.push(crate::CtxV { kind: 0, id: format!("spell-fix:{}:{}:{}", wa, wb, s).into(), label: s.into(), ..Default::default() });
             }
-            items.push((format!("spell-add:{word}"), tr("Dodaj do słownika").into(), String::new()));
-            items.push((format!("spell-ignore:{word}"), tr("Ignoruj wszystkie").into(), String::new()));
-            items.push(("-".into(), String::new(), String::new()));
+            m.row(
+                tr("Pisownia"),
+                &[
+                    (&format!("spell-add:{word}"), tr("Dodaj do słownika"), "book-a", false),
+                    (&format!("spell-ignore:{word}"), tr("Ignoruj wszystkie wystąpienia"), "eye", false),
+                    ("spell-next", tr("Następny błąd (F7)"), "spell-check", false),
+                ],
+            )
+            .sep();
         }
-        items.push(("cut".into(), tr("Wytnij").into(), "Ctrl+X".into()));
-        items.push(("copy".into(), tr("Kopiuj").into(), "Ctrl+C".into()));
-        items.push(("paste".into(), tr("Wklej").into(), "Ctrl+V".into()));
-        items.push(("paste-plain".into(), tr("Wklej jako tekst").into(), "Ctrl+Shift+V".into()));
-        items.push(("-".into(), String::new(), String::new()));
-        items.push(("link".into(), tr("Hiperłącze…").into(), "Ctrl+Shift+K".into()));
-        items.push(("clear-format".into(), tr("Wyczyść formatowanie").into(), "Ctrl+Spacja".into()));
-        items.push(("panel:styles".into(), tr("Style…").into(), String::new()));
-        if st.ed.has_sel() {
-            items.push(("style-new".into(), tr("Nowy styl z zaznaczenia").into(), String::new()));
+
+        // Łącze pod kursorem.
+        if let Some(url) = cp.link.clone().filter(|u| !u.is_empty()) {
+            m.add(&format!("open-url:{url}"), tr("Otwórz łącze"), "external-link", "")
+                .add("link", tr("Edytuj łącze…"), "link", "Ctrl+K")
+                .sep();
+        }
+
+        m.add_if(sel, "cut", tr("Wytnij"), "scissors", "Ctrl+X")
+            .add_if(sel, "copy", tr("Kopiuj"), "copy", "Ctrl+C")
+            .add("paste", tr("Wklej"), "clipboard-paste", "Ctrl+V")
+            .add("paste-plain", tr("Wklej jako tekst"), "clipboard-paste", "Ctrl+Shift+V")
+            .add("select-all", tr("Zaznacz wszystko"), "text-select", "Ctrl+A")
+            .sep();
+
+        m.row(
+            tr("Znaki"),
+            &[
+                ("bold", tr("Pogrubienie (Ctrl+B)"), "bold", cp.bold),
+                ("italic", tr("Kursywa (Ctrl+I)"), "italic", cp.italic),
+                ("underline", tr("Podkreślenie (Ctrl+U)"), "underline", cp.underline != Underline::None),
+                ("strike", tr("Przekreślenie"), "strikethrough", cp.strike),
+                ("format-painter", tr("Malarz formatów – przenieś formatowanie na inny tekst"), "paintbrush", false),
+                ("clear-format", tr("Wyczyść formatowanie (Ctrl+Spacja)"), "eraser", false),
+            ],
+        )
+        .row(
+            tr("Akapit"),
+            &[
+                ("align:0", tr("Do lewej (Ctrl+L)"), "align-left", matches!(pp.align, Align::Left)),
+                ("align:1", tr("Wyśrodkuj (Ctrl+E)"), "align-center", matches!(pp.align, Align::Center)),
+                ("align:3", tr("Wyjustuj (Ctrl+J)"), "align-justify", matches!(pp.align, Align::Justify)),
+                ("list:bullet", tr("Lista punktowana"), "list", pp.list.is_some()),
+                ("outdent", tr("Zmniejsz wcięcie (Shift+Tab)"), "list-indent-decrease", false),
+                ("indent", tr("Zwiększ wcięcie (Tab)"), "list-indent-increase", false),
+            ],
+        )
+        .add("font-dialog", tr("Czcionka…"), "a-large-small", "")
+        .add("para-dialog", tr("Akapit…"), "sliders-vertical", "")
+        .add("panel:styles", tr("Style…"), "letter-text", "");
+        if sel {
+            m.add("style-new", tr("Nowy styl z zaznaczenia"), "plus", "");
+        }
+        m.sep();
+
+        let body = story == StoryRef::Body;
+        m.row(
+            tr("Wstaw"),
+            &[
+                ("link", tr("Hiperłącze (Ctrl+K)"), "link", false),
+                (if body { "footnote" } else { "" }, tr("Przypis dolny"), "superscript", false),
+                (if body { "page-break" } else { "" }, tr("Podział strony (Ctrl+Enter)"), "separator-horizontal", false),
+                (if body { "column-break" } else { "" }, tr("Podział kolumny (Ctrl+Shift+Enter)"), "columns-2", false),
+                ("field:page-number", tr("Numer strony"), "hash", false),
+                ("field:date", tr("Data"), "calendar", false),
+            ],
+        );
+        if sel {
+            m.add("find", tr("Znajdź zaznaczony tekst"), "search", "Ctrl+F");
+        }
+        if in_frame_text {
+            m.sep().add("panel:props", tr("Właściwości ramki…"), "sliders-horizontal", "");
         }
     }
     refresh(st);
     let Some(ui) = st.ui.upgrade() else { return };
     let app = ui.global::<App>();
-    let model: Vec<crate::ItemV> = items.into_iter().map(|(id, label, hint)| crate::ItemV { id: id.into(), label: label.into(), hint: hint.into(), ..Default::default() }).collect();
-    app.set_ctx_items(slint::ModelRc::new(slint::VecModel::from(model)));
+    while m.0.last().is_some_and(|i| i.kind == 1) {
+        m.0.pop();
+    }
+    app.set_ctx_items(slint::ModelRc::new(slint::VecModel::from(m.0)));
     app.set_ctx_open(true);
+}
+
+fn ui_flag(st: &State, f: impl Fn(&App) -> bool) -> bool {
+    st.ui.upgrade().is_some_and(|ui| f(&ui.global::<App>()))
 }
 
 // ---------------------------------------------------------------- klawiatura

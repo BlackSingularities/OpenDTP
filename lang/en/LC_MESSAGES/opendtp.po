@@ -2744,3 +2744,522 @@ msgstr "Line spacing: at least (pt)"
 
 msgid "TABULATORY"
 msgstr "TAB STOPS"
+
+msgid "Karta skrótów"
+msgstr "Shortcut tab"
+
+msgid "Nazwa"
+msgstr "Name"
+
+msgid "Karta skrótów zbiera polecenia dostępne też na pozostałych kartach."
+msgstr "A shortcut tab collects commands that are also available on the other tabs."
+
+msgid "Usuń kartę"
+msgstr "Remove tab"
+
+msgid "Nazwa i polecenia tej karty"
+msgstr "Name and commands of this tab"
+
+msgid "Karty skrótów (do trzech, z własną nazwą)"
+msgstr "Shortcut tabs (up to three, with your own names)"
+
+msgid "Dodaj kartę"
+msgstr "Add tab"
+
+msgid "Przezroczystość interfejsu"
+msgstr "Interface transparency"
+
+msgid "Jedno ustawienie dla pasków, wstążki, paneli, menu i okien"
+msgstr "One setting for bars, ribbon, panels, menus and dialogs"
+
+msgid "Kolor akcentu interfejsu – przyciski, zaznaczenia, wyróżnienia"
+msgstr "Interface accent colour – buttons, selections, highlights"
+
+msgid "Nowy dokument z szablonu (Ctrl+N)"
+msgstr "New document from a template (Ctrl+N)"
+
+msgid "Otwórz dokument z dysku lub z listy ostatnich (Ctrl+O)"
+msgstr "Open a document from disk or the recent list (Ctrl+O)"
+
+msgid "Zapisz dokument (Ctrl+S)"
+msgstr "Save the document (Ctrl+S)"
+
+msgid "Zapisz pod nową nazwą lub w innym miejscu (Ctrl+Shift+S)"
+msgstr "Save under a new name or location (Ctrl+Shift+S)"
+
+msgid "Zapisz jako PDF, DOCX, HTML, Markdown, tekst lub obraz"
+msgstr "Save as PDF, DOCX, HTML, Markdown, text or image"
+
+msgid "Drukuj dokument (przez PDF, Ctrl+P)"
+msgstr "Print the document (via PDF, Ctrl+P)"
+
+msgid "Właściwości dokumentu i statystyki"
+msgstr "Document properties and statistics"
+
+msgid "Wygląd, edycja, zapis, AI i aktualizacje"
+msgstr "Appearance, editing, saving, AI and updates"
+
+msgid "Wersja, autor i aktualizacje"
+msgstr "Version, author and updates"
+
+msgid "Tytuł dokumentu zapisywany we właściwościach pliku"
+msgstr "Document title stored in the file properties"
+
+msgid "Autor dokumentu zapisywany we właściwościach pliku"
+msgstr "Document author stored in the file properties"
+
+msgid "Język menu i komunikatów; „Jak Windows” – według ustawień systemu"
+msgstr "Language of menus and messages; “Like Windows” – follows the system"
+
+msgid "Motyw: AMOLED – czysta czerń, Grafit – ciemnoszary, Jasny – białe tło"
+msgstr "Theme: AMOLED – pure black, Graphite – dark grey, Light – white background"
+
+msgid "Zaokrąglenie rogów przycisków, pól i okien"
+msgstr "Corner rounding of buttons, fields and dialogs"
+
+msgid "Mniejsze odstępy i niższa wstążka – więcej miejsca na dokument"
+msgstr "Smaller spacing and a lower ribbon – more room for the document"
+
+msgid "Jednostki miar w polach położenia, rozmiaru i marginesów"
+msgstr "Units in position, size and margin fields"
+
+msgid "Podkreślaj błędy pisowni na bieżąco podczas pisania"
+msgstr "Underline spelling errors while typing"
+
+msgid "Zamieniaj proste cudzysłowy na drukarskie („…”) podczas pisania"
+msgstr "Replace straight quotes with typographic ones while typing"
+
+msgid "Poprawiaj typowe literówki i zamieniaj skróty (np. -- na półpauzę)"
+msgstr "Fix common typos and expand shortcuts (e.g. -- to an en dash)"
+
+msgid "Zaczynaj zdanie wielką literą automatycznie"
+msgstr "Capitalize the first letter of a sentence automatically"
+
+msgid "Rozpoczęcie wiersza od „-” lub „1.” tworzy listę"
+msgstr "Starting a line with “-” or “1.” creates a list"
+
+msgid "Przyciągaj obiekty do krawędzi strony, marginesów i innych obiektów"
+msgstr "Snap objects to page edges, margins and other objects"
+
+msgid "Rozmiar czcionki nowych dokumentów (pt)"
+msgstr "Font size for new documents (pt)"
+
+msgid "Autor wpisywany do nowych dokumentów i komentarzy"
+msgstr "Author entered in new documents and comments"
+
+msgid "Jak często zapisywać kopię roboczą na wypadek awarii"
+msgstr "How often to save a recovery copy in case of a crash"
+
+msgid "Na starcie otwieraj ostatnio edytowany dokument zamiast ekranu powitalnego"
+msgstr "Open the last edited document at startup instead of the welcome screen"
+
+msgid "Wybierz polecenia paska szybkiego dostępu nad wstążką"
+msgstr "Choose the commands of the quick access toolbar above the ribbon"
+
+msgid "Zmień nazwę i polecenia tej karty skrótów"
+msgstr "Change the name and commands of this shortcut tab"
+
+msgid "Dodaj kartę skrótów z wybranymi poleceniami (najwyżej trzy)"
+msgstr "Add a shortcut tab with chosen commands (up to three)"
+
+msgid "Pokaż wyrazy dodane do słownika użytkownika"
+msgstr "Show words added to the user dictionary"
+
+msgid "Adres serwera zgodnego z API OpenAI (dla własnego lub lokalnego modelu)"
+msgstr "Address of an OpenAI-compatible server (for your own or a local model)"
+
+msgid "Identyfikator modelu u wybranego dostawcy"
+msgstr "Model identifier at the selected provider"
+
+msgid "Otwórz okno generowania dokumentu przez AI"
+msgstr "Open the AI document generation dialog"
+
+msgid "Sprawdzaj nowe wersje na redzikowski.com"
+msgstr "Check for new versions on redzikowski.com"
+
+msgid "Pobieraj i instaluj aktualizacje automatycznie"
+msgstr "Download and install updates automatically"
+
+msgid "Sprawdź teraz, czy jest nowsza wersja"
+msgstr "Check now whether a newer version is available"
+
+msgid "Pobierz i zainstaluj nową wersję (program uruchomi się ponownie)"
+msgstr "Download and install the new version (the program restarts)"
+
+msgid "Wpisz część nazwy polecenia; Enter uruchamia zaznaczone, Esc zamyka"
+msgstr "Type part of a command name; Enter runs the selected one, Esc closes"
+
+msgid "Nazwa karty widoczna na wstążce"
+msgstr "Tab name shown on the ribbon"
+
+msgid "Usuń tę kartę skrótów (polecenia zostają na pozostałych kartach)"
+msgstr "Remove this shortcut tab (its commands stay on the other tabs)"
+
+msgid "Przywróć domyślny zestaw poleceń"
+msgstr "Restore the default set of commands"
+
+msgid "Zamknij okno – zmiany są już zapisane"
+msgstr "Close the dialog – changes are already saved"
+
+msgid "Przeciągnij, aby zmienić szerokość panelu; dwuklik – domyślna"
+msgstr "Drag to change the panel width; double-click – default"
+
+msgid "Adres strony (https://…) lub e-mail (mailto:…)"
+msgstr "Web address (https://…) or e-mail (mailto:…)"
+
+msgid "Usuń łącze, zostawiając sam tekst"
+msgstr "Remove the link, keeping the text"
+
+msgid "Wstaw łącze w zaznaczony tekst"
+msgstr "Insert a link on the selected text"
+
+msgid "Dostawca, klucz API i model AI"
+msgstr "AI provider, API key and model"
+
+msgid "Wygeneruj dokument według opisu"
+msgstr "Generate a document from the description"
+
+msgid "Kerning – dopasowanie odstępów między parami liter (np. AV)"
+msgstr "Kerning – adjusts spacing between letter pairs (e.g. AV)"
+
+msgid "Ligatury – połączone znaki, np. fi, fl"
+msgstr "Ligatures – joined characters, e.g. fi, fl"
+
+msgid "Kapitaliki z czcionki OpenType (prawdziwe, nie pomniejszone wersaliki)"
+msgstr "Small caps from the OpenType font (true, not scaled capitals)"
+
+msgid "Ułamki – 1/2 jako jeden znak ułamka"
+msgstr "Fractions – 1/2 as a single fraction glyph"
+
+msgid "Cyfry nautyczne – z wydłużeniami górnymi i dolnymi, dopasowane do tekstu"
+msgstr "Old-style figures – with ascenders and descenders, blending with text"
+
+msgid "Cyfry równej wysokości – jak wersaliki"
+msgstr "Lining figures – the height of capitals"
+
+msgid "Cyfry tabelaryczne – jednakowej szerokości, równe kolumny liczb"
+msgstr "Tabular figures – equal width, aligned columns of numbers"
+
+msgid "Zamknij bez zmian"
+msgstr "Close without changes"
+
+msgid "Zastosuj ustawienia do zaznaczenia"
+msgstr "Apply the settings to the selection"
+
+msgid "Nie oddzielaj akapitu od następnego (np. nagłówka od treści)"
+msgstr "Keep the paragraph with the next one (e.g. a heading with its text)"
+
+msgid "Nie dziel akapitu między strony lub kolumny"
+msgstr "Do not split the paragraph across pages or columns"
+
+msgid "Nie zostawiaj pojedynczego wiersza akapitu na górze lub dole strony"
+msgstr "Do not leave a single line of a paragraph at the top or bottom of a page"
+
+msgid "Zaczynaj akapit zawsze od nowej strony"
+msgstr "Always start the paragraph on a new page"
+
+msgid "Dziel długie wyrazy na końcu wiersza według reguł języka"
+msgstr "Hyphenate long words at line ends according to the language rules"
+
+msgid "Zastosuj ustawienia do zaznaczonych akapitów"
+msgstr "Apply the settings to the selected paragraphs"
+
+msgid "Zamknij okno"
+msgstr "Close the dialog"
+
+msgid "Wróć do dokumentu"
+msgstr "Back to the document"
+
+msgid "Zamknij bez zapisywania zmian"
+msgstr "Close without saving changes"
+
+msgid "Zapisz zmiany i zamknij"
+msgstr "Save changes and close"
+
+msgid "Nowy styl"
+msgstr "New style"
+
+msgid "Utwórz nowy styl akapitu z formatowania zaznaczonego tekstu"
+msgstr "Create a new paragraph style from the selected text's formatting"
+
+msgid "Szukany tekst – wyniki podświetlają się na bieżąco, Enter przechodzi do następnego"
+msgstr "Search text – matches are highlighted live, Enter goes to the next one"
+
+msgid "Tekst wstawiany w miejsce znalezionego"
+msgstr "Text inserted in place of the match"
+
+msgid "Uwzględniaj wielkość liter (A ≠ a)"
+msgstr "Match case (A ≠ a)"
+
+msgid "Tylko całe wyrazy – bez trafień w środku dłuższych słów"
+msgstr "Whole words only – no matches inside longer words"
+
+msgid "Poprzednie wystąpienie"
+msgstr "Previous match"
+
+msgid "Następne wystąpienie (Enter)"
+msgstr "Next match (Enter)"
+
+msgid "Zamień bieżące wystąpienie i przejdź do następnego"
+msgstr "Replace the current match and go to the next one"
+
+msgid "Zamień wszystkie wystąpienia w dokumencie"
+msgstr "Replace all matches in the document"
+
+msgid "Przesuwaj z tekstem: obiekt zakotwiczony w akapicie wędruje razem z nim (wyłączone – stałe miejsce na stronie)"
+msgstr "Move with text: the object is anchored in a paragraph and moves with it (off – fixed place on the page)"
+
+msgid "Odblokuj obiekt – znów można go przesuwać i zmieniać"
+msgstr "Unlock the object – it can be moved and changed again"
+
+msgid "Zablokuj obiekt przed przypadkowym przesunięciem i zmianą"
+msgstr "Lock the object against accidental moving and changes"
+
+msgid "Usuń obiekt (Delete)"
+msgstr "Delete the object (Delete)"
+
+msgid "Szerokość obiektu"
+msgstr "Object width"
+
+msgid "Wysokość obiektu"
+msgstr "Object height"
+
+msgid "Wypełnij kształt – obraz pokrywa cały kształt, nadmiar jest przycięty"
+msgstr "Fill shape – the image covers the whole shape, the excess is cropped"
+
+msgid "Zmieść cały – widać cały obraz, mogą zostać puste pasy"
+msgstr "Fit whole – the whole image is visible, empty bands may remain"
+
+msgid "Wykryj kontur – opływanie tekstu po krawędzi rysunku zamiast prostokąta"
+msgstr "Detect contour – text wraps along the picture's edge instead of a rectangle"
+
+msgid "Zmień obraz na inny plik, zachowując położenie i rozmiar"
+msgstr "Replace the image with another file, keeping position and size"
+
+msgid "Kolumny – pionowe słupki"
+msgstr "Columns – vertical bars"
+
+msgid "Słupki – poziome paski"
+msgstr "Bars – horizontal bars"
+
+msgid "Linie – zmiany w czasie"
+msgstr "Lines – change over time"
+
+msgid "Pola – linie z wypełnieniem"
+msgstr "Areas – lines with a fill"
+
+msgid "Koło – udział części w całości"
+msgstr "Pie – share of parts in the whole"
+
+msgid "Pierścień – koło z otworem"
+msgstr "Doughnut – pie with a hole"
+
+msgid "Legenda – opis kolorów serii"
+msgstr "Legend – describes series colours"
+
+msgid "Wartości – liczby nad słupkami i przy punktach"
+msgstr "Values – numbers above bars and at points"
+
+msgid "Tytuł nad wykresem; Enter zatwierdza"
+msgstr "Title above the chart; Enter confirms"
+
+msgid "Dane"
+msgstr "Data"
+
+msgid "Pierwszy wiersz – nazwy serii, kolejne – etykieta i wartości oddzielone średnikiem, np. „I kw.;12;16”"
+msgstr "First row – series names, then a label and values separated by semicolons, e.g. “Q1;12;16”"
+
+msgid "Zastosuj dane do wykresu"
+msgstr "Apply the data to the chart"
+
+msgid "Wiersz nagłówka – wyróżniony kolorem i powtarzany na kolejnych stronach"
+msgstr "Header row – highlighted in colour and repeated on following pages"
+
+msgid "Pasy – co drugi wiersz lekko zacieniony"
+msgstr "Stripes – every other row lightly shaded"
+
+msgid "Kolor nagłówka i pasów tabeli"
+msgstr "Header and stripe colour of the table"
+
+msgid "Każdy wiersz w osobnej linii, komórki oddzielone średnikiem albo tabulatorem (można wkleić z Excela). Znak < scala komórkę z lewą. Dwuklik w komórkę na stronie – pisanie w niej, Tab – następna."
+msgstr "Each row on its own line, cells separated by semicolons or tabs (you can paste from Excel). The < sign merges a cell with the one on its left. Double-click a cell on the page to type in it, Tab – next cell."
+
+msgid "Zastosuj dane do tabeli"
+msgstr "Apply the data to the table"
+
+msgid "Czcionkę, kolor i rozmiar ustawisz na karcie Narzędzia główne, gdy obiekt jest zaznaczony. Kształt ścieżki zmienisz węzłami."
+msgstr "Set the font, colour and size on the Home tab while the object is selected. Change the path shape with nodes."
+
+msgid "Tekst układany wzdłuż ścieżki – zmiany widać od razu"
+msgstr "Text laid out along the path – changes show immediately"
+
+msgid "Przesunięcie początku tekstu wzdłuż krzywej"
+msgstr "Shift of the text start along the curve"
+
+msgid "Nazwa widoczna w nagłówku panelu; Enter zatwierdza"
+msgstr "Name shown in the panel header; Enter confirms"
+
+msgid "Wpisz część nazwy czcionki, aby zawęzić listę"
+msgstr "Type part of a font name to narrow the list"
+
+msgid "Usuń nagłówek z tej sekcji"
+msgstr "Remove the header from this section"
+
+msgid "Usuń stopkę z tej sekcji"
+msgstr "Remove the footer from this section"
+
+msgid "Przenieś obiekt nad wszystkie inne"
+msgstr "Bring the object in front of all others"
+
+msgid "Przenieś obiekt o jedną warstwę wyżej"
+msgstr "Move the object one layer up"
+
+msgid "Przenieś obiekt o jedną warstwę niżej"
+msgstr "Move the object one layer down"
+
+msgid "Przenieś obiekt pod wszystkie inne"
+msgstr "Send the object behind all others"
+
+msgid "Zostaw tylko część wspólną zaznaczonych kształtów"
+msgstr "Keep only the common part of the selected shapes"
+
+msgid "Rozłącz ramkę – tekst przestanie płynąć do następnej"
+msgstr "Unlink the frame – text stops flowing to the next one"
+
+msgid "Powiększenie 100% – rzeczywisty rozmiar"
+msgstr "Zoom 100% – actual size"
+
+msgid "Dopasuj powiększenie do szerokości strony"
+msgstr "Fit the zoom to the page width"
+
+msgid "Pokaż całą stronę w oknie"
+msgstr "Show the whole page in the window"
+
+msgid "Pokaż znaki niedrukowane: spacje, akapity, tabulatory"
+msgstr "Show non-printing characters: spaces, paragraphs, tabs"
+
+msgid "Panel nawigatora z nagłówkami dokumentu"
+msgstr "Navigator panel with the document's headings"
+
+msgid "Zwiń wstążkę – karty rozwijają się po kliknięciu"
+msgstr "Collapse the ribbon – tabs expand when clicked"
+
+msgid "Otwórz ustawienia programu"
+msgstr "Open the program settings"
+
+msgid "Schowek, czcionka, akapit i style"
+msgstr "Clipboard, font, paragraph and styles"
+
+msgid "Strony, obrazy, kształty, tabele, wykresy, tekst i nagłówki"
+msgstr "Pages, images, shapes, tables, charts, text and headers"
+
+msgid "Motyw dokumentu, kolory, znak wodny i obramowanie strony"
+msgstr "Document theme, colours, watermark and page border"
+
+msgid "Marginesy, orientacja, kolumny, sekcje, podziały i układ obiektów"
+msgstr "Margins, orientation, columns, sections, breaks and object layout"
+
+msgid "Spis treści, przypisy, podpisy i odsyłacze"
+msgstr "Table of contents, footnotes, captions and cross-references"
+
+msgid "Pisownia, język, komentarze i statystyki"
+msgstr "Spelling, language, comments and statistics"
+
+msgid "Powiększenie, linijka, znaki formatowania i panele"
+msgstr "Zoom, ruler, formatting marks and panels"
+
+msgid "Karta skrótów – własny zestaw poleceń"
+msgstr "Shortcut tab – your own set of commands"
+
+msgid "Komórki"
+msgstr "Cells"
+
+msgid "Dane i wygląd tabeli…"
+msgstr "Table data and look…"
+
+msgid "Zmień obraz…"
+msgstr "Change image…"
+
+msgid "Dodaj podpis"
+msgstr "Add caption"
+
+msgid "Dane i typ wykresu…"
+msgstr "Chart data and type…"
+
+msgid "Połącz z następną ramką"
+msgstr "Link to the next frame"
+
+msgid "Odbij w poziomie"
+msgstr "Flip horizontally"
+
+msgid "Odbij w pionie"
+msgstr "Flip vertically"
+
+msgid "Opływanie po większej stronie"
+msgstr "Wrap on the larger side"
+
+msgid "Przed tekstem – bez opływania"
+msgstr "In front of text – no wrapping"
+
+msgid "Kolejność"
+msgstr "Order"
+
+msgid "O warstwę wyżej"
+msgstr "One layer up"
+
+msgid "O warstwę niżej"
+msgstr "One layer down"
+
+msgid "Położenie"
+msgstr "Position"
+
+msgid "Przesuwaj z tekstem (zakotwiczenie w akapicie)"
+msgstr "Move with text (anchored in a paragraph)"
+
+msgid "Odblokuj położenie"
+msgstr "Unlock position"
+
+msgid "Ignoruj wszystkie wystąpienia"
+msgstr "Ignore all occurrences"
+
+msgid "Następny błąd (F7)"
+msgstr "Next error (F7)"
+
+msgid "Otwórz łącze"
+msgstr "Open link"
+
+msgid "Edytuj łącze…"
+msgstr "Edit link…"
+
+msgid "Znaki"
+msgstr "Characters"
+
+msgid "Malarz formatów – przenieś formatowanie na inny tekst"
+msgstr "Format painter – copy formatting to other text"
+
+msgid "Wyczyść formatowanie (Ctrl+Spacja)"
+msgstr "Clear formatting (Ctrl+Space)"
+
+msgid "Zmniejsz wcięcie (Shift+Tab)"
+msgstr "Decrease indent (Shift+Tab)"
+
+msgid "Zwiększ wcięcie (Tab)"
+msgstr "Increase indent (Tab)"
+
+msgid "Czcionka…"
+msgstr "Font…"
+
+msgid "Akapit…"
+msgstr "Paragraph…"
+
+msgid "Hiperłącze (Ctrl+K)"
+msgstr "Hyperlink (Ctrl+K)"
+
+msgid "Podział kolumny (Ctrl+Shift+Enter)"
+msgstr "Column break (Ctrl+Shift+Enter)"
+
+msgid "Znajdź zaznaczony tekst"
+msgstr "Find the selected text"
+
+msgid "Właściwości ramki…"
+msgstr "Frame properties…"

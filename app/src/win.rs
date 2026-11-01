@@ -38,6 +38,25 @@ pub fn dark_title(ui: &AppWindow, dark: bool) {
         let _ = DwmSetWindowAttribute(hw, DWMWA_CAPTION_COLOR, &caption as *const _ as *const _, 4);
         let _ = DwmSetWindowAttribute(hw, DWMWA_TEXT_COLOR, &text as *const _ as *const _, 4);
     }
+    backdrop(ui, h);
+}
+
+/// Rozmycie pod przezroczystym interfejsem: akryl Windows 11 (DWMSBT_TRANSIENTWINDOW) rozciągnięty
+/// na całe okno. Bez przezroczystości – zwykłe, nieprzepuszczające tło. Starsze Windows ignorują.
+fn backdrop(ui: &AppWindow, h: isize) {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::Graphics::Dwm::{DwmExtendFrameIntoClientArea, DwmSetWindowAttribute, DWMWINDOWATTRIBUTE};
+    use windows::Win32::UI::Controls::MARGINS;
+    let on = ui.global::<crate::Theme>().get_clear() > 0.0;
+    let hw = HWND(h as *mut _);
+    // 38 – DWMWA_SYSTEMBACKDROP_TYPE; 1 – brak, 3 – akryl.
+    let kind: i32 = if on { 3 } else { 1 };
+    let m = if on { -1 } else { 0 };
+    let margins = MARGINS { cxLeftWidth: m, cxRightWidth: m, cyTopHeight: m, cyBottomHeight: m };
+    unsafe {
+        let _ = DwmExtendFrameIntoClientArea(hw, &margins);
+        let _ = DwmSetWindowAttribute(hw, DWMWINDOWATTRIBUTE(38), &kind as *const _ as *const _, 4);
+    }
 }
 
 /// Polecenia okna bez ramki: przeciąganie, minimalizacja, maksymalizacja, zamknięcie, zmiana rozmiaru.

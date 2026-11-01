@@ -4,14 +4,14 @@
 import { ListView, ScrollView, TextEdit } from "std-widgets.slint";
 import { Theme } from "theme.slint";
 import { Icons } from "icons.slint";
-import { App, PageV, BoxV, NodeV, ItemV, StyleV, NavV, RecentV } from "state.slint";
-import { Tip, TipArea, IconButton, Field, Spin, Switch, MenuItem, MenuSep, Card, Segmented, Label, Dim, Button, Slider, Toggle, IconSeg, Pane, IconField, IconSpin, ColorRow } from "widgets.slint";
+import { App, TabV, CtxV, PageV, BoxV, NodeV, ItemV, StyleV, NavV, RecentV } from "state.slint";
+import { Splitter, Tip, TipArea, IconButton, Field, Spin, Switch, MenuItem, MenuSep, Card, Segmented, Label, Dim, Button, Slider, Toggle, IconSeg, Pane, IconField, IconSpin, ColorRow } from "widgets.slint";
 import { RibbonTabs, RibbonBody, Menus, MenuButton } from "ribbon.slint";
 import { Canvas } from "canvas.slint";
 import { LeftPanel, RightPanel } from "panels.slint";
 import { Backstage } from "backstage.slint";
 
-export { App, Theme, Icons, Tip, PageV, BoxV, NodeV, ItemV, StyleV, NavV, RecentV }
+export { App, Theme, Icons, Tip, TabV, CtxV, PageV, BoxV, NodeV, ItemV, StyleV, NavV, RecentV }
 
 /// Przycisk okna (minimalizuj, maksymalizuj, zamknij) w pasku tytułu.
 component WinButton inherits Rectangle {
@@ -304,6 +304,7 @@ component Palette inherits Rectangle {
             padding: 10px;
             spacing: 8px;
             q := Field {
+                tip: @tr("Wpisz część nazwy polecenia; Enter uruchamia zaznaczone, Esc zamyka");
                 w: 540px;
                 placeholder: @tr("Wpisz polecenie, np. „kolumny”, „kształt”, „PDF”…");
                 edited(t) => {
@@ -348,24 +349,58 @@ component ContextMenu inherits Rectangle {
     }
     Card {
         x: min(App.ctx-x, parent.width - self.width - 8px);
-        y: min(App.ctx-y, parent.height - self.height - 8px);
-        width: 250px;
+        y: max(8px, min(App.ctx-y, parent.height - self.height - 8px));
+        width: 300px * Theme.scale;
         height: vl.preferred-height;
         TouchArea {}
         vl := VerticalLayout {
             padding: 5px;
             for it in App.ctx-items: Rectangle {
-                height: it.id == "-" ? 9px : 28px * Theme.scale;
-                if it.id == "-": MenuSep {
+                height: it.kind == 1 ? 9px : it.kind == 2 ? 22px : it.kind == 3 ? 32px * Theme.scale : 28px * Theme.scale;
+                if it.kind == 1: MenuSep {
                     width: parent.width;
                 }
-                if it.id != "-": MenuItem {
+                if it.kind == 2: Text {
+                    x: 10px;
+                    text: it.label;
+                    font-family: Theme.font;
+                    font-size: Theme.fs-small;
+                    font-weight: 600;
+                    color: Theme.text-faint;
+                    vertical-alignment: center;
+                }
+                // Rząd ikon: podpis po lewej, przyciski z podpowiedziami.
+                if it.kind == 3: HorizontalLayout {
+                    padding-left: 10px;
+                    padding-right: 4px;
+                    spacing: 2px;
+                    Text {
+                        width: 74px * Theme.scale;
+                        text: it.label;
+                        font-family: Theme.font;
+                        font-size: Theme.fs-small;
+                        color: Theme.text-dim;
+                        vertical-alignment: center;
+                        overflow: elide;
+                    }
+                    for b in it.row: IconButton {
+                        y: (parent.height - self.height) / 2;
+                        icon: b.icon;
+                        tip: b.label;
+                        active: b.checked;
+                        enabled: b.id != "";
+                        clicked => {
+                            App.ctx-open = false;
+                            App.cmd(b.id, "");
+                        }
+                    }
+                }
+                if it.kind == 0: MenuItem {
                     width: parent.width;
                     label: it.label;
                     hint: it.hint;
                     icon: it.icon;
                     checked: it.checked;
-                    font-family: it.font != "" ? it.font : Theme.font;
                     enabled: it.id != "";
                     clicked => {
                         App.ctx-open = false;
@@ -413,9 +448,26 @@ component Dialog inherits Rectangle {
 component Customize inherits Dialog {
     in property <string> target;
     w: 460px;
-    title: root.target == "qat" ? @tr("Pasek szybkiego dostępu") : @tr("Moja karta");
+    title: root.target == "qat" ? @tr("Pasek szybkiego dostępu") : @tr("Karta skrótów");
+    if root.target != "qat": HorizontalLayout {
+        spacing: 8px;
+        Label {
+            text: @tr("Nazwa");
+            vertical-alignment: center;
+        }
+        Field {
+            tip: @tr("Nazwa karty widoczna na wstążce");
+            w: 220px;
+            text: App.custom-name;
+            placeholder: @tr("Moja karta");
+            edited(t) => {
+                App.custom-name = t;
+                App.cmd("tab-rename", t);
+            }
+        }
+    }
     Dim {
-        text: @tr("Zaznacz polecenia, które mają być pod ręką.");
+        text: root.target == "qat" ? @tr("Zaznacz polecenia, które mają być pod ręką.") : @tr("Karta skrótów zbiera polecenia dostępne też na pozostałych kartach.");
     }
     ListView {
         height: 380px;
@@ -429,15 +481,26 @@ component Customize inherits Dialog {
         }
     }
     HorizontalLayout {
-        alignment: end;
         spacing: 8px;
+        if root.target != "qat": Button {
+            tip: @tr("Usuń tę kartę skrótów (polecenia zostają na pozostałych kartach)");
+            label: @tr("Usuń kartę");
+            clicked => {
+                App.cmd("tab-remove", "");
+            }
+        }
+        Rectangle {
+            horizontal-stretch: 1;
+        }
         Button {
+            tip: @tr("Przywróć domyślny zestaw poleceń");
             label: @tr("Przywróć domyślne");
             clicked => {
                 App.cmd(root.target == "qat" ? "qat-reset" : "tab-reset", "");
             }
         }
         Button {
+            tip: @tr("Zamknij okno – zmiany są już zapisane");
             label: @tr("Gotowe");
             primary: true;
             clicked => {
@@ -451,13 +514,13 @@ export component AppWindow inherits Window {
     title: App.title;
     no-frame: true;
     icon: @image-url("../icon.png");
-    background: Theme.bg;
+    // Przy przezroczystości tło okna przepuszcza akryl Windows (rozmycie tego, co za oknem).
+    background: Theme.bg.with-alpha(1 - Theme.clear);
     preferred-width: 1440px;
     preferred-height: 920px;
     min-width: 900px;
     min-height: 560px;
     default-font-family: Theme.font;
-    property <int> tip-shown: -1;
     init => {
         App.win-h = self.height;
     }
@@ -477,29 +540,41 @@ export component AppWindow inherits Window {
             height: 1px;
             background: Theme.line;
         }
-        Rectangle {
+        HorizontalLayout {
             vertical-stretch: 1;
-            canvas := Canvas {
-                width: parent.width;
-                height: parent.height;
-            }
-            if App.ribbon-collapsed && App.ribbon-peek: Rectangle {
-                y: 0;
-                height: Theme.ribbon-h + 2px;
-                background: Theme.panel;
-                drop-shadow-blur: 16px;
-                drop-shadow-color: #00000080;
-                RibbonBody {}
-            }
+            // Paski boczne zadokowane obok strony; szerokość zmienia uchwyt przy krawędzi.
             if App.left-panel != "": LeftPanel {
-                x: 10px;
-                y: 10px;
-                height: parent.height - 20px;
+                width: App.left-w;
+            }
+            if App.left-panel != "": Splitter {
+                side: 1;
+                value <=> App.left-w;
+                reset: 290px;
+                tip: @tr("Przeciągnij, aby zmienić szerokość panelu; dwuklik – domyślna");
+            }
+            Rectangle {
+                horizontal-stretch: 1;
+                canvas := Canvas {
+                    width: parent.width;
+                    height: parent.height;
+                }
+                if App.ribbon-collapsed && App.ribbon-peek: Rectangle {
+                    y: 0;
+                    height: Theme.ribbon-h + 2px;
+                    background: Theme.panel;
+                    drop-shadow-blur: 16px;
+                    drop-shadow-color: #00000080;
+                    RibbonBody {}
+                }
+            }
+            if App.right-panel != "": Splitter {
+                side: -1;
+                value <=> App.right-w;
+                reset: 330px;
+                tip: @tr("Przeciągnij, aby zmienić szerokość panelu; dwuklik – domyślna");
             }
             if App.right-panel != "": RightPanel {
-                x: parent.width - self.width - 10px;
-                y: 10px;
-                height: parent.height - 20px;
+                width: App.right-w;
             }
         }
         StatusBar {}
@@ -522,6 +597,7 @@ export component AppWindow inherits Window {
         height: parent.height;
         title: @tr("Hiperłącze");
         lf := Field {
+            tip: @tr("Adres strony (https://…) lub e-mail (mailto:…)");
             w: 384px;
             text <=> App.link-url;
             placeholder: "https://";
@@ -533,12 +609,14 @@ export component AppWindow inherits Window {
             alignment: end;
             spacing: 8px;
             Button {
+                tip: @tr("Usuń łącze, zostawiając sam tekst");
                 label: @tr("Usuń łącze");
                 clicked => {
                     App.cmd("link-apply", "");
                 }
             }
             Button {
+                tip: @tr("Wstaw łącze w zaznaczony tekst");
                 label: @tr("Wstaw");
                 primary: true;
                 clicked => {
@@ -626,6 +704,7 @@ export component AppWindow inherits Window {
                 wrap: word-wrap;
             }
             Button {
+                tip: @tr("Dostawca, klucz API i model AI");
                 label: @tr("Ustawienia AI");
                 icon: Icons.settings;
                 clicked => {
@@ -634,6 +713,7 @@ export component AppWindow inherits Window {
                 }
             }
             Button {
+                tip: @tr("Wygeneruj dokument według opisu");
                 label: App.ai-busy ? @tr("Generowanie…") : @tr("Generuj");
                 icon: Icons.wand-sparkles;
                 primary: true;
@@ -867,6 +947,7 @@ export component AppWindow inherits Window {
                 spacing: 6px;
                 alignment: start;
                 Switch {
+                    tip: @tr("Kerning – dopasowanie odstępów między parami liter (np. AV)");
                     icon: Icons.unfold-horizontal;
                     label: @tr("Kerning");
                     on: App.f-kerning;
@@ -875,6 +956,7 @@ export component AppWindow inherits Window {
                     }
                 }
                 Switch {
+                    tip: @tr("Ligatury – połączone znaki, np. fi, fl");
                     icon: Icons.link;
                     label: @tr("Ligatury");
                     on: App.f-ligatures;
@@ -883,6 +965,7 @@ export component AppWindow inherits Window {
                     }
                 }
                 Switch {
+                    tip: @tr("Kapitaliki z czcionki OpenType (prawdziwe, nie pomniejszone wersaliki)");
                     icon: Icons.a-large-small;
                     label: @tr("Kapitaliki OT");
                     on: App.f-smcp;
@@ -891,6 +974,7 @@ export component AppWindow inherits Window {
                     }
                 }
                 Switch {
+                    tip: @tr("Ułamki – 1/2 jako jeden znak ułamka");
                     icon: Icons.divide;
                     label: @tr("Ułamki");
                     on: App.f-frac;
@@ -903,6 +987,7 @@ export component AppWindow inherits Window {
                 spacing: 6px;
                 alignment: start;
                 Switch {
+                    tip: @tr("Cyfry nautyczne – z wydłużeniami górnymi i dolnymi, dopasowane do tekstu");
                     icon: Icons.chart-line;
                     label: @tr("Cyfry nautyczne");
                     on: App.f-onum;
@@ -911,6 +996,7 @@ export component AppWindow inherits Window {
                     }
                 }
                 Switch {
+                    tip: @tr("Cyfry równej wysokości – jak wersaliki");
                     icon: Icons.baseline;
                     label: @tr("Cyfry równej wysokości");
                     on: App.f-lnum;
@@ -919,6 +1005,7 @@ export component AppWindow inherits Window {
                     }
                 }
                 Switch {
+                    tip: @tr("Cyfry tabelaryczne – jednakowej szerokości, równe kolumny liczb");
                     icon: Icons.grid-3x3;
                     label: @tr("Cyfry tabelaryczne");
                     on: App.f-tnum;
@@ -939,12 +1026,14 @@ export component AppWindow inherits Window {
             alignment: end;
             spacing: 8px;
             Button {
+                tip: @tr("Zamknij bez zmian");
                 label: @tr("Anuluj");
                 clicked => {
                     App.dialog = "";
                 }
             }
             Button {
+                tip: @tr("Zastosuj ustawienia do zaznaczenia");
                 label: @tr("Zastosuj");
                 icon: Icons.check;
                 primary: true;
@@ -1070,6 +1159,7 @@ export component AppWindow inherits Window {
                 spacing: 6px;
                 alignment: start;
                 Switch {
+                    tip: @tr("Nie oddzielaj akapitu od następnego (np. nagłówka od treści)");
                     icon: Icons.link-2;
                     label: @tr("Razem z następnym");
                     on: App.p-keep-next;
@@ -1078,6 +1168,7 @@ export component AppWindow inherits Window {
                     }
                 }
                 Switch {
+                    tip: @tr("Nie dziel akapitu między strony lub kolumny");
                     icon: Icons.fold-vertical;
                     label: @tr("Wiersze razem");
                     on: App.p-keep-lines;
@@ -1086,6 +1177,7 @@ export component AppWindow inherits Window {
                     }
                 }
                 Switch {
+                    tip: @tr("Nie zostawiaj pojedynczego wiersza akapitu na górze lub dole strony");
                     icon: Icons.between-horizontal-start;
                     label: @tr("Wdowy i sieroty");
                     on: App.p-widows;
@@ -1098,6 +1190,7 @@ export component AppWindow inherits Window {
                 spacing: 6px;
                 alignment: start;
                 Switch {
+                    tip: @tr("Zaczynaj akapit zawsze od nowej strony");
                     icon: Icons.file-plus;
                     label: @tr("Od nowej strony");
                     on: App.p-page-before;
@@ -1106,6 +1199,7 @@ export component AppWindow inherits Window {
                     }
                 }
                 Switch {
+                    tip: @tr("Dziel długie wyrazy na końcu wiersza według reguł języka");
                     icon: Icons.scissors;
                     label: @tr("Dzielenie wyrazów");
                     on: App.p-hyphen;
@@ -1205,12 +1299,14 @@ export component AppWindow inherits Window {
             alignment: end;
             spacing: 8px;
             Button {
+                tip: @tr("Zamknij bez zmian");
                 label: @tr("Anuluj");
                 clicked => {
                     App.dialog = "";
                 }
             }
             Button {
+                tip: @tr("Zastosuj ustawienia do zaznaczonych akapitów");
                 label: @tr("Zastosuj");
                 icon: Icons.check;
                 primary: true;
@@ -1233,6 +1329,7 @@ export component AppWindow inherits Window {
         HorizontalLayout {
             alignment: end;
             Button {
+                tip: @tr("Zamknij okno");
                 label: @tr("Zamknij");
                 primary: true;
                 clicked => {
@@ -1254,12 +1351,14 @@ export component AppWindow inherits Window {
             alignment: end;
             spacing: 8px;
             Button {
+                tip: @tr("Wróć do dokumentu");
                 label: @tr("Anuluj");
                 clicked => {
                     App.dialog = "";
                 }
             }
             Button {
+                tip: @tr("Zamknij bez zapisywania zmian");
                 label: @tr("Nie zapisuj");
                 clicked => {
                     App.dialog = "";
@@ -1267,6 +1366,7 @@ export component AppWindow inherits Window {
                 }
             }
             Button {
+                tip: @tr("Zapisz zmiany i zamknij");
                 label: @tr("Zapisz");
                 primary: true;
                 clicked => {
@@ -1329,7 +1429,7 @@ export component AppWindow inherits Window {
         width: tt.preferred-width + 32px;
         height: 36px;
         border-radius: 18px;
-        background: Theme.higher;
+        background: Theme.popup;
         border-width: 1px;
         border-color: Theme.line-strong;
         drop-shadow-blur: 18px;
@@ -1343,21 +1443,27 @@ export component AppWindow inherits Window {
     }
 
     // Dymek podpowiedzi po krótkim zatrzymaniu wskaźnika.
+    // Pokazujemy dopiero, gdy przez cały takt wskaźnik się nie ruszył (numer bez zmian).
+    property <int> tip-seen: -1;
     tip-timer := Timer {
-        interval: 550ms;
-        running: Tip.text != "" && root.tip-shown != Tip.serial;
+        interval: 300ms;
+        running: Tip.text != "" && Tip.shown != Tip.serial;
         triggered => {
-            root.tip-shown = Tip.serial;
+            if (root.tip-seen == Tip.serial) {
+                Tip.shown = Tip.serial;
+            } else {
+                root.tip-seen = Tip.serial;
+            }
         }
     }
-    if Tip.text != "" && root.tip-shown == Tip.serial: Rectangle {
+    if Tip.text != "" && Tip.shown == Tip.serial: Rectangle {
         property <length> below: Tip.y + 22px;
         x: max(8px, min(Tip.x - 8px, root.width - self.width - 8px));
         y: self.below + self.height > root.height - 8px ? Tip.y - self.height - 10px : self.below;
         width: min(tt2.preferred-width, 380px) + 20px;
         height: tt2.preferred-height + 12px;
         border-radius: Theme.r-small;
-        background: Theme.higher;
+        background: Theme.popup;
         border-width: 1px;
         border-color: Theme.line-strong;
         drop-shadow-blur: 12px;

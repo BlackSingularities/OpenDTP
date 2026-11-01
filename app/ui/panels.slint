@@ -1,11 +1,11 @@
-// Panele wysuwane nad treścią (nie przesuwają układu): nawigator, style, znajdź i zamień,
-// właściwości obiektu (położenie, wykres, tekst na ścieżce).
+// Paski boczne zadokowane przy stronie (szerokość zmienia uchwyt): nawigator, style, słownik,
+// znajdź i zamień, właściwości obiektu (położenie, obraz, wykres, tabela, tekst na ścieżce).
 
 import { ScrollView, ListView, TextEdit } from "std-widgets.slint";
 import { Theme } from "theme.slint";
 import { Icons } from "icons.slint";
 import { App, NavV, StyleV } from "state.slint";
-import { TipArea, IconButton, Field, Spin, Switch, MenuItem, MenuSep, Card, Segmented, Label, Dim, Button, Slider } from "widgets.slint";
+import { TipArea, IconButton, Field, Spin, Switch, MenuItem, MenuSep, Segmented, IconSeg, Toggle, Label, Dim, Button, Slider } from "widgets.slint";
 
 component PanelHead inherits HorizontalLayout {
     in property <string> title;
@@ -46,8 +46,8 @@ component Section inherits Text {
     height: 22px;
 }
 
-export component LeftPanel inherits Card {
-    width: 290px;
+export component LeftPanel inherits Rectangle {
+    background: Theme.panel;
     VerticalLayout {
         padding-bottom: 8px;
         if App.left-panel == "nav": VerticalLayout {
@@ -154,8 +154,9 @@ export component LeftPanel inherits Card {
                 padding-top: 6px;
                 spacing: 6px;
                 Button {
-                    label: @tr("Nowy styl z zaznaczenia");
+                    label: @tr("Nowy styl");
                     icon: Icons.plus;
+                    tip: @tr("Utwórz nowy styl akapitu z formatowania zaznaczonego tekstu");
                     clicked => {
                         App.cmd("style-new", "");
                     }
@@ -203,12 +204,21 @@ export component LeftPanel inherits Card {
     }
 }
 
-export component RightPanel inherits Card {
-    width: 310px;
+/// Przycisk z ikoną w pasku bocznym – zawsze z podpowiedzią opisującą działanie.
+component Tool inherits IconButton {
+    size: 30px * Theme.scale;
+}
+
+export component RightPanel inherits Rectangle {
+    background: Theme.panel;
+    // Pole na całą szerokość kolumny i pole w jednej z dwóch kolumn.
+    property <length> full: root.width - 24px;
+    property <length> half: (root.width - 32px) / 2;
     VerticalLayout {
         padding-bottom: 10px;
         if App.right-panel == "find": VerticalLayout {
             spacing: 8px;
+            alignment: start;
             PanelHead {
                 title: @tr("Znajdź i zamień");
                 icon: Icons.search;
@@ -222,9 +232,10 @@ export component RightPanel inherits Card {
                 padding-right: 12px;
                 spacing: 8px;
                 fnd := Field {
-                    w: 286px;
+                    w: root.full;
                     text <=> App.find-text;
                     placeholder: @tr("Szukaj…");
+                    tip: @tr("Szukany tekst – wyniki podświetlają się na bieżąco, Enter przechodzi do następnego");
                     edited(t) => {
                         App.cmd("find-run", t);
                     }
@@ -233,62 +244,65 @@ export component RightPanel inherits Card {
                     }
                 }
                 Field {
-                    w: 286px;
+                    w: root.full;
                     text <=> App.replace-text;
                     placeholder: @tr("Zamień na…");
+                    tip: @tr("Tekst wstawiany w miejsce znalezionego");
                 }
                 HorizontalLayout {
-                    spacing: 10px;
-                    Switch {
-                        label: @tr("Wielkość liter");
+                    spacing: 4px;
+                    Toggle {
+                        icon: Icons.case-sensitive;
                         on: App.find-case;
+                        tip: @tr("Uwzględniaj wielkość liter (A ≠ a)");
                         toggled => {
                             App.find-case = !App.find-case;
                             App.cmd("find-run", App.find-text);
                         }
                     }
-                    Switch {
-                        label: @tr("Całe wyrazy");
+                    Toggle {
+                        icon: Icons.whole-word;
                         on: App.find-whole;
+                        tip: @tr("Tylko całe wyrazy – bez trafień w środku dłuższych słów");
                         toggled => {
                             App.find-whole = !App.find-whole;
                             App.cmd("find-run", App.find-text);
                         }
                     }
-                }
-                Dim {
-                    text: App.find-info;
-                }
-                HorizontalLayout {
-                    spacing: 6px;
-                    Button {
-                        label: @tr("Poprzedni");
+                    Rectangle {
+                        horizontal-stretch: 1;
+                    }
+                    Tool {
+                        icon: Icons.chevron-up;
+                        tip: @tr("Poprzednie wystąpienie");
                         clicked => {
                             App.cmd("find-prev", "");
                         }
                     }
-                    Button {
-                        label: @tr("Następny");
-                        primary: true;
+                    Tool {
+                        icon: Icons.chevron-down;
+                        tip: @tr("Następne wystąpienie (Enter)");
                         clicked => {
                             App.cmd("find-next", "");
                         }
                     }
-                }
-                HorizontalLayout {
-                    spacing: 6px;
-                    Button {
-                        label: @tr("Zamień");
+                    Tool {
+                        icon: Icons.replace;
+                        tip: @tr("Zamień bieżące wystąpienie i przejdź do następnego");
                         clicked => {
                             App.cmd("replace-one", "");
                         }
                     }
-                    Button {
-                        label: @tr("Zamień wszystko");
+                    Tool {
+                        icon: Icons.list-checks;
+                        tip: @tr("Zamień wszystkie wystąpienia w dokumencie");
                         clicked => {
                             App.cmd("replace-all", "");
                         }
                     }
+                }
+                Dim {
+                    text: App.find-info;
                 }
             }
             init => {
@@ -309,6 +323,43 @@ export component RightPanel inherits Card {
                     padding-left: 12px;
                     padding-right: 12px;
                     spacing: 6px;
+                    // Akcje obiektu jako ikony.
+                    HorizontalLayout {
+                        spacing: 4px;
+                        Toggle {
+                            icon: Icons.pin;
+                            on: App.obj-anchored;
+                            tip: @tr("Przesuwaj z tekstem: obiekt zakotwiczony w akapicie wędruje razem z nim (wyłączone – stałe miejsce na stronie)");
+                            toggled => {
+                                App.cmd("anchor-toggle", "");
+                            }
+                        }
+                        Toggle {
+                            icon: App.obj-locked ? Icons.lock : Icons.lock-open;
+                            on: App.obj-locked;
+                            tip: App.obj-locked ? @tr("Odblokuj obiekt – znów można go przesuwać i zmieniać") : @tr("Zablokuj obiekt przed przypadkowym przesunięciem i zmianą");
+                            toggled => {
+                                App.cmd("lock", "");
+                            }
+                        }
+                        Rectangle {
+                            horizontal-stretch: 1;
+                        }
+                        Tool {
+                            icon: Icons.copy;
+                            tip: @tr("Duplikuj obiekt (Ctrl+D)");
+                            clicked => {
+                                App.cmd("duplicate", "");
+                            }
+                        }
+                        Tool {
+                            icon: Icons.trash-2;
+                            tip: @tr("Usuń obiekt (Delete)");
+                            clicked => {
+                                App.cmd("delete-obj", "");
+                            }
+                        }
+                    }
                     Section {
                         text: @tr("POŁOŻENIE I ROZMIAR");
                     }
@@ -318,7 +369,7 @@ export component RightPanel inherits Card {
                             label: "X";
                             value: App.obj-x;
                             unit: App.unit;
-                            w: 104px;
+                            w: root.half;
                             tip: @tr("Odległość od lewej krawędzi strony");
                             changed-value(v) => {
                                 App.cmd("obj-x", v);
@@ -331,7 +382,7 @@ export component RightPanel inherits Card {
                             label: "Y";
                             value: App.obj-y;
                             unit: App.unit;
-                            w: 104px;
+                            w: root.half;
                             tip: @tr("Odległość od górnej krawędzi strony");
                             changed-value(v) => {
                                 App.cmd("obj-y", v);
@@ -347,8 +398,8 @@ export component RightPanel inherits Card {
                             label: "W";
                             value: App.obj-w;
                             unit: App.unit;
-                            w: 104px;
-                            tip: @tr("Szerokość");
+                            w: root.half;
+                            tip: @tr("Szerokość obiektu");
                             changed-value(v) => {
                                 App.cmd("obj-w", v);
                             }
@@ -360,8 +411,8 @@ export component RightPanel inherits Card {
                             label: "H";
                             value: App.obj-h;
                             unit: App.unit;
-                            w: 104px;
-                            tip: @tr("Wysokość");
+                            w: root.half;
+                            tip: @tr("Wysokość obiektu");
                             changed-value(v) => {
                                 App.cmd("obj-h", v);
                             }
@@ -370,64 +421,34 @@ export component RightPanel inherits Card {
                             }
                         }
                     }
-                    Switch {
-                        label: @tr("Przesuwaj z tekstem");
-                        tip: @tr("Obiekt jest zakotwiczony w akapicie i przesuwa się razem z tekstem (wyłączone – stałe miejsce na stronie)");
-                        on: App.obj-anchored;
-                        toggled => {
-                            App.cmd("anchor-toggle", "");
-                        }
-                    }
-                    HorizontalLayout {
-                        spacing: 6px;
-                        Button {
-                            label: @tr("Duplikuj");
-                            icon: Icons.copy;
-                            tip: @tr("Duplikuj obiekt (Ctrl+D)");
-                            clicked => {
-                                App.cmd("duplicate", "");
-                            }
-                        }
-                        Button {
-                            label: App.obj-locked ? @tr("Odblokuj") : @tr("Zablokuj");
-                            icon: App.obj-locked ? Icons.lock-open : Icons.lock;
-                            clicked => {
-                                App.cmd("lock", "");
-                            }
-                        }
-                        Button {
-                            label: @tr("Usuń");
-                            icon: Icons.trash-2;
-                            clicked => {
-                                App.cmd("delete-obj", "");
-                            }
-                        }
-                    }
                     if App.obj-kind == "image": VerticalLayout {
                         spacing: 6px;
                         Section {
                             text: @tr("OBRAZ");
                         }
-                        Segmented {
-                            items: [@tr("Wypełnij kształt"), @tr("Zmieść cały")];
-                            current: App.image-fit-cover ? 0 : 1;
-                            tip: @tr("Dopasowanie obrazu do kształtu");
-                            picked(i) => {
-                                App.cmd("image-fit", i);
-                            }
-                        }
                         HorizontalLayout {
-                            spacing: 6px;
-                            Button {
-                                label: @tr("Wykryj kontur");
+                            spacing: 4px;
+                            IconSeg {
+                                icons: [Icons.maximize, Icons.minimize];
+                                tips: [@tr("Wypełnij kształt – obraz pokrywa cały kształt, nadmiar jest przycięty"), @tr("Zmieść cały – widać cały obraz, mogą zostać puste pasy")];
+                                current: App.image-fit-cover ? 0 : 1;
+                                picked(i) => {
+                                    App.cmd("image-fit", i);
+                                }
+                            }
+                            Rectangle {
+                                horizontal-stretch: 1;
+                            }
+                            Tool {
                                 icon: Icons.scan;
+                                tip: @tr("Wykryj kontur – opływanie tekstu po krawędzi rysunku zamiast prostokąta");
                                 clicked => {
                                     App.cmd("detect-contour", "");
                                 }
                             }
-                            Button {
-                                label: @tr("Zmień obraz");
+                            Tool {
                                 icon: Icons.image;
+                                tip: @tr("Zmień obraz na inny plik, zachowując położenie i rozmiar");
                                 clicked => {
                                     App.cmd("replace-image", "");
                                 }
@@ -439,54 +460,68 @@ export component RightPanel inherits Card {
                         Section {
                             text: @tr("WYKRES");
                         }
-                        Segmented {
-                            items: [@tr("Kolumny"), @tr("Słupki"), @tr("Linie"), @tr("Pola"), @tr("Koło"), @tr("Pierścień")];
-                            current: App.chart-kind;
-                            picked(i) => {
-                                App.cmd("chart-kind", i);
-                            }
-                        }
-                        Field {
-                            w: 286px;
-                            text <=> App.chart-title;
-                            placeholder: @tr("Tytuł wykresu");
-                            accepted(t) => {
-                                App.cmd("chart-title", t);
-                            }
-                        }
-                        Dim {
-                            text: @tr("Dane: pierwszy wiersz – nazwy serii, potem etykieta i wartości oddzielone średnikiem.");
-                            wrap: word-wrap;
-                            height: 32px;
-                        }
-                        TextEdit {
-                            height: 150px;
-                            text <=> App.chart-data;
-                            font-size: 12px;
-                        }
                         HorizontalLayout {
-                            spacing: 8px;
-                            Switch {
-                                label: @tr("Legenda");
+                            spacing: 4px;
+                            IconSeg {
+                                icons: [Icons.chart-column, Icons.chart-bar, Icons.chart-line, Icons.chart-area, Icons.chart-pie, Icons.circle-dot];
+                                tips: [@tr("Kolumny – pionowe słupki"), @tr("Słupki – poziome paski"), @tr("Linie – zmiany w czasie"), @tr("Pola – linie z wypełnieniem"), @tr("Koło – udział części w całości"), @tr("Pierścień – koło z otworem")];
+                                current: App.chart-kind;
+                                picked(i) => {
+                                    App.cmd("chart-kind", i);
+                                }
+                            }
+                            Rectangle {
+                                horizontal-stretch: 1;
+                            }
+                            Toggle {
+                                icon: Icons.list;
                                 on: App.chart-legend;
+                                tip: @tr("Legenda – opis kolorów serii");
                                 toggled => {
                                     App.cmd("chart-legend", "");
                                 }
                             }
-                            Switch {
-                                label: @tr("Wartości");
+                            Toggle {
+                                icon: Icons.hash;
                                 on: App.chart-values;
+                                tip: @tr("Wartości – liczby nad słupkami i przy punktach");
                                 toggled => {
                                     App.cmd("chart-values", "");
                                 }
                             }
                         }
-                        Button {
-                            label: @tr("Zastosuj dane");
-                            primary: true;
-                            clicked => {
-                                App.cmd("chart-data", App.chart-data);
+                        Field {
+                            w: root.full;
+                            text <=> App.chart-title;
+                            placeholder: @tr("Tytuł wykresu");
+                            tip: @tr("Tytuł nad wykresem; Enter zatwierdza");
+                            accepted(t) => {
+                                App.cmd("chart-title", t);
                             }
+                        }
+                        HorizontalLayout {
+                            spacing: 4px;
+                            Dim {
+                                text: @tr("Dane");
+                                horizontal-stretch: 1;
+                            }
+                            Tool {
+                                icon: Icons.badge-info;
+                                tip: @tr("Pierwszy wiersz – nazwy serii, kolejne – etykieta i wartości oddzielone średnikiem, np. „I kw.;12;16”");
+                            }
+                            Tool {
+                                icon: Icons.check;
+                                tint: Theme.accent;
+                                tip: @tr("Zastosuj dane do wykresu");
+                                clicked => {
+                                    App.cmd("chart-data", App.chart-data);
+                                }
+                            }
+                        }
+                        TextEdit {
+                            height: 170px;
+                            text <=> App.chart-data;
+                            font-size: 12px;
                         }
                     }
                     if App.obj-kind == "table": VerticalLayout {
@@ -494,45 +529,37 @@ export component RightPanel inherits Card {
                         Section {
                             text: @tr("TABELA");
                         }
-                        Dim {
-                            height: 58px;
-                            text: @tr("Każdy wiersz w osobnej linii, komórki oddzielone średnikiem (albo tabulatorem – można wkleić z Excela). Znak < scala komórkę z lewą. Dwuklik w komórkę na stronie – pisanie w niej (Tab – następna).");
-                            wrap: word-wrap;
-                            
-                        }
-                        TextEdit {
-                            height: 170px;
-                            text <=> App.table-data;
-                            font-size: 12px;
-                        }
                         HorizontalLayout {
-                            spacing: 8px;
-                            Switch {
-                                label: @tr("Nagłówek");
+                            spacing: 4px;
+                            Toggle {
+                                icon: Icons.panel-top;
                                 on: App.table-header;
+                                tip: @tr("Wiersz nagłówka – wyróżniony kolorem i powtarzany na kolejnych stronach");
                                 toggled => {
                                     App.cmd("table-header", "");
                                 }
                             }
-                            Switch {
-                                label: @tr("Pasy");
+                            Toggle {
+                                icon: Icons.rows-3;
                                 on: App.table-stripes;
+                                tip: @tr("Pasy – co drugi wiersz lekko zacieniony");
                                 toggled => {
                                     App.cmd("table-stripes", "");
                                 }
                             }
-                        }
-                        HorizontalLayout {
-                            spacing: 6px;
+                            Rectangle {
+                                horizontal-stretch: 1;
+                            }
                             for c in [#1f4e79, #00796b, #8a1c1c, #5b3a7a, #d05a00, #333333]: Rectangle {
-                                width: 22px;
-                                height: 22px;
+                                width: 20px;
+                                height: 20px;
+                                y: (parent.height - self.height) / 2;
                                 border-radius: 4px;
                                 background: c;
                                 border-width: App.table-accent == c ? 2px : 0;
                                 border-color: Theme.accent;
                                 TipArea {
-                                    tip: @tr("Kolor nagłówka");
+                                    tip: @tr("Kolor nagłówka i pasów tabeli");
                                     clicked => {
                                         App.table-accent = c;
                                         App.cmd("table-accent", "");
@@ -540,50 +567,77 @@ export component RightPanel inherits Card {
                                 }
                             }
                         }
-                        Button {
-                            label: @tr("Zastosuj dane");
-                            primary: true;
-                            clicked => {
-                                App.cmd("table-data", App.table-data);
+                        HorizontalLayout {
+                            spacing: 4px;
+                            Dim {
+                                text: @tr("Dane");
+                                horizontal-stretch: 1;
                             }
+                            Tool {
+                                icon: Icons.badge-info;
+                                tip: @tr("Każdy wiersz w osobnej linii, komórki oddzielone średnikiem albo tabulatorem (można wkleić z Excela). Znak < scala komórkę z lewą. Dwuklik w komórkę na stronie – pisanie w niej, Tab – następna.");
+                            }
+                            Tool {
+                                icon: Icons.check;
+                                tint: Theme.accent;
+                                tip: @tr("Zastosuj dane do tabeli");
+                                clicked => {
+                                    App.cmd("table-data", App.table-data);
+                                }
+                            }
+                        }
+                        TextEdit {
+                            height: 200px;
+                            text <=> App.table-data;
+                            font-size: 12px;
                         }
                     }
                     if App.obj-kind == "path-text": VerticalLayout {
                         spacing: 6px;
-                        Section {
-                            text: @tr("TEKST NA ŚCIEŻCE");
+                        HorizontalLayout {
+                            Section {
+                                text: @tr("TEKST NA ŚCIEŻCE");
+                                horizontal-stretch: 1;
+                            }
+                            Tool {
+                                icon: Icons.badge-info;
+                                tip: @tr("Czcionkę, kolor i rozmiar ustawisz na karcie Narzędzia główne, gdy obiekt jest zaznaczony. Kształt ścieżki zmienisz węzłami.");
+                            }
                         }
                         Field {
-                            w: 286px;
+                            w: root.full;
                             text <=> App.path-text;
                             placeholder: @tr("Tekst biegnący po krzywej");
+                            tip: @tr("Tekst układany wzdłuż ścieżki – zmiany widać od razu");
                             edited(t) => {
                                 App.cmd("path-text-set", t);
                             }
                         }
-                        Dim {
-                            text: @tr("Przesunięcie wzdłuż ścieżki");
-                        }
-                        Slider {
-                            value: App.path-offset;
-                            tip: @tr("Początek tekstu na krzywej");
-                            moved(v) => {
-                                App.cmd("path-offset", v);
+                        HorizontalLayout {
+                            spacing: 8px;
+                            Image {
+                                source: Icons.move-horizontal;
+                                width: 16px;
+                                colorize: Theme.text-dim;
                             }
-                        }
-                        Dim {
-                            text: @tr("Formatowanie (czcionka, kolor, rozmiar) – z karty Narzędzia główne, gdy obiekt jest zaznaczony. Kształt ścieżki zmienisz węzłami.");
-                            wrap: word-wrap;
-                            height: 46px;
+                            Slider {
+                                horizontal-stretch: 1;
+                                value: App.path-offset;
+                                tip: @tr("Przesunięcie początku tekstu wzdłuż krzywej");
+                                moved(v) => {
+                                    App.cmd("path-offset", v);
+                                }
+                            }
                         }
                     }
                     Section {
                         text: @tr("NAZWA");
                     }
                     Field {
-                        w: 286px;
+                        w: root.full;
                         text <=> App.obj-name;
                         placeholder: @tr("Nazwa obiektu");
+                        tip: @tr("Nazwa widoczna w nagłówku panelu; Enter zatwierdza");
                         accepted(t) => {
                             App.cmd("obj-name", t);
                         }

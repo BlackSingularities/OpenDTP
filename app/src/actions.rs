@@ -1124,6 +1124,10 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             p.border = if p.border.is_some() { None } else { Some(StrokeStyle { color: Color::rgb(0x40, 0x40, 0x40), width: 1.5, dash: vec![] }) };
             st.ed.changed();
         }
+        "open-url" => {
+            let _ = open::that(arg);
+            return;
+        }
         "symbol" => {
             st.ed.insert(arg);
             scroll = true;
@@ -1912,6 +1916,12 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             crate::apply_theme_prefs(st, &ui);
             return;
         }
+        "transparency" => {
+            st.prefs.transparency = (arg.parse::<f32>().unwrap_or(0.0).round() as i32).clamp(0, 60);
+            st.prefs.save();
+            crate::apply_theme_prefs(st, &ui);
+            return;
+        }
         "ui-scale" => {
             st.prefs.scale = arg.parse::<f32>().unwrap_or(1.0).clamp(0.85, 1.35);
             st.prefs.save();
@@ -1943,13 +1953,32 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             return;
         }
         "customize" => {
-            customize_list(st, arg);
-            app.set_dialog(if arg == "qat" { "customize-qat".into() } else { "customize-tab".into() });
+            if arg == "qat" {
+                customize_list(st, "qat");
+                app.set_dialog("customize-qat".into());
+            } else {
+                let i = arg.parse::<usize>().unwrap_or(0);
+                if i >= st.prefs.tabs().len() {
+                    return;
+                }
+                app.set_custom_edit(i as i32);
+                app.set_custom_name(st.prefs.tabs()[i].name.clone().into());
+                customize_list(st, "tab");
+                app.set_dialog("customize-tab".into());
+            }
             app.set_backstage(false);
             return;
         }
         "qat-toggle" | "tab-toggle" => {
-            let list = if base == "qat-toggle" { &mut st.prefs.qat } else { &mut st.prefs.custom_tab };
+            let i = app.get_custom_edit().max(0) as usize;
+            let list = if base == "qat-toggle" {
+                &mut st.prefs.qat
+            } else {
+                match st.prefs.tabs_mut().get_mut(i) {
+                    Some(t) => &mut t.items,
+                    None => return,
+                }
+            };
             if let Some(i) = list.iter().position(|x| x == arg) {
                 list.remove(i);
             } else {
@@ -1963,12 +1992,46 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
         "qat-reset" | "tab-reset" => {
             if base == "qat-reset" {
                 st.prefs.qat = crate::settings::default_qat();
-            } else {
-                st.prefs.custom_tab = crate::settings::default_tab();
+            } else if let Some(t) = st.prefs.tabs_mut().get_mut(app.get_custom_edit().max(0) as usize) {
+                t.items = crate::settings::default_tab();
             }
             st.prefs.save();
             sync_lists(st);
             customize_list(st, if base == "qat-reset" { "qat" } else { "tab" });
+            return;
+        }
+        // Karty skrótów: dodanie (od razu okno wyboru poleceń), zmiana nazwy, usunięcie.
+        "tab-add" => {
+            if st.prefs.tabs().len() >= crate::settings::MAX_TABS {
+                return;
+            }
+            st.prefs.tabs_mut().push(crate::settings::CustomTab { name: String::new(), items: crate::settings::default_tab() });
+            let i = st.prefs.tabs().len() - 1;
+            st.prefs.save();
+            sync_lists(st);
+            app.set_tab(crate::FIXED_TABS + i as i32);
+            return run(st, "customize", &i.to_string());
+        }
+        "tab-rename" => {
+            if let Some(t) = st.prefs.tabs_mut().get_mut(app.get_custom_edit().max(0) as usize) {
+                t.name = arg.trim().to_string();
+            }
+            st.prefs.save();
+            sync_lists(st);
+            return;
+        }
+        "tab-remove" => {
+            let i = app.get_custom_edit().max(0) as usize;
+            if i < st.prefs.tabs().len() {
+                st.prefs.tabs_mut().remove(i);
+            }
+            st.prefs.save();
+            sync_lists(st);
+            let last = crate::FIXED_TABS - 1 + st.prefs.tabs().len() as i32;
+            if app.get_tab() > last {
+                app.set_tab(last);
+            }
+            app.set_dialog("".into());
             return;
         }
 
@@ -2361,7 +2424,8 @@ pub fn font_query(st: &State, q: &str) {
 
 fn customize_list(st: &State, which: &str) {
     let Some(ui) = st.ui.upgrade() else { return };
-    let list = if which == "qat" { &st.prefs.qat } else { &st.prefs.custom_tab };
+    let tab = st.prefs.tabs().get(ui.global::<App>().get_custom_edit().max(0) as usize);
+    let list: &[String] = if which == "qat" { &st.prefs.qat } else { tab.map(|t| t.items.as_slice()).unwrap_or(&[]) };
     let items: Vec<ItemV> = commands::ALL.iter().map(|c| ItemV { id: c.id.into(), label: commands::label(c).into(), hint: c.key.into(), icon: Default::default(), checked: list.iter().any(|x| x == c.id), font: "".into() }).collect();
     ui.global::<App>().set_all_commands(ModelRc::new(VecModel::from(items)));
 }
