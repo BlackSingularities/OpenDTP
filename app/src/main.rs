@@ -572,7 +572,7 @@ fn main() {
     // Dokument startowy: plik z wiersza poleceń, kopia odzyskana, ostatni dokument albo przewodnik.
     {
         let mut st = shared.borrow_mut();
-        let opened = args.first().map(|p| files::open_path(&mut st, p)).unwrap_or(false);
+        let opened = args.iter().find(|a| !a.starts_with("--") && !a.ends_with(".png") && a.parse::<i32>().is_err()).map(|p| files::open_path(&mut st, p)).unwrap_or(false);
         if !opened && !files::recover(&mut st) {
             let last = st.prefs.last_doc.clone();
             let ok = st.prefs.restore && !last.is_empty() && std::path::Path::new(&last).exists() && files::open_path(&mut st, &last);
@@ -674,6 +674,7 @@ fn main() {
             }
         });
     }
+    snapshot_mode(&ui, &args);
     slint::run_event_loop().expect("pętla zdarzeń");
 }
 
@@ -769,4 +770,43 @@ pub fn items(list: Vec<(String, String, String)>) -> ModelRc<ItemV> {
 #[allow(dead_code)]
 fn model_len<T: Clone + 'static>(m: &ModelRc<T>) -> usize {
     m.row_count()
+}
+
+/// Tryb diagnostyczny: `--snapshot plik.png [--tab N] [--backstage N] [--dialog nazwa] [--doc szablon]`
+/// – po starcie zapisuje obraz okna i kończy program (sprawdzanie wyglądu bez interakcji).
+fn snapshot_mode(ui: &AppWindow, args: &[String]) {
+    let Some(i) = args.iter().position(|a| a == "--snapshot") else { return };
+    let Some(out) = args.get(i + 1).cloned() else { return };
+    let get = |k: &str| args.iter().position(|a| a == k).and_then(|j| args.get(j + 1)).cloned();
+    let app = ui.global::<App>();
+    if let Some(t) = get("--tab").and_then(|v| v.parse().ok()) {
+        app.set_tab(t);
+    }
+    if let Some(p) = get("--backstage").and_then(|v| v.parse().ok()) {
+        app.set_backstage_page(p);
+        app.set_backstage(true);
+    }
+    if let Some(d) = get("--dialog") {
+        app.set_dialog(d.into());
+    }
+    if let Some(t) = get("--doc") {
+        if let Some(sh) = shared() {
+            let mut st = sh.borrow_mut();
+            files::set_doc(&mut st, opendtp_core::sample::template(&t), None);
+        }
+    }
+    if let Some(t) = get("--theme").and_then(|v| v.parse().ok()) {
+        ui.global::<Theme>().set_mode(t);
+    }
+    let w = ui.as_weak();
+    slint::Timer::single_shot(Duration::from_millis(3500), move || {
+        if let Some(ui) = w.upgrade() {
+            if let Ok(buf) = ui.window().take_snapshot() {
+                if let Some(img) = image::RgbaImage::from_raw(buf.width(), buf.height(), buf.as_bytes().to_vec()) {
+                    let _ = img.save(&out);
+                }
+            }
+        }
+        let _ = slint::quit_event_loop();
+    });
 }
