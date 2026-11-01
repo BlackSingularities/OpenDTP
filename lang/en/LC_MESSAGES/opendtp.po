@@ -2327,3 +2327,6 @@ msgstr "Ollama (local)"
 msgid "Własny (zgodny z OpenAI)"
 msgstr "Custom (OpenAI-compatible)"
 
+msgid "np. Ulotka na otwarcie kawiarni „Pod Lipą”: menu śniadaniowe, godziny, rabat na start, ciepłe kolory"
+msgstr "e.g. Flyer for the opening of the “Linden Tree” café: breakfast menu, opening hours, launch discount, warm colours"
+

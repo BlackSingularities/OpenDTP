@@ -67,7 +67,8 @@ fn clean(word: &str) -> &str {
 /// Czy wyraz jest błędny. Przed wczytaniem słowników – nigdy.
 pub fn misspelled(word: &str, lang: &str) -> bool {
     let w = clean(word);
-    if w.chars().count() < 2 || w.chars().any(|c| c.is_ascii_digit()) || w.chars().all(|c| c.is_uppercase()) {
+    let inner_caps = w.chars().skip(1).any(|c| c.is_uppercase());
+    if w.chars().count() < 2 || w.chars().any(|c| c.is_ascii_digit()) || w.chars().all(|c| c.is_uppercase()) || inner_caps {
         return false;
     }
     let Some(d) = dict(lang) else { return false };

@@ -2,6 +2,7 @@
 // próbki kolorów i podpowiedzi po najechaniu (każda kontrolka ma swoją).
 
 import { Theme } from "theme.slint";
+import { Icons } from "icons.slint";
 
 export global Tip {
     in-out property <string> text;
@@ -108,14 +109,25 @@ export component BigButton inherits Rectangle {
                 colorize: !root.enabled ? Theme.text-faint : root.active ? Theme.accent : root.tint;
             }
         }
-        t := Text {
-            text: root.label + (root.menu ? " ▾" : "");
-            font-family: Theme.font;
-            font-size: Theme.fs-small;
-            color: root.enabled ? Theme.text : Theme.text-faint;
-            horizontal-alignment: center;
-            wrap: word-wrap;
-            max-width: 90px * Theme.scale;
+        HorizontalLayout {
+            alignment: center;
+            spacing: 2px;
+            t := Text {
+                text: root.label;
+                font-family: Theme.font;
+                font-size: Theme.fs-small;
+                color: root.enabled ? Theme.text : Theme.text-faint;
+                horizontal-alignment: center;
+                wrap: word-wrap;
+                max-width: 90px * Theme.scale;
+            }
+            if root.menu: Image {
+                source: Icons.chevron-down;
+                width: 10px;
+                height: 10px;
+                y: (parent.height - self.height) / 2;
+                colorize: Theme.text-dim;
+            }
         }
     }
     ta := TipArea {
@@ -152,12 +164,19 @@ export component RowButton inherits Rectangle {
             y: (parent.height - self.height) / 2;
             colorize: !root.enabled ? Theme.text-faint : root.active ? Theme.accent : Theme.text;
         }
-        Text {
-            text: root.label + (root.menu ? " ▾" : "");
+        if root.label != "": Text {
+            text: root.label;
             font-family: Theme.font;
             font-size: Theme.fs-small;
             color: root.enabled ? Theme.text : Theme.text-faint;
             vertical-alignment: center;
+        }
+        if root.menu: Image {
+            source: Icons.chevron-down;
+            width: 10px;
+            height: 10px;
+            y: (parent.height - self.height) / 2;
+            colorize: Theme.text-dim;
         }
     }
     ta := TipArea {

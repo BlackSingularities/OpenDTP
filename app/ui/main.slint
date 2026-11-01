@@ -503,11 +503,22 @@ export component AppWindow inherits Window {
             wrap: word-wrap;
             height: 34px;
         }
-        TextEdit {
-            height: 170px;
-            text <=> App.ai-prompt;
-            font-size: 13px;
-            enabled: !App.ai-busy;
+        Rectangle {
+            height: 172px;
+            border-radius: Theme.r-small;
+            background: Theme.raised;
+            border-width: 1px;
+            border-color: Theme.line-strong;
+            TextEdit {
+                x: 1px;
+                y: 1px;
+                width: parent.width - 2px;
+                height: parent.height - 2px;
+                text <=> App.ai-prompt;
+                font-size: 13px;
+                enabled: !App.ai-busy;
+                placeholder-text: @tr("np. Ulotka na otwarcie kawiarni „Pod Lipą”: menu śniadaniowe, godziny, rabat na start, ciepłe kolory");
+            }
         }
         HorizontalLayout {
             spacing: 12px;

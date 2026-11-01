@@ -58,10 +58,11 @@ export component ColorPick inherits Rectangle {
         }
         Rectangle {
             width: 12px;
-            Text {
-                text: "▾";
-                font-size: 9px;
-                color: Theme.text-dim;
+            Image {
+                source: Icons.chevron-down;
+                width: 10px;
+                height: 10px;
+                colorize: Theme.text-dim;
             }
             tb := TipArea {
                 tip: root.tip;
@@ -282,13 +283,13 @@ export component FontBox inherits Rectangle {
         overflow: elide;
         height: parent.height;
     }
-    Text {
+    Image {
         x: parent.width - 16px;
-        text: "▾";
-        font-size: 9px;
-        color: Theme.text-dim;
-        vertical-alignment: center;
-        height: parent.height;
+        y: (parent.height - self.height) / 2;
+        source: Icons.chevron-down;
+        width: 10px;
+        height: 10px;
+        colorize: Theme.text-dim;
     }
     fta := TipArea {
         tip: @tr("Czcionka – lista krojów zainstalowanych w systemie");
@@ -379,10 +380,11 @@ export component SizeBox inherits Rectangle {
     Rectangle {
         x: parent.width - 16px;
         width: 16px;
-        Text {
-            text: "▾";
-            font-size: 9px;
-            color: Theme.text-dim;
+        Image {
+            source: Icons.chevron-down;
+            width: 10px;
+            height: 10px;
+            colorize: Theme.text-dim;
         }
         TipArea {
             tip: @tr("Rozmiar czcionki (pt)");

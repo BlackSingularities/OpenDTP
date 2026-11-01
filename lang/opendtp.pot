@@ -2327,3 +2327,6 @@ msgstr ""
 msgid "Własny (zgodny z OpenAI)"
 msgstr ""
 
+msgid "np. Ulotka na otwarcie kawiarni „Pod Lipą”: menu śniadaniowe, godziny, rabat na start, ciepłe kolory"
+msgstr ""
+
