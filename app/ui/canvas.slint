@@ -227,11 +227,11 @@ export component Canvas inherits Rectangle {
                             App.cmd("cell-commit", self.text);
                         }
                         key-pressed(e) => {
-                            if (e.text == "\t") {
+                            if (e.text == Key.Tab) {
                                 App.cmd(e.modifiers.shift ? "cell-prev" : "cell-next", self.text);
                                 return accept;
                             }
-                            if (e.text == "\u{1b}") {
+                            if (e.text == Key.Escape) {
                                 App.cmd("cell-cancel", "");
                                 return accept;
                             }
