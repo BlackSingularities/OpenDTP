@@ -56,9 +56,9 @@ fn alpha(c: Color, op: f32) -> NormalizedF32 {
     NormalizedF32::new((c.a as f32 / 255.0 * op).clamp(0.0, 1.0)).unwrap_or(NormalizedF32::ONE)
 }
 
-fn fill_of(p: &Paint, op: f32, cx: &Cx) -> Fill {
+fn fill_of(p: &Paint, op: f32, k: &Cx) -> Fill {
     match p {
-        Paint::Solid(c) => Fill { paint: col(*c, cx).into(), opacity: alpha(*c, op), rule: FillRule::EvenOdd },
+        Paint::Solid(c) => Fill { paint: col(*c, k).into(), opacity: alpha(*c, op), rule: FillRule::EvenOdd },
         Paint::Linear { x0, y0, x1, y1, from, to } => {
             let g = krilla::paint::LinearGradient {
                 x1: *x0,
@@ -67,7 +67,7 @@ fn fill_of(p: &Paint, op: f32, cx: &Cx) -> Fill {
                 y2: *y1,
                 transform: Transform::identity(),
                 spread_method: krilla::paint::SpreadMethod::Pad,
-                stops: vec![krilla::paint::Stop { offset: NormalizedF32::ZERO, color: col(*from, cx).into(), opacity: alpha(*from, 1.0) }, krilla::paint::Stop { offset: NormalizedF32::ONE, color: col(*to, cx).into(), opacity: alpha(*to, 1.0) }],
+                stops: vec![krilla::paint::Stop { offset: NormalizedF32::ZERO, color: col(*from, k).into(), opacity: alpha(*from, 1.0) }, krilla::paint::Stop { offset: NormalizedF32::ONE, color: col(*to, k).into(), opacity: alpha(*to, 1.0) }],
                 anti_alias: true,
             };
             Fill { paint: g.into(), opacity: NormalizedF32::new(op.clamp(0.0, 1.0)).unwrap_or(NormalizedF32::ONE), rule: FillRule::EvenOdd }
@@ -82,7 +82,7 @@ fn fill_of(p: &Paint, op: f32, cx: &Cx) -> Fill {
                 cr: *r,
                 transform: Transform::identity(),
                 spread_method: krilla::paint::SpreadMethod::Pad,
-                stops: vec![krilla::paint::Stop { offset: NormalizedF32::ZERO, color: col(*from, cx).into(), opacity: alpha(*from, 1.0) }, krilla::paint::Stop { offset: NormalizedF32::ONE, color: col(*to, cx).into(), opacity: alpha(*to, 1.0) }],
+                stops: vec![krilla::paint::Stop { offset: NormalizedF32::ZERO, color: col(*from, k).into(), opacity: alpha(*from, 1.0) }, krilla::paint::Stop { offset: NormalizedF32::ONE, color: col(*to, k).into(), opacity: alpha(*to, 1.0) }],
                 anti_alias: true,
             };
             Fill { paint: g.into(), opacity: NormalizedF32::new(op.clamp(0.0, 1.0)).unwrap_or(NormalizedF32::ONE), rule: FillRule::EvenOdd }
