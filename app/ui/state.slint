@@ -276,6 +276,10 @@ export global App {
     in-out property <int> ai-length: 1;
     in-out property <bool> ai-insert;
 
+    in-out property <bool> maximized;
+    // Okno bez ramki systemowej: 0 – przeciągnij, 1 – minimalizuj, 2 – maksymalizuj/przywróć, 3 – zamknij,
+    // 11..18 – zmiana rozmiaru od krawędzi (N, S, W, E, NW, NE, SW, SE).
+    callback win(int);
     callback cmd(string, string);
     // Wskaźnik na płótnie: rodzaj (0 – naciśnięcie, 1 – ruch, 2 – puszczenie), x, y, przycisk (0 – lewy, 1 – prawy), Shift, Ctrl, Alt.
     callback pointer(int, length, length, int, bool, bool, bool);

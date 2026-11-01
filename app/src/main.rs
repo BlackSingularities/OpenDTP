@@ -681,6 +681,15 @@ fn main() {
 fn wire(ui: &AppWindow, shared: &Shared) {
     let app = ui.global::<App>();
     {
+        // Od razu (nie przez kolejkę poleceń) – przeciąganie okna musi ruszyć przy wciśniętym przycisku.
+        let w = ui.as_weak();
+        app.on_win(move |a| {
+            if let Some(ui) = w.upgrade() {
+                win::action(&ui, a);
+            }
+        });
+    }
+    {
         let sh = shared.clone();
         app.on_cmd(move |id, arg| {
             let id = id.to_string();
@@ -729,6 +738,12 @@ fn wire(ui: &AppWindow, shared: &Shared) {
             let apply = move || {
                 let Ok(mut st) = sh2.try_borrow_mut() else { return };
                 let resized = (st.view.vw - w).abs() > 0.5;
+                if let Some(ui) = st.ui.upgrade() {
+                    let m = ui.window().is_maximized();
+                    if ui.global::<App>().get_maximized() != m {
+                        ui.global::<App>().set_maximized(m);
+                    }
+                }
                 st.view.vx = x;
                 st.view.vy = y;
                 st.view.vw = w;

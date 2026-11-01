@@ -12,7 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 opendtp-core = { path = "../core" }
-slint = { version = "1.18", default-features = false, features = ["std", "compat-1-2", "accessibility", "backend-winit", "renderer-femtovg", "unstable-winit-030"] }
+slint = { version = "1.18", default-features = false, features = ["std", "compat-1-2", "accessibility", "backend-winit", "renderer-skia", "unstable-winit-030"] }
 raw-window-handle = "0.6"
 rfd = "0.15"
 open = "5"

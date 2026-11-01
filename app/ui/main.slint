@@ -14,7 +14,7 @@ import { Backstage } from "backstage.slint";
 export { App, Theme, Icons, Tip, PageV, BoxV, NodeV, ItemV, StyleV, NavV, RecentV }
 
 component TopBar inherits Rectangle {
-    height: 38px * Theme.scale;
+    height: 40px * Theme.scale;
     background: Theme.panel;
     HorizontalLayout {
         padding-left: 10px;
@@ -49,6 +49,16 @@ component TopBar inherits Rectangle {
         }
         Rectangle {
             horizontal-stretch: 1;
+            TouchArea {
+                pointer-event(e) => {
+                    if (e.kind == PointerEventKind.down && e.button == PointerEventButton.left) {
+                        App.win(0);
+                    }
+                }
+                double-clicked => {
+                    App.win(2);
+                }
+            }
             Text {
                 text: App.doc-name + (App.dirty ? " •" : "");
                 font-family: Theme.font;
@@ -128,6 +138,45 @@ component TopBar inherits Rectangle {
             clicked => {
                 App.cmd("ribbon-collapse", "");
             }
+        }
+        Rectangle {
+            width: 10px;
+        }
+        WinButton {
+            kind: 1;
+            tip: @tr("Minimalizuj");
+        }
+        WinButton {
+            kind: 2;
+            tip: App.maximized ? @tr("Przywróć") : @tr("Maksymalizuj");
+        }
+        WinButton {
+            kind: 3;
+            tip: @tr("Zamknij");
+        }
+    }
+}
+
+/// Przycisk okna (minimalizuj, maksymalizuj, zamknij) w pasku tytułu.
+component WinButton inherits Rectangle {
+    in property <int> kind;
+    in property <string> tip;
+    width: 46px;
+    background: ta.pressed ? (kind == 3 ? #c42b1c : Theme.press) : ta.has-hover ? (kind == 3 ? #e81123 : Theme.hover) : transparent;
+    Path {
+        width: 10px;
+        height: 10px;
+        viewbox-width: 10;
+        viewbox-height: 10;
+        stroke: ta.has-hover && root.kind == 3 ? #ffffff : Theme.text;
+        stroke-width: 1px;
+        fill: transparent;
+        commands: root.kind == 1 ? "M 0 5 L 10 5" : root.kind == 3 ? "M 0 0 L 10 10 M 10 0 L 0 10" : App.maximized ? "M 2 0 L 10 0 L 10 8 M 0 2 L 8 2 L 8 10 L 0 10 Z" : "M 0 0 L 10 0 L 10 10 L 0 10 Z";
+    }
+    ta := TipArea {
+        tip: root.tip;
+        clicked => {
+            App.win(root.kind);
         }
     }
 }
@@ -399,6 +448,7 @@ component Customize inherits Dialog {
 
 export component AppWindow inherits Window {
     title: App.title;
+    no-frame: true;
     icon: @image-url("../icon.png");
     background: Theme.bg;
     preferred-width: 1440px;
@@ -652,6 +702,33 @@ export component AppWindow inherits Window {
         width: parent.width;
         height: parent.height;
         target: "tab";
+    }
+
+    // Zmiana rozmiaru okna bez ramki – cienkie pasy przy krawędziach i rogach.
+    if !App.maximized && !App.fullscreen: Rectangle {
+        width: parent.width;
+        height: parent.height;
+        for e in [
+            { d: 11, x: 8px, y: 0, w: root.width - 16px, h: 4px, c: 0 },
+            { d: 12, x: 8px, y: root.height - 4px, w: root.width - 16px, h: 4px, c: 0 },
+            { d: 13, x: 0, y: 8px, w: 4px, h: root.height - 16px, c: 1 },
+            { d: 14, x: root.width - 4px, y: 8px, w: 4px, h: root.height - 16px, c: 1 },
+            { d: 15, x: 0, y: 0, w: 8px, h: 8px, c: 2 },
+            { d: 16, x: root.width - 8px, y: 0, w: 8px, h: 8px, c: 3 },
+            { d: 17, x: 0, y: root.height - 8px, w: 8px, h: 8px, c: 3 },
+            { d: 18, x: root.width - 8px, y: root.height - 8px, w: 8px, h: 8px, c: 2 },
+        ]: TouchArea {
+            x: e.x;
+            y: e.y;
+            width: e.w;
+            height: e.h;
+            mouse-cursor: e.c == 0 ? MouseCursor.ns-resize : e.c == 1 ? MouseCursor.ew-resize : e.c == 2 ? MouseCursor.nwse-resize : MouseCursor.nesw-resize;
+            pointer-event(ev) => {
+                if (ev.kind == PointerEventKind.down) {
+                    App.win(e.d);
+                }
+            }
+        }
     }
 
     // Powiadomienie u dołu okna.

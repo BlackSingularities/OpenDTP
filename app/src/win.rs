@@ -40,6 +40,41 @@ pub fn dark_title(ui: &AppWindow, dark: bool) {
     }
 }
 
+/// Polecenia okna bez ramki: przeciąganie, minimalizacja, maksymalizacja, zamknięcie, zmiana rozmiaru.
+pub fn action(ui: &AppWindow, a: i32) {
+    use slint::winit_030::winit::window::ResizeDirection;
+    match a {
+        0 => {
+            ui.window().with_winit_window(|w| {
+                let _ = w.drag_window();
+            });
+        }
+        1 => ui.window().set_minimized(true),
+        2 => {
+            let m = !ui.window().is_maximized();
+            ui.window().set_maximized(m);
+            ui.global::<crate::App>().set_maximized(m);
+        }
+        3 => ui.window().dispatch_event(slint::platform::WindowEvent::CloseRequested),
+        11..=18 => {
+            let dir = match a {
+                11 => ResizeDirection::North,
+                12 => ResizeDirection::South,
+                13 => ResizeDirection::West,
+                14 => ResizeDirection::East,
+                15 => ResizeDirection::NorthWest,
+                16 => ResizeDirection::NorthEast,
+                17 => ResizeDirection::SouthWest,
+                _ => ResizeDirection::SouthEast,
+            };
+            ui.window().with_winit_window(|w| {
+                let _ = w.drag_resize_window(dir);
+            });
+        }
+        _ => {}
+    }
+}
+
 pub fn fullscreen(ui: &AppWindow, on: bool) {
     ui.window().set_fullscreen(on);
 }
