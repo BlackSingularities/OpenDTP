@@ -184,9 +184,12 @@ impl Editor {
             let head = self.doc.chain_head(id);
             self.story = StoryRef::Obj(head);
         }
-        let s = self.story_ref();
-        self.anchor = edit::clamp(s, self.anchor);
-        self.head = edit::clamp(s, self.head);
+        let (a, h) = {
+            let s = self.story_ref();
+            (edit::clamp(s, self.anchor), edit::clamp(s, self.head))
+        };
+        self.anchor = a;
+        self.head = h;
         if let Some(o) = self.obj {
             if self.doc.object(o).is_none() {
                 self.obj = None;
@@ -530,10 +533,13 @@ impl Editor {
     }
 
     pub fn select_all(&mut self) {
-        let s = self.story_ref();
-        let n = s.paras.len();
+        let end = {
+            let s = self.story_ref();
+            let n = s.paras.len();
+            At::new(n - 1, s.paras[n - 1].len())
+        };
         self.anchor = At::new(0, 0);
-        self.head = At::new(n - 1, s.paras[n - 1].len());
+        self.head = end;
         self.obj = None;
     }
 

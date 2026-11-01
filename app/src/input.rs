@@ -946,7 +946,7 @@ pub fn key(st: &mut State, text: &str, ctrl: bool, shift: bool, alt: bool) -> bo
             return true;
         }
         if is(text, Key::Return) || is(text, Key::F2) {
-            let o = st.ed.object().unwrap();
+            let o = st.ed.object().unwrap().clone();
             if matches!(o.kind, ObjKind::Text { .. }) {
                 let head = st.ed.doc.chain_head(o.id);
                 st.ed.set_caret(StoryRef::Obj(head), At::new(0, 0), false);
