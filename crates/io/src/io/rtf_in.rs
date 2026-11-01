@@ -381,7 +381,7 @@ mod tests {
     fn reads_formatting_and_polish() {
         let rtf = br"{\rtf1\ansi\ansicpg1250{\fonttbl{\f0\fswiss Arial;}}{\colortbl;\red255\green0\blue0;}{\info{\title Raport}{\author Anna}}
 \pard\qc\b Tytu\'b3\b0\par
-\pard Zwyk\'b3y {\i kursywa} i \cf1 czerwony\cf0  舢?cytat舡?\par}";
+\pard Zwyk\'b3y {\i kursywa} i \cf1 czerwony\cf0  \u8222?cytat\u8221?\par}";
         let d = import(rtf).unwrap();
         assert_eq!(d.meta.title, "Raport");
         assert_eq!(d.meta.author, "Anna");

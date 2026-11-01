@@ -1,6 +1,6 @@
 # Zmiany
 
-## Niewydane
+## 0.8.0
 
 - Rdzeń podzielony na osobne moduły (`crates/`): podstawa, dokument, tekst, format, skład, wymiana plików, AI, aktualizacje.
 - Bezpieczny zapis wszystkich plików (dokument, eksport DOCX/PDF/EPUB/HTML/MD/TXT/PNG, kopie odzyskiwania, ustawienia, słownik): plik tymczasowy, zapis na dysk, podmiana z ponawianiem, gdy plik chwilowo blokuje antywirus albo OneDrive. Przerwany zapis nie psuje już istniejącego pliku.
