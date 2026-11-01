@@ -575,7 +575,7 @@ export component IconField inherits Rectangle {
     }
     TouchArea {
         enabled: !ti.has-focus;
-        mouse-cursor: text;
+        mouse-cursor: MouseCursor.text;
         clicked => {
             ti.focus();
         }
