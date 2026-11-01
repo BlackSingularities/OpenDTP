@@ -64,8 +64,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Podpisywanie nie powiodło się" }
           Remove-Item $pfx
 
-      # Dokładnie dwa pliki do pobrania: instalator i wersja przenośna.
-      - name: Instalator i wersja przenośna
+      # Do pobrania tylko instalator (plus sumy kontrolne dla aktualizatora).
+      - name: Instalator
         shell: pwsh
         run: |
           $v = "${{ steps.ver.outputs.version }}"
@@ -76,9 +76,6 @@ jobs:
           } else { $iscc = $iscc.Source }
           & $iscc "/DAppVersion=$v" installer/OpenDTP.iss
           if ($LASTEXITCODE -ne 0) { throw "Instalator nie powstał" }
-          # Plik portable.ini obok programu = ustawienia w folderze „data” obok .exe.
-          "OpenDTP – wersja przenośna. Ustawienia i kopie zapisywane są w folderze data obok programu." | Set-Content dist/portable.ini -Encoding utf8
-          Compress-Archive -Path dist/OpenDTP.exe, dist/portable.ini -DestinationPath "out/OpenDTP-$v-portable.zip"
           Get-FileHash out/* -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $(Split-Path $_.Path -Leaf)" } | Set-Content out/SHA256SUMS.txt
 
       - uses: actions/upload-artifact@v4
@@ -99,5 +96,5 @@ jobs:
             $m = [regex]::Match($text, "(?ms)^## \[?$([regex]::Escape($v))\]?[^\n]*\n(.*?)(?=^## |\z)")
             if ($m.Success) { $notes = $m.Groups[1].Value.Trim() }
           }
-          $notes += "`n`n**OpenDTP-Setup-$v.exe** – instalator (Program Files, wymaga uprawnień administratora); kolejne wersje program pobiera i instaluje sam.`n**OpenDTP-$v-portable.zip** – wersja przenośna.`n`nPomysł i wykonanie: Adam Rędzikowski · [redzikowski.com](https://redzikowski.com) · [Postaw kawę](https://buycoffee.to/adamredzikowski)"
+          $notes += "`n`n**OpenDTP-Setup-$v.exe** – instalator (Program Files, wymaga uprawnień administratora); kolejne wersje program pobiera i instaluje sam.`n`nPomysł i wykonanie: Adam Rędzikowski · [redzikowski.com](https://redzikowski.com) · [Postaw kawę](https://buycoffee.to/adamredzikowski)"
           gh release create "${{ github.ref_name }}" out/* --title "OpenDTP $v" --notes $notes
