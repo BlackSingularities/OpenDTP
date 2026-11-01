@@ -2290,6 +2290,123 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             library_list(&app);
             return;
         }
+        "preflight" => {
+            let cur = app.get_left_panel();
+            app.set_left_panel(if cur == "preflight" && arg.is_empty() { "".into() } else { "preflight".into() });
+            crate::preflight_list(&app, &st.ed);
+        }
+        "preflight-goto" => {
+            if let Some(id) = arg.strip_prefix("obj:") {
+                let id = id.to_string();
+                return run(st, "image-goto", &id);
+            }
+            if let Some(p) = arg.strip_prefix("page:").and_then(|p| p.parse::<usize>().ok()) {
+                let (_, cy) = st.view.to_canvas(p, 0.0, 0.0);
+                let vy = (cy - 20.0).max(0.0);
+                app.set_view_y(-vy);
+                st.view.vy = vy;
+            }
+        }
+        "print-bleed" | "print-bleed-step" | "print-marks" | "print-cmyk" => {
+            st.ed.begin(Kind::Other);
+            let p = &mut st.ed.doc.print;
+            match base {
+                "print-bleed-step" => {
+                    let d: f32 = arg.parse().unwrap_or(0.0);
+                    p.bleed = (p.bleed / MM + d).clamp(0.0, 20.0) * MM;
+                }
+                "print-bleed" => {
+                    if let Some(v) = parse_num(arg) {
+                        p.bleed = (v.clamp(0.0, 20.0)) * MM;
+                    }
+                }
+                "print-marks" => p.marks = !p.marks,
+                _ => p.cmyk = !p.cmyk,
+            }
+            st.ed.changed();
+        }
+        "swatch-add-used" => {
+            // Wszystkie kolory użyte w dokumencie (tekst, style, wypełnienia, obrysy) jako próbki.
+            let d = &st.ed.doc;
+            let mut used: Vec<Color> = Vec::new();
+            let mut add = |c: Option<Color>| {
+                if let Some(c) = c {
+                    let c = Color::rgb(c.r, c.g, c.b);
+                    if c != Color::WHITE && !used.contains(&c) {
+                        used.push(c);
+                    }
+                }
+            };
+            for s in &d.styles {
+                add(s.chars.color);
+            }
+            let mut stories: Vec<&Story> = vec![&d.body];
+            stories.extend(d.objects.iter().filter_map(|o| o.story()));
+            for s in stories {
+                for p in &s.paras {
+                    for r in &p.runs {
+                        add(r.fmt.color);
+                    }
+                }
+            }
+            for o in &d.objects {
+                match &o.fill {
+                    Some(Fill::Solid { color }) => add(Some(*color)),
+                    Some(Fill::Linear { from, to, .. } | Fill::Radial { from, to }) => {
+                        add(Some(*from));
+                        add(Some(*to));
+                    }
+                    None => {}
+                }
+                add(o.stroke.as_ref().map(|s| s.color));
+            }
+            let new: Vec<Swatch> = used
+                .into_iter()
+                .filter(|c| !d.swatches.iter().any(|s| s.color.r == c.r && s.color.g == c.g && s.color.b == c.b))
+                .map(|c| Swatch { name: format!("#{}", c.hex6().trim_start_matches('#')), color: c, cmyk: None, spot: false })
+                .collect();
+            if new.is_empty() {
+                toast(st, tr("Wszystkie użyte kolory są już na liście"));
+                return;
+            }
+            let n = new.len();
+            st.ed.begin(Kind::Other);
+            st.ed.doc.swatches.extend(new);
+            st.ed.changed();
+            toast(st, &opendtp_core::trf!("Dodano kolory: {}", n));
+        }
+        "swatch-remove" | "swatch-spot" | "swatch-name" | "swatch-cmyk" => {
+            let (i, val) = arg.split_once(':').unwrap_or((arg, ""));
+            let Ok(i) = i.parse::<usize>() else { return };
+            if i >= st.ed.doc.swatches.len() {
+                return;
+            }
+            st.ed.begin(Kind::Other);
+            match base {
+                "swatch-remove" => {
+                    st.ed.doc.swatches.remove(i);
+                }
+                "swatch-spot" => {
+                    let s = &mut st.ed.doc.swatches[i];
+                    s.spot = !s.spot;
+                }
+                "swatch-name" => {
+                    if !val.trim().is_empty() {
+                        st.ed.doc.swatches[i].name = val.trim().to_string();
+                    }
+                }
+                _ => {
+                    // „c m y k” – procenty, oddzielone spacjami albo przecinkami.
+                    let v: Vec<u8> = val.split(|c: char| c == ' ' || c == ',' || c == ';').filter(|t| !t.is_empty()).filter_map(|t| t.trim_end_matches('%').parse::<f32>().ok()).map(|f| f.round().clamp(0.0, 100.0) as u8).collect();
+                    if v.len() == 4 {
+                        st.ed.doc.swatches[i].cmyk = Some([v[0], v[1], v[2], v[3]]);
+                    } else {
+                        toast(st, tr("Podaj cztery wartości CMYK w procentach, np. 0 85 100 0"));
+                    }
+                }
+            }
+            st.ed.changed();
+        }
         "chapter-move" => {
             let (p, dir) = arg.split_once(':').unwrap_or((arg, "down"));
             let Ok(p) = p.parse::<usize>() else { return };

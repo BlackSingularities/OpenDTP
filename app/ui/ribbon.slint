@@ -2270,6 +2270,68 @@ component RefsTab inherits HorizontalLayout {
 component ReviewTab inherits HorizontalLayout {
     alignment: start;
     Group {
+        title: @tr("Druk");
+        BigButton {
+            icon: Icons.badge-info;
+            label: @tr("Preflight");
+            tip: @tr("Kontrola przed drukiem: nadmiar tekstu, brakujące pliki i czcionki, rozdzielczość, spady");
+            active: App.left-panel == "preflight";
+            clicked => {
+                App.cmd("preflight", "");
+            }
+        }
+        Col {
+            RowButton {
+                icon: Icons.printer;
+                label: @tr("PDF do druku");
+                tip: @tr("Zapisz PDF dla drukarni: CMYK, spady i znaczniki cięcia");
+                clicked => {
+                    App.cmd("export", "pdf-print");
+                }
+            }
+            RowButton {
+                icon: Icons.palette;
+                label: @tr("Kolory dokumentu");
+                tip: @tr("Próbki kolorów: dokładne CMYK i kolory dodatkowe (Pantone)");
+                active: App.left-panel == "swatches";
+                clicked => {
+                    App.cmd("panel", "swatches");
+                }
+            }
+            Spin {
+                label: @tr("Spad");
+                tip: @tr("Spad – ile tła i obrazów wychodzi poza kartkę do obcięcia (mm, zwykle 3)");
+                value: App.print-bleed;
+                unit: "mm";
+                w: 60px;
+                changed-value(v) => {
+                    App.cmd("print-bleed", v);
+                }
+                step(d) => {
+                    App.cmd("print-bleed-step", d);
+                }
+            }
+        }
+        Col {
+            Switch {
+                label: @tr("Znaczniki cięcia");
+                tip: @tr("Kreski w narożnikach pokazujące, gdzie drukarnia przytnie kartkę");
+                on: App.print-marks;
+                toggled => {
+                    App.cmd("print-marks", "");
+                }
+            }
+            Switch {
+                label: @tr("Kolory CMYK");
+                tip: @tr("Zapisz kolory w CMYK (farby drukarskie) zamiast RGB (ekran)");
+                on: App.print-cmyk;
+                toggled => {
+                    App.cmd("print-cmyk", "");
+                }
+            }
+        }
+    }
+    Group {
         title: @tr("Pisownia");
         BigButton {
             icon: Icons.spell-check;

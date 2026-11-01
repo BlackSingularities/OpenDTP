@@ -12,6 +12,7 @@ pub mod library;
 pub mod model;
 pub mod paint;
 pub mod paths;
+pub mod preflight;
 pub mod raster;
 pub mod sample;
 pub mod spell;

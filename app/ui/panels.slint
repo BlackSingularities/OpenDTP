@@ -4,7 +4,7 @@
 import { ScrollView, ListView, TextEdit } from "std-widgets.slint";
 import { Theme } from "theme.slint";
 import { Icons } from "icons.slint";
-import { App, NavV, StyleV, ImgV } from "state.slint";
+import { App, NavV, StyleV, ImgV, PreV, SwatchV } from "state.slint";
 import { MenuButton } from "ribbon.slint";
 import { TipArea, IconButton, Field, Spin, Switch, MenuItem, MenuSep, Segmented, IconSeg, Toggle, Label, Dim, Button, Slider } from "widgets.slint";
 
@@ -239,6 +239,181 @@ export component LeftPanel inherits Rectangle {
                     tip: @tr("Osadź wszystkie obrazy linkowane");
                     clicked => {
                         App.cmd("links-embed-all", "");
+                    }
+                }
+            }
+        }
+        if App.left-panel == "preflight": VerticalLayout {
+            PanelHead {
+                title: @tr("Preflight – kontrola przed drukiem");
+                icon: Icons.badge-info;
+                close => {
+                    App.left-panel = "";
+                }
+            }
+            Text {
+                x: 14px;
+                width: parent.width - 28px;
+                height: 26px;
+                text: App.preflight-sum;
+                font-family: Theme.font;
+                font-size: Theme.fs;
+                font-weight: 600;
+                color: App.preflight.length == 0 ? Theme.accent : Theme.text;
+                vertical-alignment: center;
+            }
+            ListView {
+                for it in App.preflight: Rectangle {
+                    height: max(40px, pt.preferred-height + 14px);
+                    border-radius: Theme.r-small;
+                    background: pta.has-hover ? Theme.hover : transparent;
+                    pta := TipArea {
+                        tip: it.id == "" ? "" : @tr("Pokaż miejsce w dokumencie");
+                        clicked => {
+                            if it.id != "" {
+                                App.cmd("preflight-goto", it.id);
+                            }
+                        }
+                    }
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        padding-right: 10px;
+                        spacing: 8px;
+                        // Kropka poziomu: czerwona – błąd, pomarańczowa – ostrzeżenie, szara – informacja.
+                        Rectangle {
+                            width: 9px;
+                            height: 9px;
+                            y: (parent.height - self.height) / 2;
+                            border-radius: 4.5px;
+                            background: it.level == 0 ? #d93f3f : it.level == 1 ? #d9822b : Theme.text-faint;
+                        }
+                        pt := Text {
+                            text: it.text;
+                            font-family: Theme.font;
+                            font-size: Theme.fs-small + 0.5px;
+                            color: Theme.text;
+                            wrap: word-wrap;
+                            vertical-alignment: center;
+                            horizontal-stretch: 1;
+                        }
+                        if it.page >= 0: Text {
+                            text: @tr("s. {}", it.page + 1);
+                            font-family: Theme.font;
+                            font-size: Theme.fs-small;
+                            color: Theme.text-faint;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+            HorizontalLayout {
+                padding-left: 10px;
+                padding-right: 10px;
+                padding-top: 6px;
+                spacing: 6px;
+                Button {
+                    label: @tr("PDF do druku");
+                    icon: Icons.printer;
+                    tip: @tr("Zapisz PDF dla drukarni: CMYK, spady i znaczniki cięcia");
+                    clicked => {
+                        App.cmd("export", "pdf-print");
+                    }
+                }
+                IconButton {
+                    icon: Icons.refresh-cw;
+                    tip: @tr("Sprawdź ponownie");
+                    clicked => {
+                        App.cmd("preflight", "keep");
+                    }
+                }
+            }
+        }
+        if App.left-panel == "swatches": VerticalLayout {
+            PanelHead {
+                title: @tr("Kolory dokumentu");
+                icon: Icons.palette;
+                close => {
+                    App.left-panel = "";
+                }
+            }
+            if App.swatches.length == 0: Dim {
+                text: @tr("Brak próbek. „Pobierz użyte” doda wszystkie kolory z dokumentu – potem ustawisz im dokładne wartości CMYK albo oznaczysz jako kolor dodatkowy (np. Pantone).");
+                wrap: word-wrap;
+                x: 14px;
+                width: parent.width - 28px;
+                height: 92px;
+            }
+            ListView {
+                for sw[i] in App.swatches: Rectangle {
+                    height: 64px;
+                    VerticalLayout {
+                        padding-left: 12px;
+                        padding-right: 8px;
+                        padding-top: 4px;
+                        spacing: 3px;
+                        HorizontalLayout {
+                            spacing: 8px;
+                            Rectangle {
+                                width: 22px;
+                                height: 22px;
+                                border-radius: sw.spot ? 11px : 4px;
+                                background: sw.color;
+                                border-width: 1px;
+                                border-color: Theme.line-strong;
+                            }
+                            Field {
+                                w: 140px;
+                                text: sw.name;
+                                tip: @tr("Nazwa koloru (dla koloru dodatkowego – nazwa farby, np. PANTONE 185 C)");
+                                accepted(t) => {
+                                    App.cmd("swatch-name", i + ":" + t);
+                                }
+                            }
+                            Toggle {
+                                icon: Icons.droplet;
+                                on: sw.spot;
+                                tip: @tr("Kolor dodatkowy – drukowany osobną farbą");
+                                toggled => {
+                                    App.cmd("swatch-spot", i);
+                                }
+                            }
+                            IconButton {
+                                icon: Icons.trash-2;
+                                size: 24px;
+                                icon-size: 13px;
+                                tip: @tr("Usuń próbkę");
+                                clicked => {
+                                    App.cmd("swatch-remove", i);
+                                }
+                            }
+                        }
+                        HorizontalLayout {
+                            spacing: 6px;
+                            Dim {
+                                text: "CMYK %";
+                            }
+                            Field {
+                                w: 130px;
+                                text: sw.cmyk;
+                                tip: @tr("Wartości CMYK w procentach, np. 0 85 100 0 (Enter zatwierdza)");
+                                accepted(t) => {
+                                    App.cmd("swatch-cmyk", i + ":" + t);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            HorizontalLayout {
+                padding-left: 10px;
+                padding-right: 10px;
+                padding-top: 6px;
+                Button {
+                    label: @tr("Pobierz użyte");
+                    icon: Icons.paint-bucket;
+                    tip: @tr("Dodaj jako próbki wszystkie kolory użyte w dokumencie");
+                    clicked => {
+                        App.cmd("swatch-add-used", "");
                     }
                 }
             }

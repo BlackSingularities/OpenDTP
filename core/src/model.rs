@@ -1317,6 +1317,55 @@ pub struct Meta {
     pub modified: String,
 }
 
+/// Próbka koloru dokumentu: nazwa, wartości CMYK do druku albo kolor dodatkowy (spot, np. Pantone).
+/// Elementy w tym kolorze (ta sama wartość RGB) dostają w PDF do druku dokładnie te wartości.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Swatch {
+    pub name: String,
+    pub color: Color,
+    /// CMYK w procentach (0–100); brak – przeliczenie z RGB.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cmyk: Option<[u8; 4]>,
+    /// Kolor dodatkowy – osobna farba (separacja) o nazwie `name`.
+    #[serde(default)]
+    pub spot: bool,
+}
+
+/// Przybliżone przeliczenie RGB → CMYK (procenty). Czerń (0,0,0) daje samo K = 100.
+pub fn rgb_to_cmyk(c: Color) -> [u8; 4] {
+    let (r, g, b) = (c.r as f32 / 255.0, c.g as f32 / 255.0, c.b as f32 / 255.0);
+    let k = 1.0 - r.max(g).max(b);
+    if k >= 0.999 {
+        return [0, 0, 0, 100];
+    }
+    let f = |x: f32| (((1.0 - x - k) / (1.0 - k)) * 100.0).round().clamp(0.0, 100.0) as u8;
+    [f(r), f(g), f(b), (k * 100.0).round() as u8]
+}
+
+/// Ustawienia PDF do druku (drukarnia).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrintSetup {
+    /// Spad w punktach (zwykle 3 mm).
+    #[serde(default = "default_bleed")]
+    pub bleed: f32,
+    /// Znaczniki cięcia w narożnikach.
+    #[serde(default = "yes")]
+    pub marks: bool,
+    /// Kolory w CMYK zamiast RGB.
+    #[serde(default = "yes")]
+    pub cmyk: bool,
+}
+
+fn default_bleed() -> f32 {
+    3.0 * MM
+}
+
+impl Default for PrintSetup {
+    fn default() -> Self {
+        PrintSetup { bleed: default_bleed(), marks: true, cmyk: true }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DocSettings {
     /// Język domyślny tekstu (pisownia).
@@ -1410,6 +1459,11 @@ pub struct Document {
     pub bookmarks: Vec<Bookmark>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub index: Vec<IndexEntry>,
+    /// Próbki kolorów (CMYK, kolory dodatkowe).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub swatches: Vec<Swatch>,
+    #[serde(default)]
+    pub print: PrintSetup,
     /// Obrazy linkowane (klucz jak w `assets`); pozostałe obrazy są osadzone.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub links: BTreeMap<String, ImageLink>,
@@ -1470,6 +1524,8 @@ impl Document {
             index: Vec::new(),
             links: BTreeMap::new(),
             missing: Default::default(),
+            swatches: Vec::new(),
+            print: PrintSetup::default(),
         }
     }
 

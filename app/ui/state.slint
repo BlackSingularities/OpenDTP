@@ -75,6 +75,20 @@ export struct ImgV {
     current: bool,
 }
 
+export struct PreV {
+    id: string,
+    text: string,
+    page: int,
+    level: int,
+}
+
+export struct SwatchV {
+    name: string,
+    color: color,
+    cmyk: string,
+    spot: bool,
+}
+
 export struct NavV {
     label: string,
     level: int,
@@ -283,6 +297,12 @@ export global App {
     in-out property <[ItemV]> find-styles;
     in-out property <[ItemV]> library;
     in-out property <string> lib-name;
+    in-out property <[PreV]> preflight;
+    in-out property <string> preflight-sum;
+    in-out property <[SwatchV]> swatches;
+    in-out property <string> print-bleed;
+    in-out property <bool> print-marks;
+    in-out property <bool> print-cmyk;
 
     // Menu kontekstowe.
     in-out property <bool> ctx-open;

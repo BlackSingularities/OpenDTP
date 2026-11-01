@@ -3,7 +3,7 @@
 
 use std::collections::HashMap;
 
-use krilla::color::rgb;
+use krilla::color::{cmyk, rgb, separation};
 use krilla::geom::{PathBuilder, Point, Size, Transform};
 use krilla::num::NormalizedF32;
 use krilla::page::PageSettings;
@@ -12,7 +12,7 @@ use krilla::text::{Font, GlyphId, KrillaGlyph};
 use krilla::Document as PdfDoc;
 
 use crate::layout::Layout;
-use crate::model::{Color, Document};
+use crate::model::{Color, Document, Swatch};
 use crate::paint::{self, Op, Paint, PathCmd};
 
 fn path(p: &paint::Path) -> Option<krilla::geom::Path> {
@@ -28,17 +28,37 @@ fn path(p: &paint::Path) -> Option<krilla::geom::Path> {
     pb.finish()
 }
 
-fn col(c: Color) -> rgb::Color {
-    rgb::Color::new(c.r, c.g, c.b)
+/// Sposób zapisu kolorów: RGB albo CMYK, z próbkami dokumentu (dokładne CMYK, kolory dodatkowe).
+struct Cx<'a> {
+    cmyk: bool,
+    swatches: &'a [Swatch],
+}
+
+fn pct(v: u8) -> u8 {
+    (v.min(100) as u16 * 255 / 100) as u8
+}
+
+fn col(c: Color, cx: &Cx) -> krilla::color::Color {
+    let sw = cx.swatches.iter().find(|s| s.color.r == c.r && s.color.g == c.g && s.color.b == c.b);
+    let k = sw.and_then(|s| s.cmyk).unwrap_or_else(|| crate::model::rgb_to_cmyk(c));
+    let cm = cmyk::Color::new(pct(k[0]), pct(k[1]), pct(k[2]), pct(k[3]));
+    match sw {
+        Some(s) if s.spot && cx.cmyk => {
+            let space = separation::SeparationSpace::new(separation::SeparationColorant::Custom(s.name.clone()), cm.into());
+            separation::Color::new(255, space).into()
+        }
+        _ if cx.cmyk => cm.into(),
+        _ => rgb::Color::new(c.r, c.g, c.b).into(),
+    }
 }
 
 fn alpha(c: Color, op: f32) -> NormalizedF32 {
     NormalizedF32::new((c.a as f32 / 255.0 * op).clamp(0.0, 1.0)).unwrap_or(NormalizedF32::ONE)
 }
 
-fn fill_of(p: &Paint, op: f32) -> Fill {
+fn fill_of(p: &Paint, op: f32, cx: &Cx) -> Fill {
     match p {
-        Paint::Solid(c) => Fill { paint: col(*c).into(), opacity: alpha(*c, op), rule: FillRule::EvenOdd },
+        Paint::Solid(c) => Fill { paint: col(*c, cx).into(), opacity: alpha(*c, op), rule: FillRule::EvenOdd },
         Paint::Linear { x0, y0, x1, y1, from, to } => {
             let g = krilla::paint::LinearGradient {
                 x1: *x0,
@@ -47,7 +67,7 @@ fn fill_of(p: &Paint, op: f32) -> Fill {
                 y2: *y1,
                 transform: Transform::identity(),
                 spread_method: krilla::paint::SpreadMethod::Pad,
-                stops: vec![krilla::paint::Stop { offset: NormalizedF32::ZERO, color: col(*from).into(), opacity: alpha(*from, 1.0) }, krilla::paint::Stop { offset: NormalizedF32::ONE, color: col(*to).into(), opacity: alpha(*to, 1.0) }],
+                stops: vec![krilla::paint::Stop { offset: NormalizedF32::ZERO, color: col(*from, cx).into(), opacity: alpha(*from, 1.0) }, krilla::paint::Stop { offset: NormalizedF32::ONE, color: col(*to, cx).into(), opacity: alpha(*to, 1.0) }],
                 anti_alias: true,
             };
             Fill { paint: g.into(), opacity: NormalizedF32::new(op.clamp(0.0, 1.0)).unwrap_or(NormalizedF32::ONE), rule: FillRule::EvenOdd }
@@ -62,7 +82,7 @@ fn fill_of(p: &Paint, op: f32) -> Fill {
                 cr: *r,
                 transform: Transform::identity(),
                 spread_method: krilla::paint::SpreadMethod::Pad,
-                stops: vec![krilla::paint::Stop { offset: NormalizedF32::ZERO, color: col(*from).into(), opacity: alpha(*from, 1.0) }, krilla::paint::Stop { offset: NormalizedF32::ONE, color: col(*to).into(), opacity: alpha(*to, 1.0) }],
+                stops: vec![krilla::paint::Stop { offset: NormalizedF32::ZERO, color: col(*from, cx).into(), opacity: alpha(*from, 1.0) }, krilla::paint::Stop { offset: NormalizedF32::ONE, color: col(*to, cx).into(), opacity: alpha(*to, 1.0) }],
                 anti_alias: true,
             };
             Fill { paint: g.into(), opacity: NormalizedF32::new(op.clamp(0.0, 1.0)).unwrap_or(NormalizedF32::ONE), rule: FillRule::EvenOdd }
@@ -70,7 +90,41 @@ fn fill_of(p: &Paint, op: f32) -> Fill {
     }
 }
 
+/// Znaczniki cięcia w kolorze rejestracyjnym (wszystkie farby), odsunięte poza spad.
+fn crop_marks(s: &mut krilla::surface::Surface, o: f32, bleed: f32, pw: f32, ph: f32) {
+    let reg: krilla::color::Color = separation::Color::new(255, separation::SeparationSpace::new(separation::SeparationColorant::AllColorants, cmyk::Color::new(255, 255, 255, 255).into())).into();
+    s.set_fill(None);
+    s.set_stroke(Some(Stroke { paint: reg.into(), width: 0.25, ..Stroke::default() }));
+    let gap = bleed + 3.0;
+    let len = 14.0;
+    let (x0, y0, x1, y1) = (o, o, o + pw, o + ph);
+    let mut pb = PathBuilder::new();
+    for (x, y, dx, dy) in [(x0, y0, -1.0, -1.0), (x1, y0, 1.0, -1.0), (x0, y1, -1.0, 1.0), (x1, y1, 1.0, 1.0)] {
+        // Pozioma kreska na wysokości krawędzi i pionowa na linii krawędzi.
+        pb.move_to(x + dx * gap, y);
+        pb.line_to(x + dx * (gap + len), y);
+        pb.move_to(x, y + dy * gap);
+        pb.line_to(x, y + dy * (gap + len));
+    }
+    if let Some(p) = pb.finish() {
+        s.draw_path(&p);
+    }
+    s.set_stroke(None);
+}
+
 pub fn export(doc: &Document, layout: &Layout) -> Result<Vec<u8>, String> {
+    export_with(doc, layout, false)
+}
+
+/// `print` – PDF dla drukarni: kolory CMYK (z próbkami), spady, ramki TrimBox/BleedBox i znaczniki cięcia
+/// według `doc.print`.
+pub fn export_with(doc: &Document, layout: &Layout, print: bool) -> Result<Vec<u8>, String> {
+    let ps = &doc.print;
+    let cx = &Cx { cmyk: print && ps.cmyk, swatches: &doc.swatches };
+    let bleed = if print { ps.bleed.max(0.0) } else { 0.0 };
+    // Margines wokół spadu na znaczniki cięcia.
+    let slug = if print && ps.marks { 20.0 } else { 0.0 };
+    let o = bleed + slug;
     let mut pdf = PdfDoc::new();
     let mut fonts: HashMap<u32, Option<Font>> = HashMap::new();
     let mut images: HashMap<String, Option<krilla::image::Image>> = HashMap::new();
@@ -78,14 +132,30 @@ pub fn export(doc: &Document, layout: &Layout) -> Result<Vec<u8>, String> {
     for page in 0..layout.pages.len().max(1) {
         let ops = paint::page_ops(doc, layout, page, &opts);
         let (pw, ph) = layout.page_size(doc, page);
-        let size = Size::from_wh(pw, ph).ok_or("zły rozmiar strony")?;
-        let mut pg = pdf.start_page_with(PageSettings::new(size));
+        let size = Size::from_wh(pw + 2.0 * o, ph + 2.0 * o).ok_or("zły rozmiar strony")?;
+        let mut settings = PageSettings::new(size);
+        if print {
+            settings = settings
+                .with_trim_box(krilla::geom::Rect::from_xywh(o, o, pw, ph))
+                .with_bleed_box(krilla::geom::Rect::from_xywh(o - bleed, o - bleed, pw + 2.0 * bleed, ph + 2.0 * bleed));
+        }
+        let mut pg = pdf.start_page_with(settings);
         let mut s = pg.surface();
+        if print {
+            s.push_transform(&Transform::from_translate(o, o));
+            // Tło strony sięga do krawędzi spadu.
+            let bg = layout.setup(doc, page).color;
+            if let Some(kp) = path(&paint::Path::rect(crate::geom::Rect::new(-bleed, -bleed, pw + 2.0 * bleed, ph + 2.0 * bleed))) {
+                s.set_fill(Some(fill_of(&Paint::Solid(bg), 1.0, cx)));
+                s.set_stroke(None);
+                s.draw_path(&kp);
+            }
+        }
         for op in &ops {
             match op {
                 Op::Fill { path: p, paint, opacity } => {
                     let Some(kp) = path(p) else { continue };
-                    s.set_fill(Some(fill_of(paint, *opacity)));
+                    s.set_fill(Some(fill_of(paint, *opacity, cx)));
                     s.set_stroke(None);
                     s.draw_path(&kp);
                 }
@@ -93,7 +163,7 @@ pub fn export(doc: &Document, layout: &Layout) -> Result<Vec<u8>, String> {
                     let Some(kp) = path(p) else { continue };
                     s.set_fill(None);
                     s.set_stroke(Some(Stroke {
-                        paint: col(*color).into(),
+                        paint: col(*color, cx).into(),
                         width: *width,
                         opacity: alpha(*color, *opacity),
                         dash: if dash.len() >= 2 { Some(StrokeDash { array: dash.clone(), offset: 0.0 }) } else { None },
@@ -110,11 +180,11 @@ pub fn export(doc: &Document, layout: &Layout) -> Result<Vec<u8>, String> {
                     let Some(font) = font else { continue };
                     let Some(l) = crate::fonts::get(run.font) else { continue };
                     let upem = l.upem;
-                    s.set_fill(Some(Fill { paint: col(run.color).into(), opacity: alpha(run.color, 1.0), rule: FillRule::NonZero }));
+                    s.set_fill(Some(Fill { paint: col(run.color, cx).into(), opacity: alpha(run.color, 1.0), rule: FillRule::NonZero }));
                     let stroke = if run.outline > 0.0 {
-                        Some(Stroke { paint: col(run.color).into(), width: run.outline, ..Stroke::default() })
+                        Some(Stroke { paint: col(run.color, cx).into(), width: run.outline, ..Stroke::default() })
                     } else if run.fake_bold {
-                        Some(Stroke { paint: col(run.color).into(), width: run.size * 0.035, ..Stroke::default() })
+                        Some(Stroke { paint: col(run.color, cx).into(), width: run.size * 0.035, ..Stroke::default() })
                     } else {
                         None
                     };
@@ -207,6 +277,12 @@ pub fn export(doc: &Document, layout: &Layout) -> Result<Vec<u8>, String> {
                         s.pop();
                     }
                 }
+            }
+        }
+        if print {
+            s.pop();
+            if ps.marks {
+                crop_marks(&mut s, o, bleed, pw, ph);
             }
         }
         s.finish();

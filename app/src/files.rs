@@ -150,13 +150,13 @@ pub fn save(st: &mut State, as_new: bool) -> bool {
 pub fn export(st: &mut State, kind: &str) {
     let (ext, filter) = match kind {
         "docx" => ("docx", "Microsoft Word"),
-        "pdf" => ("pdf", "PDF"),
+        "pdf" | "pdf-print" => ("pdf", "PDF"),
         "html" => ("html", "HTML"),
         "md" => ("md", "Markdown"),
         "png" => ("png", "PNG"),
         _ => ("txt", "Tekst"),
     };
-    let name = format!("{}.{}", doc_name(&st.ed), ext);
+    let name = if kind == "pdf-print" { format!("{}-druk.pdf", doc_name(&st.ed)) } else { format!("{}.{}", doc_name(&st.ed), ext) };
     let mut dlg = rfd::FileDialog::new().set_title(tr("Eksportuj")).set_file_name(&name).add_filter(filter, &[ext]);
     if let Some(dir) = st.ed.path.as_ref().and_then(|p| p.parent()) {
         dlg = dlg.set_directory(dir);
@@ -168,6 +168,7 @@ pub fn export(st: &mut State, kind: &str) {
         let bytes = match kind {
             "docx" => io::docx::export(doc, lay, &io::docx::DocxOpts { exact_shapes: st.prefs.exact_shapes })?,
             "pdf" => io::pdf::export(doc, lay)?,
+            "pdf-print" => io::pdf::export_with(doc, lay, true)?,
             "html" => io::plain::to_html(doc).into_bytes(),
             "md" => io::plain::to_markdown(doc).into_bytes(),
             "png" => page_png(st, st.ed.caret_page().map(|c| c.0).unwrap_or(0), 300.0)?,

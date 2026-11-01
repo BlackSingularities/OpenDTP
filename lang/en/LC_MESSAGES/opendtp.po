@@ -3611,3 +3611,135 @@ msgstr "Images panel: embedded and linked, resolution, file links"
 
 msgid "Zapisz zaznaczenie w bibliotece"
 msgstr "Save selection to library"
+
+msgid "Tekst nie mieści się w ramce (nadmiar tekstu)"
+msgstr "Text doesn't fit in the frame (overset text)"
+
+msgid "Brak pliku obrazu linkowanego – w druku będzie podgląd niskiej jakości"
+msgstr "Linked image file missing – a low-quality preview will print"
+
+msgid "Obraz ma tylko {} ppi – w druku będzie nieostry (potrzeba 300)"
+msgstr "Image is only {} ppi – it will print blurry (300 needed)"
+
+msgid "Obraz ma {} ppi – do druku zalecane 300"
+msgstr "Image is {} ppi – 300 recommended for print"
+
+msgid "Element dochodzi do krawędzi strony bez spadu – wysuń go 3 mm poza kartkę"
+msgstr "Element reaches the page edge without bleed – extend it 3 mm past the page"
+
+msgid "Tekst leży bliżej niż 3 mm od krawędzi – może zostać ucięty"
+msgstr "Text is closer than 3 mm to the edge – it may be trimmed"
+
+msgid "Obrazy w RGB: {} – drukarnia przeliczy je do CMYK (kolory mogą się nieco zmienić)"
+msgstr "RGB images: {} – the printer will convert them to CMYK (colors may shift slightly)"
+
+msgid "Brak czcionki „{}” – tekst jest wyświetlany zastępczą"
+msgstr "Font “{}” missing – text uses a substitute"
+
+msgid "Odsyłacz do usuniętej zakładki albo podpisu (pokazuje „?”)"
+msgstr "Cross-reference to a deleted bookmark or caption (shows “?”)"
+
+msgid "Przed drukiem zaktualizuj spis treści (Odwołania → Aktualizuj)"
+msgstr "Update the table of contents before printing (References → Update)"
+
+msgid "Przed drukiem odśwież indeks (Odwołania → Indeks)"
+msgstr "Refresh the index before printing (References → Index)"
+
+msgid "Kolory dodatkowe (osobne farby): {}"
+msgstr "Spot colors (separate inks): {}"
+
+msgid "Gotowe do druku – bez błędów i ostrzeżeń"
+msgstr "Ready to print – no errors or warnings"
+
+msgid "Błędy: {} · ostrzeżenia: {}"
+msgstr "Errors: {} · warnings: {}"
+
+msgid "Wszystkie użyte kolory są już na liście"
+msgstr "All used colors are already listed"
+
+msgid "Dodano kolory: {}"
+msgstr "Colors added: {}"
+
+msgid "Podaj cztery wartości CMYK w procentach, np. 0 85 100 0"
+msgstr "Enter four CMYK percentages, e.g. 0 85 100 0"
+
+msgid "PDF do druku (.pdf)"
+msgstr "Print PDF (.pdf)"
+
+msgid "Dla drukarni: kolory CMYK i dodatkowe, spady, znaczniki cięcia (ustawienia: Recenzja → Druk)"
+msgstr "For the printer: CMYK and spot colors, bleed, crop marks (settings: Review → Print)"
+
+msgid "Preflight – kontrola przed drukiem"
+msgstr "Preflight – pre-print check"
+
+msgid "Pokaż miejsce w dokumencie"
+msgstr "Show the spot in the document"
+
+msgid "s. {}"
+msgstr "p. {}"
+
+msgid "PDF do druku"
+msgstr "Print PDF"
+
+msgid "Zapisz PDF dla drukarni: CMYK, spady i znaczniki cięcia"
+msgstr "Save a PDF for the printer: CMYK, bleed and crop marks"
+
+msgid "Sprawdź ponownie"
+msgstr "Check again"
+
+msgid "Kolory dokumentu"
+msgstr "Document colors"
+
+msgid "Brak próbek. „Pobierz użyte” doda wszystkie kolory z dokumentu – potem ustawisz im dokładne wartości CMYK albo oznaczysz jako kolor dodatkowy (np. Pantone)."
+msgstr "No swatches. “Collect used” adds every color from the document – then set exact CMYK values or mark them as spot colors (e.g. Pantone)."
+
+msgid "Nazwa koloru (dla koloru dodatkowego – nazwa farby, np. PANTONE 185 C)"
+msgstr "Color name (for a spot color – the ink name, e.g. PANTONE 185 C)"
+
+msgid "Kolor dodatkowy – drukowany osobną farbą"
+msgstr "Spot color – printed with a separate ink"
+
+msgid "Usuń próbkę"
+msgstr "Delete swatch"
+
+msgid "Wartości CMYK w procentach, np. 0 85 100 0 (Enter zatwierdza)"
+msgstr "CMYK percentages, e.g. 0 85 100 0 (Enter applies)"
+
+msgid "Pobierz użyte"
+msgstr "Collect used"
+
+msgid "Dodaj jako próbki wszystkie kolory użyte w dokumencie"
+msgstr "Add every color used in the document as a swatch"
+
+msgid "Preflight"
+msgstr "Preflight"
+
+msgid "Kontrola przed drukiem: nadmiar tekstu, brakujące pliki i czcionki, rozdzielczość, spady"
+msgstr "Pre-print check: overset text, missing files and fonts, resolution, bleed"
+
+msgid "Próbki kolorów: dokładne CMYK i kolory dodatkowe (Pantone)"
+msgstr "Color swatches: exact CMYK and spot colors (Pantone)"
+
+msgid "Spad"
+msgstr "Bleed"
+
+msgid "Spad – ile tła i obrazów wychodzi poza kartkę do obcięcia (mm, zwykle 3)"
+msgstr "Bleed – how far backgrounds and images extend past the page for trimming (mm, usually 3)"
+
+msgid "Znaczniki cięcia"
+msgstr "Crop marks"
+
+msgid "Kreski w narożnikach pokazujące, gdzie drukarnia przytnie kartkę"
+msgstr "Corner lines showing where the printer will trim the page"
+
+msgid "Kolory CMYK"
+msgstr "CMYK colors"
+
+msgid "Zapisz kolory w CMYK (farby drukarskie) zamiast RGB (ekran)"
+msgstr "Write colors as CMYK (printing inks) instead of RGB (screen)"
+
+msgid "Eksportuj PDF do druku"
+msgstr "Export print PDF"
+
+msgid "Pobierz kolory użyte w dokumencie"
+msgstr "Collect colors used in the document"

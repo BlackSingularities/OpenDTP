@@ -493,7 +493,52 @@ fn sync(st: &mut State, ui: &AppWindow) {
             })
             .collect();
         app.set_images(ModelRc::new(VecModel::from(imgs)));
+        if app.get_left_panel() == "preflight" {
+            preflight_list(&app, ed);
+        }
+        let sws: Vec<SwatchV> = ed
+            .doc
+            .swatches
+            .iter()
+            .map(|s| {
+                let k = s.cmyk.unwrap_or_else(|| rgb_to_cmyk(s.color));
+                SwatchV { name: s.name.clone().into(), color: slint_color(s.color), cmyk: format!("{} {} {} {}", k[0], k[1], k[2], k[3]).into(), spot: s.spot }
+            })
+            .collect();
+        app.set_swatches(ModelRc::new(VecModel::from(sws)));
+        app.set_print_bleed(num(ed.doc.print.bleed / opendtp_core::model::MM).into());
+        app.set_print_marks(ed.doc.print.marks);
+        app.set_print_cmyk(ed.doc.print.cmyk);
     }
+}
+
+/// Lista problemów przed drukiem do panelu Preflight.
+pub fn preflight_list(app: &App, ed: &Editor) {
+    use opendtp_core::preflight::Level;
+    let issues = opendtp_core::preflight::check(&ed.doc, &ed.layout);
+    let errors = issues.iter().filter(|i| i.level == Level::Error).count();
+    let warns = issues.iter().filter(|i| i.level == Level::Warning).count();
+    let items: Vec<PreV> = issues
+        .into_iter()
+        .map(|i| PreV {
+            id: match (i.obj, i.page) {
+                (Some(o), _) => format!("obj:{o}"),
+                (None, Some(p)) => format!("page:{p}"),
+                _ => String::new(),
+            }
+            .into(),
+            text: i.text.into(),
+            page: i.page.map(|p| p as i32).unwrap_or(-1),
+            level: match i.level {
+                Level::Error => 0,
+                Level::Warning => 1,
+                Level::Info => 2,
+            },
+        })
+        .collect();
+    let sum = if errors + warns == 0 { opendtp_core::lang::tr("Gotowe do druku – bez błędów i ostrzeżeń").to_string() } else { opendtp_core::trf!("Błędy: {} · ostrzeżenia: {}", errors, warns) };
+    app.set_preflight_sum(sum.into());
+    app.set_preflight(ModelRc::new(VecModel::from(items)));
 }
 
 struct ImageInfo {
