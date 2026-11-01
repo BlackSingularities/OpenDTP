@@ -445,6 +445,7 @@ pub fn textbook() -> Document {
     rem.fmt.list = Some(Some(ListFmt { kind: ListKind::Bullet, level: 0, start: None }));
     let ry = 560.0 + th + 26.0;
     let id = d.new_id();
+    let box_id = id;
     let mut boxo = shape_obj(id, 0, (d.page.margin_left, ry, tw, 70.0), Shape::rect(), frame(Story { paras: vec![rem] }, 12.0, VAlign::Center), WrapMode::TopBottom, Some(Fill::Solid { color: Color::WHITE }));
     boxo.corner = 12.0;
     boxo.stroke = Some(StrokeStyle { color: navy, width: 1.5, dash: vec![] });
@@ -461,6 +462,21 @@ pub fn textbook() -> Document {
     d.body.paras.push(Paragraph::default());
     let last = d.body.paras.len() - 1;
     d.body.paras[last].runs = vec![Run { text: FIELD_CHAR.to_string(), field: Some(Field::Anchor(table_id)), ..Default::default() }];
+    // Ramka „Remember!” za tabelą (etykieta zostaje przy ramce – oba obiekty w jednym akapicie).
+    let mut after = Paragraph::default();
+    let tag_id = d.objects.last().map(|o| o.id).unwrap_or(0);
+    after.runs = vec![
+        Run { text: FIELD_CHAR.to_string(), field: Some(Field::Anchor(box_id)), ..Default::default() },
+        Run { text: FIELD_CHAR.to_string(), field: Some(Field::Anchor(tag_id)), ..Default::default() },
+    ];
+    d.body.paras.push(after);
+    if let Some(b) = d.object_mut(box_id) {
+        b.anchor_dy = 18.0;
+    }
+    if let Some(t) = d.object_mut(tag_id) {
+        t.anchor_dy = 8.0;
+        t.wrap.mode = WrapMode::None;
+    }
     d.page.border = Some(StrokeStyle { color: navy, width: 1.0, dash: vec![] });
     d.page.border_inset = 30.0;
     d

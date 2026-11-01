@@ -287,6 +287,8 @@ impl Region {
                 WrapMode::Both => t,
                 WrapMode::Left => vec![(lo, INF)],
                 WrapMode::Right => vec![(-INF, hi)],
+                // Nad i pod: tylko w kolumnie, na którą obiekt zachodzi (inne kolumny płyną dalej).
+                WrapMode::TopBottom if hi <= self.x0 || lo >= self.x1 => continue,
                 WrapMode::TopBottom => vec![(-INF, INF)],
                 WrapMode::Largest => {
                     if lo - self.x0 >= self.x1 - hi {
@@ -1132,7 +1134,15 @@ pub fn apply_anchors(doc: &mut Document, lay: &Layout) -> bool {
             Some(l) => (l.page, l.bottom()),
             None => (0, ps.margin_top),
         };
+        // Kolumna, w której kończy się poprzedni akapit – zakotwiczona tabela dopasowuje się do niej.
+        let col = prev.map(|l| l.segs.first().map(|s| s.x0).unwrap_or(l.empty_x)).and_then(|x| ps.column_spans().into_iter().find(|(a, b)| x >= *a - 1.0 && x <= *b + 1.0));
         let Some(o) = doc.objects.iter_mut().find(|o| o.id == id) else { continue };
+        if let (Some((x0, x1)), ObjKind::Table { .. }) = (col, &o.kind) {
+            if o.w > x1 - x0 + 0.5 || o.x < x0 - 0.5 || o.x + o.w > x1 + 0.5 {
+                o.x = x0;
+                o.w = o.w.min(x1 - x0);
+            }
+        }
         let mut page = page;
         let mut y = refy + o.anchor_dy;
         let snapshot = o.clone();
