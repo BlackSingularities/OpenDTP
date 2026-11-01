@@ -919,6 +919,7 @@ export component RightPanel inherits Rectangle {
                         text: @tr("Styl:");
                     }
                     MenuButton {
+                        compactable: false;
                         horizontal-stretch: 1;
                         icon: Icons.letter-text;
                         label: App.find-style == "" ? @tr("Wszystkie akapity") : App.find-style-name;

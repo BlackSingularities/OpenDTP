@@ -57,6 +57,7 @@ fn list_kind(id: &str) -> Option<ListKind> {
         "upper-letter" => ListKind::UpperLetter,
         "lower-roman" => ListKind::LowerRoman,
         "upper-roman" => ListKind::UpperRoman,
+        "multi" => ListKind::Multi,
         _ => return None,
     })
 }
@@ -189,15 +190,56 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
         "doc-info" => {
             let (w, ns, c, p, pg) = st.ed.stats();
             app.set_stats_text(opendtp_core::trf!("Strony: {pg}\nAkapity: {p}\nWyrazy: {w}\nZnaki (bez spacji): {ns}\nZnaki (ze spacjami): {c}").into());
+            app.set_meta_subject(st.ed.doc.meta.subject.clone().into());
+            app.set_meta_keywords(st.ed.doc.meta.keywords.clone().into());
             return;
         }
-        "meta-title" => {
-            st.ed.doc.meta.title = arg.to_string();
+        "meta-title" | "meta-author" | "meta-subject" | "meta-keywords" => {
+            let m = &mut st.ed.doc.meta;
+            let v = arg.to_string();
+            match base {
+                "meta-title" => m.title = v,
+                "meta-author" => m.author = v,
+                "meta-subject" => m.subject = v,
+                _ => m.keywords = v,
+            }
             st.ed.dirty = true;
+            // Pola metadanych w tekście pokazują nową wartość.
+            st.ed.relayout();
         }
-        "meta-author" => {
-            st.ed.doc.meta.author = arg.to_string();
-            st.ed.dirty = true;
+        "code" => {
+            app.set_dialog("code".into());
+            return;
+        }
+        "code-insert" => {
+            let text = app.get_code_text().to_string();
+            let qr = app.get_code_kind() == 0;
+            if text.trim().is_empty() {
+                toast(st, tr("Wpisz treść kodu"));
+                return;
+            }
+            match code_svg(qr, &text) {
+                Some(svg) => {
+                    app.set_dialog("".into());
+                    insert_image_bytes(st, svg.into_bytes());
+                }
+                None => {
+                    toast(st, tr("Kod kreskowy przyjmuje tylko znaki ASCII (litery bez polskich znaków, cyfry, interpunkcję)"));
+                    return;
+                }
+            }
+        }
+        "cover" => {
+            let paras = cover_paras(&st.ed.doc, arg);
+            st.ed.insert_cover(paras);
+            scroll = true;
+        }
+        "meta-edit" => {
+            app.set_meta_subject(st.ed.doc.meta.subject.clone().into());
+            app.set_meta_keywords(st.ed.doc.meta.keywords.clone().into());
+            app.set_backstage_page(5);
+            app.set_backstage(true);
+            return;
         }
         "confirm-save" | "confirm-discard" => {
             if base == "confirm-save" && !files::save(st, false) {
@@ -296,6 +338,15 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
                     if sys.as_deref() == Some(t.as_str()) && !frag.is_empty() {
                         let f = frag.clone();
                         st.ed.paste(&f);
+                        refresh_scroll(st);
+                        return;
+                    }
+                }
+                // Z innych programów (Word, przeglądarka, Outlook…): HTML z pełnym formatowaniem.
+                if let Some(html) = arboard::Clipboard::new().ok().and_then(|mut c| c.get().html().ok()) {
+                    let frag = io::html_in::fragment_from_html(&html);
+                    if !frag.is_empty() {
+                        st.ed.paste_rich(&frag);
                         refresh_scroll(st);
                         return;
                     }
@@ -555,6 +606,35 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             let on = pp.drop_cap == 0;
             st.ed.format_paras(&move |p| p.fmt.drop_cap = Some(if on { 3 } else { 0 }));
         }
+        "para-border" => {
+            let b = match arg {
+                "thin" => Some(BoxBorder { width: 0.75, color: Color::rgb(0x40, 0x40, 0x40), radius: 0.0, padding: 4.0 }),
+                "thick" => Some(BoxBorder { width: 2.25, color: Color::rgb(0x40, 0x40, 0x40), radius: 0.0, padding: 5.0 }),
+                "round" => Some(BoxBorder { width: 1.0, color: Color::rgb(0x40, 0x40, 0x40), radius: 6.0, padding: 6.0 }),
+                _ => None,
+            };
+            st.ed.format_paras(&move |p| p.fmt.border = Some(b));
+        }
+        "sort" => st.ed.sort_paras(arg == "desc"),
+        "effect" => {
+            let (cp, _, _) = st.ed.caret_props();
+            let e = match arg {
+                "shadow" => TextEffect::Shadow,
+                "glow" => TextEffect::Glow,
+                _ => TextEffect::None,
+            };
+            // Ponowny wybór tego samego efektu go zdejmuje.
+            let e = if cp.effect == e { TextEffect::None } else { e };
+            st.ed.format(&move |f| f.effect = Some(e));
+        }
+        "outline-text" => {
+            let (cp, _, _) = st.ed.caret_props();
+            let v = if cp.outline > 0.0 { 0.0 } else { 0.6 };
+            st.ed.format(&move |f| f.outline = Some(v));
+        }
+        "goto" => {
+            app.set_left_panel(if arg == "comments" { "comments" } else { "nav" }.into());
+        }
         "style" => {
             st.ed.set_style(arg);
         }
@@ -735,15 +815,24 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             }
             st.shape_preset = if arg.is_empty() { "rect".into() } else { arg.to_string() };
             st.text_shape = base == "text-shape";
+            // Kształt pojawia się od razu przy kursorze – potem przesuwasz go i zmieniasz rozmiar uchwytami.
             set_tool(st, 2);
-            toast(st, tr("Przeciągnij na stronie, aby narysować (kliknięcie – rozmiar domyślny)"));
+            insert_at_caret(st);
             return;
         }
         "text-frame" => {
             st.shape_preset = "rect".into();
             st.text_shape = true;
             set_tool(st, 1);
-            toast(st, tr("Przeciągnij na stronie, aby narysować ramkę tekstową"));
+            insert_at_caret(st);
+            return;
+        }
+        "text-to-shape" => {
+            text_to_shape(st, if arg.is_empty() { "ellipse" } else { arg });
+            return;
+        }
+        "shape-to-text" => {
+            shape_to_text(st);
             return;
         }
         "draw-shape" => {
@@ -952,6 +1041,17 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
         "ruler-toggle" => {
             st.prefs.ruler = !st.prefs.ruler;
             st.prefs.save();
+        }
+        "ruler-v-toggle" => {
+            st.prefs.ruler_v = !st.prefs.ruler_v;
+            st.prefs.save();
+        }
+        "line-numbers" => {
+            let n = arg.parse::<u8>().unwrap_or(0).min(100);
+            st.ed.begin(Kind::Other);
+            st.ed.doc.settings.line_numbers = n;
+            st.ed.changed();
+            st.view.invalidate();
         }
         "ruler" => {
             let mut it = arg.split(';');
@@ -1228,9 +1328,57 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             app.set_watermark(arg.trim().into());
         }
         "page-border" => {
+            // Styl: none, single, double, dashed, dotted; bez argumentu – przełącznik.
             st.ed.begin(Kind::Other);
             let p = &mut st.ed.doc.page;
-            p.border = if p.border.is_some() { None } else { Some(StrokeStyle { color: Color::rgb(0x40, 0x40, 0x40), width: 1.5, dash: vec![] }) };
+            let kind = if arg.is_empty() { if p.border.is_some() { "none" } else { "single" } } else { arg };
+            if kind == "none" {
+                p.border = None;
+                p.border_double = false;
+            } else {
+                let mut b = p.border.clone().unwrap_or(StrokeStyle { color: Color::rgb(0x40, 0x40, 0x40), width: 1.5, dash: vec![] });
+                b.dash = match kind {
+                    "dashed" => vec![b.width * 4.0, b.width * 2.5],
+                    "dotted" => vec![b.width, b.width * 1.8],
+                    _ => vec![],
+                };
+                p.border_double = kind == "double";
+                p.border = Some(b);
+            }
+            st.ed.changed();
+        }
+        "page-border-w" | "page-border-inset" => {
+            let p = st.ed.doc.page.clone();
+            let Some(b) = p.border.clone() else {
+                toast(st, tr("Najpierw wybierz styl obramowania"));
+                return;
+            };
+            let cur = if base == "page-border-w" { b.width } else { p.border_inset };
+            let step = if base == "page-border-w" { 0.5 } else { 2.0 };
+            if let Some(v) = value_or_step(arg, cur, step, is_step) {
+                st.ed.begin(Kind::Other);
+                let pg = &mut st.ed.doc.page;
+                if base == "page-border-w" {
+                    let v = v.clamp(0.25, 12.0);
+                    let mut nb = b;
+                    // Kreski i kropki skalują się z grubością linii.
+                    let k = v / nb.width.max(0.01);
+                    nb.dash.iter_mut().for_each(|d| *d *= k);
+                    nb.width = v;
+                    pg.border = Some(nb);
+                } else {
+                    pg.border_inset = v.clamp(0.0, 72.0);
+                }
+                st.ed.changed();
+            }
+        }
+        "page-border-color" => {
+            let c = color_of(app.get_page_border_color());
+            st.ed.begin(Kind::Other);
+            let pg = &mut st.ed.doc.page;
+            let mut b = pg.border.clone().unwrap_or(StrokeStyle { color: c, width: 1.5, dash: vec![] });
+            b.color = c;
+            pg.border = Some(b);
             st.ed.changed();
         }
         "open-url" => {
@@ -1249,6 +1397,10 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
                 "time" => Some(Field::Time),
                 "title" => Some(Field::Title),
                 "author" => Some(Field::Author),
+                "subject" => Some(Field::Meta(MetaKey::Subject)),
+                "keywords" => Some(Field::Meta(MetaKey::Keywords)),
+                "created" => Some(Field::Meta(MetaKey::Created)),
+                "modified" => Some(Field::Meta(MetaKey::Modified)),
                 "running-1" => Some(Field::Running(1)),
                 "running-2" => Some(Field::Running(2)),
                 _ => None,
@@ -1319,6 +1471,20 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
                 }
             }
             st.ed.changed();
+        }
+        "refs-update" => {
+            // Spis treści i indeks (jeśli są) – numery stron, podpisy i odsyłacze liczą się przy składzie.
+            let has_toc = st.ed.doc.body.paras.iter().any(|p| p.style.starts_with("toc"));
+            let has_idx = st.ed.doc.body.paras.iter().any(|p| p.style.starts_with("index"));
+            if has_toc {
+                run(st, "toc-update", "");
+            }
+            if has_idx {
+                run(st, "index-update", "");
+            }
+            st.ed.relayout();
+            st.view.invalidate();
+            toast(st, tr("Zaktualizowano spis treści, indeks, numery podpisów i odsyłacze"));
         }
         "toc" | "toc-update" => {
             let paras = opendtp_core::layout::toc(&st.ed.doc, &st.ed.layout);
@@ -1558,15 +1724,7 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             st.ed.edit_obj(&move |o| o.repeat = r);
         }
 
-        // ---------------------------------------------------------- projekt i strona
-        "doc-theme" => {
-            if let Some(t) = styles::THEMES.iter().find(|t| t.id == arg) {
-                st.ed.begin(Kind::Other);
-                styles::apply_theme(&mut st.ed.doc, t);
-                st.doc_theme = t.id.into();
-                st.ed.changed();
-            }
-        }
+        // ---------------------------------------------------------- tło strony i typografia
         "page-color" => {
             let c = color_of(app.get_page_color());
             st.ed.begin(Kind::Other);
@@ -1594,6 +1752,28 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
                 st.ed.changed();
                 st.view.invalidate();
             }
+        }
+        "page-w" | "page-h" => {
+            let p = &st.ed.doc.page;
+            let cur = if base == "page-w" { p.width } else { p.height } / uk;
+            let step = if unit == 0 { 1.0 } else if unit == 3 { 2.0 } else { 0.1 };
+            if let Some(v) = value_or_step(arg, cur, step, is_step) {
+                // Od 2 cm do 5 m – dalej to już nie strona.
+                let v = (v * uk).clamp(20.0 * MM, 5000.0 * MM);
+                st.ed.begin(Kind::Other);
+                let pg = &mut st.ed.doc.page;
+                if base == "page-w" {
+                    pg.width = v;
+                } else {
+                    pg.height = v;
+                }
+                st.ed.changed();
+                st.view.invalidate();
+            }
+        }
+        "page-dialog" => {
+            app.set_dialog("page".into());
+            return;
         }
         "orientation" => {
             st.ed.begin(Kind::Other);
@@ -2154,17 +2334,17 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
                 "page" => st.view.fit_page(&st.ed),
                 v => parse_num(v).map(|p| p / 100.0).unwrap_or(1.0),
             };
-            set_zoom(st, z, None);
+            zoom_smooth(st, z, None);
             return;
         }
         "zoom-in" => {
-            let z = st.view.zoom * 1.15;
-            set_zoom(st, z, None);
+            let z = zoom_target(st) * 1.15;
+            zoom_smooth(st, z, None);
             return;
         }
         "zoom-out" => {
-            let z = st.view.zoom / 1.15;
-            set_zoom(st, z, None);
+            let z = zoom_target(st) / 1.15;
+            zoom_smooth(st, z, None);
             return;
         }
         "marks" => {
@@ -2748,6 +2928,12 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             toast(st, tr("Język zmieni się po ponownym uruchomieniu"));
             return;
         }
+        "s-screen-ppi" => {
+            st.prefs.screen_ppi = parse_num(arg).filter(|v| (40.0..=600.0).contains(v)).unwrap_or(0.0);
+            st.prefs.save();
+            crate::apply_screen_ppi(st, &ui);
+            st.view.place(&st.ed);
+        }
         "s-unit" => {
             st.prefs.unit = arg.parse().unwrap_or(0);
             st.prefs.save();
@@ -3116,10 +3302,19 @@ fn spell_next(st: &mut State) -> bool {
 }
 
 pub fn set_zoom(st: &mut State, z: f32, anchor: Option<(f32, f32)>) {
+    ANIM.with(|a| a.borrow_mut().zoom = None);
+    st.view.animating = false;
+    if zoom_core(st, z, anchor) {
+        refresh(st);
+    }
+}
+
+/// Powiększenie bez odświeżania interfejsu: punkt pod `anchor` (płótno) zostaje w miejscu.
+fn zoom_core(st: &mut State, z: f32, anchor: Option<(f32, f32)>) -> bool {
     let z = z.clamp(0.25, 4.0);
     let old = st.view.zoom;
     if (z - old).abs() < 1e-4 {
-        return;
+        return false;
     }
     // Punkt pod wskaźnikiem (albo środek widoku) zostaje w miejscu.
     let (ax, ay) = anchor.unwrap_or((st.view.vx + st.view.vw / 2.0, st.view.vy + st.view.vh / 2.0));
@@ -3138,9 +3333,118 @@ pub fn set_zoom(st: &mut State, z: f32, anchor: Option<(f32, f32)>) {
         app.set_content_h(st.view.content_h);
         app.set_view_x(-vx);
         app.set_view_y(-vy);
+        app.set_zoom((z * 100.0).round() as i32);
     }
     st.prefs.zoom = (z * 100.0).round() as i32;
-    refresh(st);
+    true
+}
+
+/// Płynne powiększanie i przewijanie: cel ustawiają przyciski i kółko, widok dojeżdża do niego
+/// co klatkę z łagodnym hamowaniem. W trakcie powiększania strony są skalowanymi obrazami,
+/// ostro przerysowujemy je raz – na końcu.
+#[derive(Default)]
+struct Anim {
+    /// (od, do, punkt zaczepienia względem widoku, start).
+    zoom: Option<(f32, f32, Option<(f32, f32)>, std::time::Instant)>,
+    /// Docelowe przesunięcie widoku (x, y) w pikselach płótna.
+    scroll: Option<(f32, f32)>,
+}
+
+thread_local! {
+    static ANIM: std::cell::RefCell<Anim> = std::cell::RefCell::new(Anim::default());
+    static ANIM_TIMER: slint::Timer = slint::Timer::default();
+}
+
+const ZOOM_MS: f32 = 180.0;
+
+/// Docelowe powiększenie (w trakcie animacji – to, do którego zmierzamy).
+pub fn zoom_target(st: &State) -> f32 {
+    ANIM.with(|a| a.borrow().zoom.map(|z| z.1)).unwrap_or(st.view.zoom)
+}
+
+/// Płynne powiększenie do `z`; `anchor` – punkt płótna, który ma zostać pod wskaźnikiem.
+pub fn zoom_smooth(st: &mut State, z: f32, anchor: Option<(f32, f32)>) {
+    let z = z.clamp(0.25, 4.0);
+    if (z - st.view.zoom).abs() < 1e-4 {
+        return;
+    }
+    let rel = anchor.map(|(x, y)| (x - st.view.vx, y - st.view.vy));
+    ANIM.with(|a| {
+        let mut a = a.borrow_mut();
+        a.scroll = None;
+        a.zoom = Some((st.view.zoom, z, rel, std::time::Instant::now()));
+    });
+    st.view.animating = true;
+    start_anim();
+}
+
+/// Płynne przewinięcie o (dx, dy) pikseli; kolejne obroty kółka przesuwają cel dalej.
+pub fn scroll_smooth(st: &mut State, dx: f32, dy: f32) {
+    let max_x = (st.view.content_w - st.view.vw).max(0.0);
+    let max_y = (st.view.content_h - st.view.vh).max(0.0);
+    ANIM.with(|a| {
+        let mut a = a.borrow_mut();
+        let (tx, ty) = a.scroll.unwrap_or((st.view.vx, st.view.vy));
+        a.scroll = Some(((tx + dx).clamp(0.0, max_x), (ty + dy).clamp(0.0, max_y)));
+    });
+    start_anim();
+}
+
+fn start_anim() {
+    ANIM_TIMER.with(|t| {
+        if !t.running() {
+            t.start(slint::TimerMode::Repeated, Duration::from_millis(16), anim_tick);
+        }
+    });
+}
+
+fn anim_tick() {
+    let Some(sh) = crate::shared() else { return };
+    let Ok(mut st) = sh.try_borrow_mut() else { return };
+    let st = &mut *st;
+    let (zoom, scroll) = ANIM.with(|a| {
+        let a = a.borrow();
+        (a.zoom, a.scroll)
+    });
+    if let Some((from, to, rel, t0)) = zoom {
+        let t = (t0.elapsed().as_secs_f32() * 1000.0 / ZOOM_MS).min(1.0);
+        let e = 1.0 - (1.0 - t).powi(3);
+        // Mnożnikowo – każdy krok powiększenia wygląda tak samo szybko.
+        let z = from * (to / from).powf(e);
+        let anchor = rel.map(|(x, y)| (st.view.vx + x, st.view.vy + y));
+        if t >= 1.0 {
+            ANIM.with(|a| a.borrow_mut().zoom = None);
+            st.view.animating = false;
+            zoom_core(st, to, anchor);
+            st.view.invalidate();
+            refresh(st);
+        } else if zoom_core(st, z, anchor) {
+            st.view.render(&st.ed);
+        }
+    }
+    if let Some((tx, ty)) = scroll {
+        let (cx, cy) = (st.view.vx, st.view.vy);
+        let (mut nx, mut ny) = (cx + (tx - cx) * 0.28, cy + (ty - cy) * 0.28);
+        if (tx - nx).abs() < 0.6 && (ty - ny).abs() < 0.6 {
+            nx = tx;
+            ny = ty;
+            ANIM.with(|a| a.borrow_mut().scroll = None);
+        }
+        st.view.vx = nx;
+        st.view.vy = ny;
+        if let Some(ui) = st.ui.upgrade() {
+            let app = ui.global::<App>();
+            app.set_view_x(-nx);
+            app.set_view_y(-ny);
+        }
+        st.view.render(&st.ed);
+    }
+    if ANIM.with(|a| {
+        let a = a.borrow();
+        a.zoom.is_none() && a.scroll.is_none()
+    }) {
+        ANIM_TIMER.with(|t| t.stop());
+    }
 }
 
 pub fn palette_query(st: &State, q: &str) {
@@ -3330,6 +3634,201 @@ fn insert_image(st: &mut State, asset: Asset, link: Option<ImageLink>) {
         }
     }
     refresh(st);
+}
+
+/// Kod QR albo kod kreskowy (Code 128) jako SVG – czarne moduły na białym tle z marginesem ciszy.
+fn code_svg(qr: bool, text: &str) -> Option<String> {
+    let mut rects = String::new();
+    let (w, h) = if qr {
+        let code = qrcode::QrCode::new(text.as_bytes()).ok()?;
+        let n = code.width();
+        let colors = code.to_colors();
+        for y in 0..n {
+            let mut x = 0;
+            while x < n {
+                if colors[y * n + x] == qrcode::Color::Dark {
+                    let s = x;
+                    while x < n && colors[y * n + x] == qrcode::Color::Dark {
+                        x += 1;
+                    }
+                    rects.push_str(&format!(r#"<rect x="{}" y="{}" width="{}" height="1"/>"#, s + 4, y + 4, x - s));
+                } else {
+                    x += 1;
+                }
+            }
+        }
+        (n + 8, n + 8)
+    } else {
+        // Zestaw znaków B („Ɓ” na początku) – litery, cyfry i interpunkcja ASCII.
+        if !text.is_ascii() {
+            return None;
+        }
+        let bars = barcoders::sym::code128::Code128::new(format!("Ɓ{text}")).ok()?.encode();
+        let n = bars.len();
+        let mut x = 0;
+        while x < n {
+            if bars[x] == 1 {
+                let s = x;
+                while x < n && bars[x] == 1 {
+                    x += 1;
+                }
+                rects.push_str(&format!(r#"<rect x="{}" y="0" width="{}" height="60"/>"#, s + 10, x - s));
+            } else {
+                x += 1;
+            }
+        }
+        (n + 20, 60)
+    };
+    let k = if qr { 8 } else { 2 };
+    Some(format!(
+        r##"<svg xmlns="http://www.w3.org/2000/svg" width="{}" height="{}" viewBox="0 0 {w} {h}" shape-rendering="crispEdges"><rect width="{w}" height="{h}" fill="#fff"/><g fill="#000">{rects}</g></svg>"##,
+        w * k,
+        h * k
+    ))
+}
+
+/// Akapity strony tytułowej. Tytuł, temat i autor to pola metadanych (zmienisz je w Informacjach);
+/// gdy metadana jest pusta, wstawiamy tekst do nadpisania.
+fn cover_paras(doc: &Document, variant: &str) -> Vec<Paragraph> {
+    let accent = doc.style("heading1").and_then(|s| s.chars.color).unwrap_or(Color::rgb(0x1f, 0x4e, 0x79));
+    let m = &doc.meta;
+    let line = |style: &str, field: Option<Field>, placeholder: &str, size: f32, color: Option<Color>, bold: bool| {
+        let fmt = CharFmt { size: Some(size), color, bold: bold.then_some(true), ..Default::default() };
+        let mut s = Story { paras: vec![Paragraph::with_text(style, "")] };
+        match field {
+            Some(f) => {
+                opendtp_core::edit::insert_field(&mut s, At::new(0, 0), f, &fmt);
+            }
+            None => {
+                s.paras[0].runs = vec![Run { text: placeholder.to_string(), fmt, field: None }];
+            }
+        }
+        s.paras.remove(0)
+    };
+    let pick = |v: &str, f: Field| (!v.is_empty()).then_some(f);
+    let mut title = line("title", pick(&m.title, Field::Title), &tr("Tytuł dokumentu"), 36.0, Some(accent), true);
+    let mut sub = line("subtitle", pick(&m.subject, Field::Meta(MetaKey::Subject)), &tr("Podtytuł lub temat"), 16.0, None, false);
+    let mut author = line("normal", pick(&m.author, Field::Author), &tr("Autor"), 13.0, None, true);
+    let mut date = line("normal", None, &opendtp_core::util::today(), 11.0, Some(Color::rgb(0x60, 0x60, 0x60)), false);
+    match variant {
+        // Pas w kolorze akcentu z białym tytułem u góry strony.
+        "band" => {
+            for p in [&mut title, &mut sub] {
+                p.fmt.shading = Some(accent);
+                p.fmt.indent_left = Some(12.0);
+                p.fmt.indent_right = Some(12.0);
+                for r in p.runs.iter_mut() {
+                    r.fmt.color = Some(Color::WHITE);
+                }
+            }
+            title.fmt.space_before = Some(0.0);
+            title.fmt.space_after = Some(0.0);
+            sub.fmt.space_after = Some(220.0);
+            author.fmt.space_before = Some(24.0);
+            vec![title, sub, author, date]
+        }
+        // Tytuł nisko na stronie, wyrównany do lewej.
+        "minimal" => {
+            title.fmt.space_before = Some(380.0);
+            sub.fmt.space_after = Some(30.0);
+            for p in [&mut title, &mut sub, &mut author, &mut date] {
+                p.fmt.align = Some(Align::Left);
+            }
+            vec![title, sub, author, date]
+        }
+        // Klasyczna: wszystko wyśrodkowane, tytuł w jednej trzeciej wysokości.
+        _ => {
+            title.fmt.space_before = Some(200.0);
+            sub.fmt.space_after = Some(200.0);
+            for p in [&mut title, &mut sub, &mut author, &mut date] {
+                p.fmt.align = Some(Align::Center);
+            }
+            vec![title, sub, author, date]
+        }
+    }
+}
+
+/// Zwykły tekst → kształt tekstu: zaznaczenie (albo cały bieżący akapit) wyjmujemy z treści
+/// i wkładamy do kształtu w tym samym miejscu strony; tekst opływa go z obu stron.
+fn text_to_shape(st: &mut State, preset: &str) {
+    if st.ed.story != StoryRef::Body {
+        toast(st, tr("Zaznacz tekst w treści dokumentu (poza ramkami)"));
+        return;
+    }
+    if !st.ed.has_sel() {
+        let p = st.ed.head.para;
+        let len = st.ed.doc.body.paras.get(p).map(|x| x.len()).unwrap_or(0);
+        if len == 0 {
+            toast(st, tr("Zaznacz tekst albo ustaw kursor w akapicie, który ma się stać kształtem"));
+            return;
+        }
+        st.ed.anchor = At::new(p, 0);
+        st.ed.head = At::new(p, len);
+    }
+    let (a, _) = st.ed.range();
+    let Some(c) = st.ed.layout.caret(StoryRef::Body, a.para, a.off) else { return };
+    let frag = st.ed.fragment();
+    let chars: usize = frag.iter().map(|p| p.text().chars().count()).sum();
+    let size = st.ed.caret_props().0.size.max(6.0);
+    let ps = st.ed.layout.setup(&st.ed.doc, c.page).clone();
+    let shape = geom::preset(preset).unwrap_or_else(Shape::rect);
+    // Rozmiar z ilości tekstu: kształty inne niż prostokąt mają mniej miejsca w środku.
+    let k = if preset == "rect" || preset == "rounded" { 1.0 } else { 1.45 };
+    let w = (ps.content_width() * 0.55).max(140.0);
+    let lines = ((chars as f32 * size * 0.5) / (w - 16.0)).ceil().max(1.0) + frag.len() as f32 - 1.0;
+    let h = ((lines * size * 1.3 * k * k) + 16.0).clamp(60.0, ps.height - ps.margin_top - ps.margin_bottom);
+    let w = w * k.sqrt();
+    let x = (ps.width - w) / 2.0;
+    let y = c.top.min(ps.height - ps.margin_bottom - h).max(ps.margin_top);
+    st.ed.delete_sel();
+    let mut o = new_obj(c.page, x, y, w, h, shape, ObjKind::Text { story: Story { paras: frag }, padding: 8.0, columns: 1, gap: 12.0, valign: VAlign::Center, next: None }, WrapMode::Both);
+    o.wrap.dist = 10.0;
+    let id = st.ed.add_object(o);
+    anchor_new(st, id);
+    st.ed.obj = Some(id);
+    object_selected(st);
+    refresh(st);
+    toast(st, tr("Tekst jest teraz kształtem – zmień kształt węzłami, dodaj wypełnienie albo obrys"));
+}
+
+/// Kształt tekstu → zwykły tekst: akapity wracają do treści za akapitem kotwicy, kształt znika.
+fn shape_to_text(st: &mut State) {
+    let Some(o) = st.ed.object().cloned() else {
+        toast(st, tr("Zaznacz kształt albo ramkę z tekstem"));
+        return;
+    };
+    let Some(story) = o.story().cloned() else {
+        toast(st, tr("Ten obiekt nie zawiera tekstu"));
+        return;
+    };
+    let paras: Vec<Paragraph> = story.paras.into_iter().filter(|p| !p.is_empty()).collect();
+    if paras.is_empty() {
+        st.ed.delete_object();
+        refresh(st);
+        return;
+    }
+    let anchor = st.ed.doc.body.paras.iter().position(|p| p.runs.iter().any(|r| r.field == Some(Field::Anchor(o.id))));
+    st.ed.delete_object();
+    st.ed.begin(Kind::Other);
+    let at = anchor.map(|i| i + 1).unwrap_or(st.ed.doc.body.paras.len()).min(st.ed.doc.body.paras.len());
+    let n = paras.len();
+    st.ed.doc.body.paras.splice(at..at, paras);
+    st.ed.obj = None;
+    st.ed.set_caret(StoryRef::Body, At::new(at, 0), false);
+    st.ed.set_caret(StoryRef::Body, At::new(at + n - 1, st.ed.doc.body.paras[at + n - 1].len()), true);
+    st.ed.changed();
+    refresh(st);
+}
+
+/// Wstawia obiekt bieżącego narzędzia w domyślnym rozmiarze: wyśrodkowany na stronie kursora,
+/// na wysokości kursora (jak tabela).
+fn insert_at_caret(st: &mut State) {
+    let ps = st.ed.doc.page.clone();
+    let (page, y) = st.ed.caret_page().map(|c| (c.0, c.2)).unwrap_or((0, ps.margin_top));
+    let tool = st.ui.upgrade().map(|u| u.global::<App>().get_tool()).unwrap_or(0);
+    let w = if tool == 2 { 160.0 } else { 220.0 };
+    let pw = st.ed.layout.page_size(&st.ed.doc, page).0;
+    create_from_drag(st, page, (pw - w) / 2.0, y.min(ps.height - ps.margin_bottom - 160.0).max(ps.margin_top), 0.0, 0.0);
 }
 
 /// Koniec przeciągania narzędziem: ramka, kształt albo tekst na ścieżce.

@@ -33,7 +33,6 @@ pub fn doc_name(ed: &Editor) -> String {
 pub fn set_doc(st: &mut State, doc: Document, path: Option<PathBuf>) {
     st.ed = Editor::new(doc);
     st.ed.path = path;
-    st.doc_theme = "classic".into();
     st.view.invalidate();
     if let Some(ui) = st.ui.upgrade() {
         let app = ui.global::<crate::App>();

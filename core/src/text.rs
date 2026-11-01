@@ -73,6 +73,8 @@ pub struct FieldExtra {
     pub seqs: Vec<(u64, u32)>,
     /// Cel odsyłacza: id → (numer strony, tekst akapitu celu).
     pub targets: std::collections::HashMap<u64, (u32, String)>,
+    /// Metadane dla pól `Field::Meta`, w kolejności `MetaKey`.
+    pub meta: [String; 4],
 }
 
 /// Numeracja rzymska (małe litery) – przypisy końcowe.
@@ -103,6 +105,7 @@ impl FieldValues<'_> {
             Field::Author => self.author.to_string(),
             Field::Anchor(_) | Field::Bookmark(_) | Field::IndexMark(_) | Field::Comment(_) => String::new(),
             Field::Running(_) => self.running.to_string(),
+            Field::Meta(k) => self.ext.map(|e| e.meta[k.index()].clone()).unwrap_or_default(),
             Field::Seq(id, _) => self.seq(id).map(|n| n.to_string()).unwrap_or_else(|| "?".into()),
             Field::Ref(id, kind) => {
                 let t = self.ext.and_then(|e| e.targets.get(&id));

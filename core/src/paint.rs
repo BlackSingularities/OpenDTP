@@ -171,6 +171,11 @@ pub fn page_ops(doc: &Document, layout: &Layout, page: usize, o: &PaintOpts) -> 
         if b.width > 0.0 {
             let i = ps.border_inset;
             ops.push(Op::Stroke { path: Path::rect(Rect::new(i, i, ps.width - 2.0 * i, ps.height - 2.0 * i)), color: b.color, width: b.width, dash: b.dash.clone(), opacity: 1.0 });
+            if ps.border_double {
+                // Druga linia do środka – odstęp jak dwie grubości.
+                let j = i + b.width * 3.0;
+                ops.push(Op::Stroke { path: Path::rect(Rect::new(j, j, ps.width - 2.0 * j, ps.height - 2.0 * j)), color: b.color, width: b.width, dash: b.dash.clone(), opacity: 1.0 });
+            }
         }
     }
     if !ps.watermark.trim().is_empty() {
@@ -201,6 +206,18 @@ pub fn page_ops(doc: &Document, layout: &Layout, page: usize, o: &PaintOpts) -> 
     }
     let free: Vec<&Line> = info.lines.iter().map(|&i| &layout.lines[i]).filter(|l| l.obj.is_none()).collect();
     lines_ops(doc, &free, o, &mut ops);
+    // Numeracja wierszy treści głównej – szare numery przed lewą krawędzią tekstu, od 1 na stronie.
+    let step = doc.settings.line_numbers as u32;
+    if step > 0 {
+        let mut n = 0u32;
+        for l in free.iter().filter(|l| l.story == StoryRef::Body) {
+            n += 1;
+            if n % step == 0 || step == 1 {
+                let y = l.glyphs.first().map(|g| g.y).unwrap_or(l.top + l.height * 0.8);
+                label(&mut ops, &n.to_string(), l.area.0 - 10.0, y, 8.0, Color::rgb(0x8a, 0x8a, 0x8a), "Calibri", 1.0, false);
+            }
+        }
+    }
     if let Some((y, x, w)) = info.note_rule {
         ops.push(Op::Stroke { path: Path::line(x, y, x + w, y), color: Color::rgb(0x80, 0x80, 0x80), width: 0.6, dash: vec![], opacity: 1.0 });
     }
@@ -583,9 +600,37 @@ fn push_runs(gs: &[PGlyph], _base: &CharProps, text: &str, ops: &mut Vec<Op>, st
             run.ranges = vec![0..0; run.glyphs.len()];
         }
         if !run.glyphs.is_empty() {
+            push_effect(&run, st.effect, ops);
             ops.push(Op::Glyphs(run));
         }
         k = e.max(k + 1);
+    }
+}
+
+/// Cień (przesunięta, półprzezroczysta kopia) albo poświata (gruby, miękki obrys) pod przebiegiem.
+fn push_effect(run: &GlyphRun, effect: TextEffect, ops: &mut Vec<Op>) {
+    let base = || GlyphRun { text: String::new(), ranges: vec![0..0; run.glyphs.len()], link: None, ..run.clone() };
+    match effect {
+        TextEffect::None => {}
+        TextEffect::Shadow => {
+            let d = (run.size * 0.06).max(0.6);
+            let mut sh = base();
+            sh.color = Color::rgb(0, 0, 0).with_alpha(90);
+            sh.glyphs.iter_mut().for_each(|g| {
+                g.1 += d;
+                g.2 += d;
+            });
+            ops.push(Op::Glyphs(sh));
+        }
+        TextEffect::Glow => {
+            // Kilka obrysów o rosnącej grubości – miękkie przejście bez rozmycia.
+            for (w, a) in [(0.32, 30), (0.2, 45), (0.1, 70)] {
+                let mut gl = base();
+                gl.outline = run.size * w;
+                gl.color = run.color.with_alpha(a);
+                ops.push(Op::Glyphs(gl));
+            }
+        }
     }
 }
 

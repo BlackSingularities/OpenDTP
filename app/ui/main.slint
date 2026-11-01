@@ -38,6 +38,10 @@ component WinButton inherits Rectangle {
 }
 
 component TopBar inherits Rectangle {
+    // Położenie pola „Szukaj poleceń” w oknie – tu zaczepia się paleta poleceń.
+    out property <length> search-x: search-box.absolute-position.x;
+    out property <length> search-y: search-box.absolute-position.y + search-box.height;
+    out property <length> search-w: search-box.width;
     height: 40px * Theme.scale;
     background: Theme.panel;
     HorizontalLayout {
@@ -93,7 +97,7 @@ component TopBar inherits Rectangle {
                 horizontal-alignment: center;
             }
         }
-        Rectangle {
+        search-box := Rectangle {
             width: 260px * Theme.scale;
             height: 26px * Theme.scale;
             y: (parent.height - self.height) / 2;
@@ -153,14 +157,6 @@ component TopBar inherits Rectangle {
             y: (parent.height - self.height) / 2;
             clicked => {
                 App.cmd("theme", Theme.mode == 2 ? 0 : Theme.mode + 1);
-            }
-        }
-        IconButton {
-            icon: App.ribbon-collapsed ? Icons.chevron-down : Icons.chevron-up;
-            tip: App.ribbon-collapsed ? @tr("Rozwiń wstążkę (Ctrl+F1)") : @tr("Zwiń wstążkę (Ctrl+F1)");
-            y: (parent.height - self.height) / 2;
-            clicked => {
-                App.cmd("ribbon-collapse", "");
             }
         }
         Rectangle {
@@ -273,6 +269,7 @@ component StatusBar inherits Rectangle {
                 }
             }
             MenuButton {
+                compactable: false;
                 icon: Icons.zoom-in;
                 label: App.zoom + "%";
                 tip: @tr("Powiększenie");
@@ -288,15 +285,19 @@ component StatusBar inherits Rectangle {
 }
 
 component Palette inherits Rectangle {
-    background: #00000066;
+    // Pole „Szukaj poleceń” na pasku tytułu – paleta rozwija się tuż pod nim, wyrównana do jego prawej krawędzi.
+    in property <length> anchor-x;
+    in property <length> anchor-y;
+    in property <length> anchor-w;
+    background: #00000033;
     TouchArea {
         clicked => {
             App.palette-open = false;
         }
     }
     Card {
-        x: (parent.width - self.width) / 2;
-        y: 70px;
+        x: max(8px, min(root.anchor-x + root.anchor-w - self.width, parent.width - self.width - 8px));
+        y: root.anchor-y + 4px;
         width: 560px;
         height: min(440px, vl.preferred-height);
         TouchArea {}
@@ -531,7 +532,7 @@ export component AppWindow inherits Window {
     callback close-requested();
 
     VerticalLayout {
-        TopBar {}
+        top-bar := TopBar {}
         RibbonTabs {
             background: Theme.panel;
         }
@@ -589,6 +590,9 @@ export component AppWindow inherits Window {
         height: parent.height;
     }
     if App.palette-open: Palette {
+        anchor-x: top-bar.search-x;
+        anchor-y: top-bar.search-y;
+        anchor-w: top-bar.search-w;
         width: parent.width;
         height: parent.height;
     }
@@ -626,6 +630,43 @@ export component AppWindow inherits Window {
         }
         init => {
             lf.focus-input();
+        }
+    }
+    if App.dialog == "code": Dialog {
+        width: parent.width;
+        height: parent.height;
+        title: @tr("Kod QR lub kreskowy");
+        Segmented {
+            tip: @tr("Rodzaj kodu");
+            items: [@tr("Kod QR"), @tr("Kod kreskowy (Code 128)")];
+            current: App.code-kind;
+            picked(i) => {
+                App.code-kind = i;
+            }
+        }
+        cf := Field {
+            tip: App.code-kind == 0 ? @tr("Adres strony, tekst, numer telefonu…") : @tr("Litery bez polskich znaków, cyfry i interpunkcja");
+            w: 384px;
+            text <=> App.code-text;
+            placeholder: App.code-kind == 0 ? "https://" : "OPENDTP-0001";
+            accepted(t) => {
+                App.cmd("code-insert", "");
+            }
+        }
+        HorizontalLayout {
+            alignment: end;
+            Button {
+                tip: @tr("Wstaw kod jako obraz wektorowy");
+                label: @tr("Wstaw");
+                icon: Icons.check;
+                primary: true;
+                clicked => {
+                    App.cmd("code-insert", "");
+                }
+            }
+        }
+        init => {
+            cf.focus-input();
         }
     }
     if App.dialog == "comment": Dialog {
@@ -1419,6 +1460,187 @@ export component AppWindow inherits Window {
                 primary: true;
                 clicked => {
                     App.cmd("para-apply", "");
+                }
+            }
+        }
+    }
+    if App.dialog == "page": Dialog {
+        width: parent.width;
+        height: parent.height;
+        w: 640px;
+        title: @tr("Ustawienia strony");
+        // Zmiany działają od razu (jak pola na wstążce) – wystarczy zamknąć okno.
+        HorizontalLayout {
+            spacing: 10px;
+            Pane {
+                title: @tr("PAPIER");
+                icon: Icons.file;
+                horizontal-stretch: 1;
+                MenuButton {
+                    compactable: false;
+                    icon: Icons.file;
+                    label: App.page-size;
+                    tip: @tr("Rozmiar strony");
+                    items: Menus.page-sizes;
+                    current: App.page-size;
+                    menu-w: 230px;
+                    picked(id) => {
+                        App.cmd("page-size", id);
+                    }
+                }
+                HorizontalLayout {
+                    spacing: 8px;
+                    IconSpin {
+                        icon: Icons.move-horizontal;
+                        tip: @tr("Szerokość strony");
+                        value: App.page-w;
+                        unit: App.unit;
+                        changed-value(v) => {
+                            App.cmd("page-w", v);
+                        }
+                        step(d) => {
+                            App.cmd("page-w-step", d);
+                        }
+                    }
+                    IconSpin {
+                        icon: Icons.move-vertical;
+                        tip: @tr("Wysokość strony");
+                        value: App.page-h;
+                        unit: App.unit;
+                        changed-value(v) => {
+                            App.cmd("page-h", v);
+                        }
+                        step(d) => {
+                            App.cmd("page-h-step", d);
+                        }
+                    }
+                }
+                Segmented {
+                    tip: @tr("Orientacja strony");
+                    items: [@tr("Pionowa"), @tr("Pozioma")];
+                    current: App.landscape ? 1 : 0;
+                    picked(i) => {
+                        if ((i == 1) != App.landscape) {
+                            App.cmd("orientation", "");
+                        }
+                    }
+                }
+            }
+            Pane {
+                title: @tr("MARGINESY");
+                icon: Icons.square-dashed;
+                horizontal-stretch: 1;
+                HorizontalLayout {
+                    spacing: 8px;
+                    IconSpin {
+                        icon: Icons.arrow-up-from-line;
+                        tip: @tr("Margines górny");
+                        value: App.m-top;
+                        unit: App.unit;
+                        changed-value(v) => {
+                            App.cmd("m-top", v);
+                        }
+                        step(d) => {
+                            App.cmd("m-top-step", d);
+                        }
+                    }
+                    IconSpin {
+                        icon: Icons.arrow-down-to-line;
+                        tip: @tr("Margines dolny");
+                        value: App.m-bottom;
+                        unit: App.unit;
+                        changed-value(v) => {
+                            App.cmd("m-bottom", v);
+                        }
+                        step(d) => {
+                            App.cmd("m-bottom-step", d);
+                        }
+                    }
+                }
+                HorizontalLayout {
+                    spacing: 8px;
+                    IconSpin {
+                        icon: Icons.arrow-right-from-line;
+                        tip: @tr("Margines lewy");
+                        value: App.m-left;
+                        unit: App.unit;
+                        changed-value(v) => {
+                            App.cmd("m-left", v);
+                        }
+                        step(d) => {
+                            App.cmd("m-left-step", d);
+                        }
+                    }
+                    IconSpin {
+                        icon: Icons.arrow-left-to-line;
+                        tip: @tr("Margines prawy");
+                        value: App.m-right;
+                        unit: App.unit;
+                        changed-value(v) => {
+                            App.cmd("m-right", v);
+                        }
+                        step(d) => {
+                            App.cmd("m-right-step", d);
+                        }
+                    }
+                }
+                MenuButton {
+                    compactable: false;
+                    icon: Icons.square-dashed;
+                    label: @tr("Gotowe marginesy");
+                    tip: @tr("Gotowe zestawy marginesów");
+                    items: Menus.margins;
+                    menu-w: 230px;
+                    picked(id) => {
+                        App.cmd("margins", id);
+                    }
+                }
+            }
+        }
+        Pane {
+            title: App.in-section ? @tr("KOLUMNY SEKCJI") : @tr("KOLUMNY");
+            icon: Icons.columns-2;
+            HorizontalLayout {
+                spacing: 8px;
+                Segmented {
+                    tip: @tr("Liczba kolumn");
+                    items: ["1", "2", "3", "4"];
+                    current: App.columns - 1;
+                    picked(i) => {
+                        App.cmd("columns", i + 1);
+                    }
+                }
+                IconSpin {
+                    icon: Icons.columns-2;
+                    tip: @tr("Odstęp między kolumnami");
+                    value: App.col-gap;
+                    unit: App.unit;
+                    changed-value(v) => {
+                        App.cmd("col-gap", v);
+                    }
+                    step(d) => {
+                        App.cmd("col-gap-step", d);
+                    }
+                }
+                Switch {
+                    label: @tr("Linia między kolumnami");
+                    on: App.col-rule;
+                    tip: @tr("Pionowa linia między kolumnami");
+                    toggled => {
+                        App.cmd("col-rule", "");
+                    }
+                }
+            }
+        }
+        HorizontalLayout {
+            alignment: end;
+            Button {
+                tip: @tr("Zamknij okno");
+                label: @tr("Gotowe");
+                icon: Icons.check;
+                primary: true;
+                clicked => {
+                    App.dialog = "";
                 }
             }
         }

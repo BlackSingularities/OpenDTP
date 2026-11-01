@@ -5,7 +5,7 @@ import { ListView, ScrollView } from "std-widgets.slint";
 import { Theme } from "theme.slint";
 import { Icons } from "icons.slint";
 import { App, ItemV, StyleV } from "state.slint";
-import { TipArea, IconButton, BigButton, RowButton, Group, Col, Row, Field, Spin, Switch, Swatch, MenuItem, MenuSep, Card, Segmented, Slider, Label, Dim } from "widgets.slint";
+import { TipArea, IconButton, BigButton, RowButton, Group, Col, Row, Field, Spin, Switch, Swatch, MenuItem, MenuSep, Card, Segmented, Slider, Label, Dim, IconSpin } from "widgets.slint";
 
 // ---------------------------------------------------------------- próbnik kolorów
 
@@ -161,10 +161,12 @@ export component MenuButton inherits Rectangle {
     in property <bool> active;
     in property <string> current;
     in property <length> menu-w: 220px;
+    in property <bool> compactable: true;
     callback picked(string);
     min-width: rb.min-width;
     height: 24px * Theme.scale;
     rb := RowButton {
+        compactable: root.compactable;
         width: parent.width;
         icon: root.icon;
         label: root.label;
@@ -217,6 +219,7 @@ export component BigMenuButton inherits Rectangle {
     in property <bool> active;
     in property <string> current;
     in property <length> menu-w: 220px;
+    in property <color> tint: Theme.text;
     callback picked(string);
     min-width: bb.min-width;
     height: 66px * Theme.scale;
@@ -225,6 +228,7 @@ export component BigMenuButton inherits Rectangle {
         icon: root.icon;
         label: root.label;
         tip: root.tip;
+        tint: root.tint;
         menu: true;
         active: root.active;
         clicked => {
@@ -415,13 +419,15 @@ export component SizeBox inherits Rectangle {
 
 /// Galeria stylów akapitu (próbki pisane stylem).
 export component StyleGallery inherits Rectangle {
-    width: 3 * 101px * Theme.scale + 24px;
+    // Liczba stylów w wierszu – na szerszych oknach więcej (3–5).
+    in property <int> cols: 3;
+    width: root.cols * 101px * Theme.scale + 24px;
     height: 66px * Theme.scale;
     property <length> item: 101px * Theme.scale;
     HorizontalLayout {
         spacing: 3px;
         fl := Flickable {
-            width: 3 * root.item;
+            width: root.cols * root.item;
             content-width: App.styles.length * root.item;
             interactive: false;
             for s[i] in App.styles: Rectangle {
@@ -481,7 +487,7 @@ export component StyleGallery inherits Rectangle {
                 tip: @tr("Poprzednie style");
                 enabled: fl.content-x < 0;
                 clicked => {
-                    fl.content-x = min(0px, fl.content-x + 3 * root.item);
+                    fl.content-x = min(0px, fl.content-x + root.cols * root.item);
                 }
             }
             IconButton {
@@ -489,9 +495,9 @@ export component StyleGallery inherits Rectangle {
                 icon-size: 12px;
                 icon: Icons.chevron-down;
                 tip: @tr("Kolejne style");
-                enabled: -fl.content-x + 3 * root.item < App.styles.length * root.item;
+                enabled: -fl.content-x + root.cols * root.item < App.styles.length * root.item;
                 clicked => {
-                    fl.content-x = max(-(App.styles.length * root.item - 3 * root.item), fl.content-x - 3 * root.item);
+                    fl.content-x = max(-(App.styles.length * root.item - root.cols * root.item), fl.content-x - root.cols * root.item);
                 }
             }
             IconButton {
@@ -524,6 +530,7 @@ export global Menus {
         { id: "upper-letter", label: @tr("A. Litery wielkie") },
         { id: "lower-roman", label: @tr("i. Rzymskie małe") },
         { id: "upper-roman", label: @tr("I. Rzymskie wielkie") },
+        { id: "multi", label: @tr("1.1. Wielopoziomowa"), icon: Icons.list-tree },
         { id: "-" },
         { id: "restart", label: @tr("Zacznij numerację od 1") },
     ];
@@ -548,6 +555,31 @@ export global Menus {
         { id: "lower", label: @tr("zamień na małe litery") },
         { id: "title", label: @tr("Każdy Wyraz Wielką Literą") },
         { id: "sentence", label: @tr("Jak w zdaniu") },
+    ];
+    out property <[ItemV]> paste: [
+        { id: "paste", label: @tr("Zachowaj formatowanie"), hint: "Ctrl+V", icon: Icons.clipboard-paste },
+        { id: "paste-plain", label: @tr("Tylko tekst – dopasuj do otoczenia"), hint: "Ctrl+Shift+V", icon: Icons.type },
+    ];
+    out property <[ItemV]> effects: [
+        { id: "shadow", label: @tr("Cień") },
+        { id: "glow", label: @tr("Poświata") },
+        { id: "-" },
+        { id: "none", label: @tr("Bez efektu") },
+    ];
+    out property <[ItemV]> borders: [
+        { id: "thin", label: @tr("Cienka ramka") },
+        { id: "thick", label: @tr("Gruba ramka") },
+        { id: "round", label: @tr("Zaokrąglona ramka") },
+        { id: "-" },
+        { id: "none", label: @tr("Bez obramowania") },
+    ];
+    out property <[ItemV]> sort: [
+        { id: "asc", label: @tr("Sortuj A → Z") },
+        { id: "desc", label: @tr("Sortuj Z → A") },
+    ];
+    out property <[ItemV]> goto: [
+        { id: "nav", label: @tr("Strona lub nagłówek…"), icon: Icons.list-tree },
+        { id: "comments", label: @tr("Komentarz…"), icon: Icons.message-square-quote },
     ];
     out property <[ItemV]> underline: [
         { id: "single", label: @tr("Pojedyncze") },
@@ -582,6 +614,25 @@ export global Menus {
         { id: "arc", label: @tr("Łuk otwarty"), icon: Icons.spline },
         { id: "pen", label: @tr("Rysuj własny (węzły)…"), icon: Icons.pen-tool },
     ];
+    // Kształty zamknięte – do zamiany tekstu w kształt (bez linii i łuków).
+    out property <[ItemV]> text-shapes: [
+        { id: "ellipse", label: @tr("Elipsa / koło"), icon: Icons.circle },
+        { id: "rect", label: @tr("Prostokąt"), icon: Icons.square },
+        { id: "rounded", label: @tr("Zaokrąglony prostokąt"), icon: Icons.square },
+        { id: "triangle", label: @tr("Trójkąt"), icon: Icons.triangle },
+        { id: "diamond", label: @tr("Romb"), icon: Icons.diamond },
+        { id: "pentagon", label: @tr("Pięciokąt"), icon: Icons.pentagon },
+        { id: "hexagon", label: @tr("Sześciokąt"), icon: Icons.hexagon },
+        { id: "octagon", label: @tr("Ośmiokąt"), icon: Icons.octagon },
+        { id: "star", label: @tr("Gwiazda"), icon: Icons.star },
+        { id: "heart", label: @tr("Serce"), icon: Icons.heart },
+        { id: "speech", label: @tr("Dymek"), icon: Icons.message-square-quote },
+        { id: "arrow", label: @tr("Strzałka"), icon: Icons.arrow-right },
+        { id: "chevron", label: @tr("Szewron") },
+        { id: "parallelogram", label: @tr("Równoległobok") },
+        { id: "trapezoid", label: @tr("Trapez") },
+        { id: "wave", label: @tr("Fala"), icon: Icons.waves },
+    ];
     out property <[ItemV]> charts: [
         { id: "column", label: @tr("Kolumnowy"), icon: Icons.chart-column },
         { id: "bar", label: @tr("Słupkowy"), icon: Icons.chart-bar },
@@ -610,8 +661,8 @@ export global Menus {
         { id: "time", label: @tr("Godzina"), icon: Icons.clock },
         { id: "title", label: @tr("Tytuł dokumentu") },
         { id: "author", label: @tr("Autor") },
-        { id: "running-1", label: @tr("Żywa pagina – rozdział"), icon: Icons.panel-top },
-        { id: "running-2", label: @tr("Żywa pagina – podrozdział") },
+        { id: "running-1", label: @tr("Tytuł rozdziału"), icon: Icons.panel-top },
+        { id: "running-2", label: @tr("Tytuł podrozdziału") },
         { id: "-" },
         { id: "date-text", label: @tr("Dzisiejsza data jako tekst") },
     ];
@@ -654,9 +705,12 @@ export global Menus {
 // ---------------------------------------------------------------- karty
 
 component HomeTab inherits HorizontalLayout {
+    // Szerokość wstążki – od niej zależy, ile stylów mieści się w galerii.
+    in property <length> avail;
     alignment: start;
     Group {
         title: @tr("AI");
+        optional: true;
         BigButton {
             icon: Icons.wand-sparkles;
             label: @tr("Generuj");
@@ -669,12 +723,25 @@ component HomeTab inherits HorizontalLayout {
     }
     Group {
         title: @tr("Schowek");
-        BigButton {
-            icon: Icons.clipboard-paste;
-            label: @tr("Wklej");
-            tip: @tr("Wklej (Ctrl+V)");
-            clicked => {
-                App.cmd("paste", "");
+        Col {
+            BigButton {
+                icon: Icons.clipboard-paste;
+                label: @tr("Wklej");
+                tip: @tr("Wklej (Ctrl+V)");
+                height: 50px * Theme.scale;
+                clicked => {
+                    App.cmd("paste", "");
+                }
+            }
+            MenuButton {
+                icon: Icons.chevron-down;
+                label: @tr("Opcje");
+                tip: @tr("Wklej specjalnie – z formatowaniem albo jako sam tekst");
+                items: Menus.paste;
+                menu-w: 280px;
+                picked(id) => {
+                    App.cmd(id, "");
+                }
             }
         }
         Col {
@@ -707,6 +774,10 @@ component HomeTab inherits HorizontalLayout {
     }
     Group {
         title: @tr("Czcionka");
+        launcher-tip: @tr("Czcionka – wszystkie ustawienia");
+        launch => {
+            App.cmd("font-dialog", "");
+        }
         Col {
             Row {
                 FontBox {}
@@ -733,14 +804,6 @@ component HomeTab inherits HorizontalLayout {
                     size: 24px;
                     clicked => {
                         App.cmd("clear-format", "");
-                    }
-                }
-                IconButton {
-                    icon: Icons.sliders-horizontal;
-                    tip: @tr("Czcionka – wszystkie ustawienia");
-                    size: 24px;
-                    clicked => {
-                        App.cmd("font-dialog", "");
                     }
                 }
             }
@@ -847,10 +910,54 @@ component HomeTab inherits HorizontalLayout {
                     }
                 }
             }
+            Row {
+                IconButton {
+                    icon: Icons.fold-vertical;
+                    tip: @tr("Zagęść znaki (−0,5 pt)");
+                    size: 24px;
+                    clicked => {
+                        App.cmd("tracking-step", "-1");
+                    }
+                }
+                IconButton {
+                    icon: Icons.unfold-horizontal;
+                    tip: @tr("Rozstrzel znaki (+0,5 pt)");
+                    size: 24px;
+                    clicked => {
+                        App.cmd("tracking-step", "1");
+                    }
+                }
+                IconButton {
+                    icon: Icons.type-outline;
+                    tip: @tr("Kontur tekstu");
+                    active: App.outline-text;
+                    size: 24px;
+                    clicked => {
+                        App.cmd("outline-text", "");
+                    }
+                }
+                MenuButton {
+                    icon: Icons.sparkles;
+                    label: "";
+                    tip: @tr("Efekty tekstu: cień, poświata");
+                    items: Menus.effects;
+                    active: App.effect != "";
+                    current: App.effect;
+                    menu-w: 180px;
+                    picked(id) => {
+                        App.cmd("effect", id);
+                    }
+                }
+            }
         }
     }
     Group {
         title: @tr("Akapit");
+        launcher-tip: @tr("Akapit – wszystkie ustawienia");
+        launcher-icon: Icons.sliders-vertical;
+        launch => {
+            App.cmd("para-dialog", "");
+        }
         Col {
             Row {
                 MenuButton {
@@ -896,14 +1003,6 @@ component HomeTab inherits HorizontalLayout {
                     size: 26px;
                     clicked => {
                         App.cmd("marks", "");
-                    }
-                }
-                IconButton {
-                    icon: Icons.sliders-vertical;
-                    tip: @tr("Akapit – wszystkie ustawienia");
-                    size: 26px;
-                    clicked => {
-                        App.cmd("para-dialog", "");
                     }
                 }
             }
@@ -967,11 +1066,96 @@ component HomeTab inherits HorizontalLayout {
                     }
                 }
             }
+            Row {
+                IconButton {
+                    icon: Icons.list-tree;
+                    tip: @tr("Lista wielopoziomowa (1. / 1.1. / 1.1.1.) – poziom zmieniasz klawiszem Tab");
+                    active: App.list-kind == "multi";
+                    size: 26px;
+                    clicked => {
+                        App.cmd("list", App.list-kind == "multi" ? "" : "multi");
+                    }
+                }
+                MenuButton {
+                    icon: Icons.rows-3;
+                    label: "";
+                    tip: @tr("Sortuj zaznaczone akapity alfabetycznie");
+                    items: Menus.sort;
+                    menu-w: 170px;
+                    picked(id) => {
+                        App.cmd("sort", id);
+                    }
+                }
+                MenuButton {
+                    icon: Icons.square;
+                    label: "";
+                    tip: @tr("Obramowanie akapitu");
+                    items: Menus.borders;
+                    menu-w: 190px;
+                    picked(id) => {
+                        App.cmd("para-border", id);
+                    }
+                }
+                IconButton {
+                    icon: Icons.arrow-up-from-line;
+                    tip: @tr("Odstęp przed akapitem +6 pt");
+                    size: 26px;
+                    clicked => {
+                        App.cmd("space-before-step", "3");
+                    }
+                }
+                IconButton {
+                    icon: Icons.arrow-down-to-line;
+                    tip: @tr("Odstęp po akapicie +6 pt");
+                    size: 26px;
+                    clicked => {
+                        App.cmd("space-after-step", "3");
+                    }
+                }
+                IconButton {
+                    icon: Icons.between-horizontal-start;
+                    tip: @tr("Usuń odstępy przed i po akapicie");
+                    size: 26px;
+                    clicked => {
+                        App.cmd("space-before", "0");
+                        App.cmd("space-after", "0");
+                    }
+                }
+                IconButton {
+                    icon: Icons.letter-text;
+                    tip: @tr("Inicjał – duża pierwsza litera na 3 wiersze");
+                    active: App.drop-cap;
+                    size: 26px;
+                    clicked => {
+                        App.cmd("drop-cap", "");
+                    }
+                }
+            }
         }
     }
     Group {
         title: @tr("Style");
-        StyleGallery {}
+        StyleGallery {
+            cols: Theme.ribbon-level >= 2 ? 2 : root.avail >= 1600px * Theme.scale ? 5 : root.avail >= 1500px * Theme.scale ? 4 : 3;
+        }
+        Col {
+            IconButton {
+                icon: Icons.plus;
+                tip: @tr("Utwórz styl z zaznaczenia");
+                size: 24px;
+                clicked => {
+                    App.cmd("style-new", "");
+                }
+            }
+            IconButton {
+                icon: Icons.refresh-cw;
+                tip: @tr("Aktualizuj bieżący styl według zaznaczenia");
+                size: 24px;
+                clicked => {
+                    App.cmd("style-update", "");
+                }
+            }
+        }
     }
     Group {
         title: @tr("Edycja");
@@ -1002,6 +1186,18 @@ component HomeTab inherits HorizontalLayout {
                 }
             }
         }
+        Col {
+            MenuButton {
+                icon: Icons.arrow-right;
+                label: @tr("Przejdź do");
+                tip: @tr("Przejdź do strony, nagłówka albo komentarza");
+                items: Menus.goto;
+                menu-w: 210px;
+                picked(id) => {
+                    App.cmd("goto", id);
+                }
+            }
+        }
     }
 }
 
@@ -1009,6 +1205,7 @@ component InsertTab inherits HorizontalLayout {
     alignment: start;
     Group {
         title: @tr("AI");
+        optional: true;
         BigButton {
             icon: Icons.wand-sparkles;
             label: @tr("Generuj z AI");
@@ -1046,6 +1243,54 @@ component InsertTab inherits HorizontalLayout {
                     App.cmd("column-break", "");
                 }
             }
+            RowButton {
+                icon: Icons.square-split-vertical;
+                label: @tr("Podział sekcji");
+                tip: @tr("Podział sekcji – dalsza treść od nowej strony, z własnymi kolumnami i orientacją");
+                clicked => {
+                    App.cmd("section-new", "page");
+                }
+            }
+        }
+        BigMenuButton {
+            icon: Icons.book-open;
+            label: @tr("Strona tytułowa");
+            tip: @tr("Wstaw stronę tytułową na początek dokumentu – tytuł, temat i autor z metadanych");
+            items: [
+                { id: "classic", label: @tr("Klasyczna – wyśrodkowana") },
+                { id: "band", label: @tr("Pas koloru u góry") },
+                { id: "minimal", label: @tr("Minimalna – tytuł na dole") },
+            ];
+            menu-w: 230px;
+            picked(id) => {
+                App.cmd("cover", id);
+            }
+        }
+        BigMenuButton {
+            icon: Icons.droplet;
+            label: @tr("Znak wodny");
+            tip: @tr("Ukośny napis w tle każdej strony");
+            active: App.watermark != "";
+            items: [
+                { id: "POUFNE", label: @tr("POUFNE") },
+                { id: "PROJEKT", label: @tr("PROJEKT") },
+                { id: "KOPIA", label: @tr("KOPIA") },
+                { id: "WZÓR", label: @tr("WZÓR") },
+                { id: "PILNE", label: @tr("PILNE") },
+                { id: "-" },
+                { id: "custom", label: @tr("Własny napis…"), icon: Icons.square-pen },
+                { id: "none", label: @tr("Usuń znak wodny"), icon: Icons.x },
+            ];
+            menu-w: 210px;
+            picked(id) => {
+                if id == "custom" {
+                    App.tab = 3;
+                } else if id == "none" {
+                    App.cmd("watermark", "");
+                } else {
+                    App.cmd("watermark", id);
+                }
+            }
         }
     }
     Group {
@@ -1080,7 +1325,7 @@ component InsertTab inherits HorizontalLayout {
             }
         }
         BigButton {
-            icon: Icons.layout-template;
+            icon: Icons.table;
             label: @tr("Tabela");
             tip: @tr("Wstaw tabelę – dane edytujesz w panelu właściwości");
             clicked => {
@@ -1097,11 +1342,25 @@ component InsertTab inherits HorizontalLayout {
                 App.cmd("chart", id);
             }
         }
+        BigMenuButton {
+            icon: Icons.scan;
+            label: @tr("Kod");
+            tip: @tr("Kod QR albo kod kreskowy");
+            items: [
+                { id: "0", label: @tr("Kod QR…"), icon: Icons.scan },
+                { id: "1", label: @tr("Kod kreskowy…"), icon: Icons.rows-3 },
+            ];
+            menu-w: 190px;
+            picked(id) => {
+                App.code-kind = id == "1" ? 1 : 0;
+                App.cmd("code", "");
+            }
+        }
     }
     Group {
         title: @tr("Tekst");
         BigButton {
-            icon: Icons.type;
+            icon: Icons.text-select;
             label: @tr("Ramka tekstowa");
             tip: @tr("Narysuj ramkę tekstową (przeciągnij na stronie)");
             active: App.tool == 1;
@@ -1119,25 +1378,19 @@ component InsertTab inherits HorizontalLayout {
                 App.cmd("text-shape", id);
             }
         }
+        BigButton {
+            icon: Icons.spline;
+            label: @tr("Tekst na ścieżce");
+            tip: @tr("Tekst biegnący po krzywej");
+            active: App.tool == 4;
+            clicked => {
+                App.cmd("path-text", "");
+            }
+        }
+    }
+    Group {
+        title: @tr("Symbole i metatagi");
         Col {
-            RowButton {
-                icon: Icons.spline;
-                label: @tr("Tekst na ścieżce");
-                tip: @tr("Tekst biegnący po krzywej");
-                active: App.tool == 4;
-                clicked => {
-                    App.cmd("path-text", "");
-                }
-            }
-            RowButton {
-                icon: Icons.heading;
-                label: @tr("Inicjał");
-                tip: @tr("Pierwsza litera akapitu na trzy wiersze");
-                active: App.drop-cap;
-                clicked => {
-                    App.cmd("drop-cap", "");
-                }
-            }
             MenuButton {
                 icon: Icons.omega;
                 label: @tr("Symbol");
@@ -1148,10 +1401,8 @@ component InsertTab inherits HorizontalLayout {
                     App.cmd("symbol", id);
                 }
             }
-        }
-        Col {
             MenuButton {
-                icon: Icons.hash;
+                icon: Icons.braces;
                 label: @tr("Pole");
                 tip: @tr("Numer strony, liczba stron, data…");
                 items: Menus.fields;
@@ -1169,58 +1420,67 @@ component InsertTab inherits HorizontalLayout {
                 }
             }
         }
-    }
-    Group {
-        title: @tr("Biblioteka");
         Col {
-            RowButton {
-                icon: Icons.book-a;
-                label: @tr("Biblioteka");
-                tip: @tr("Panel z zapisanymi fragmentami tekstu i obiektami do wstawienia");
-                active: App.left-panel == "library";
-                clicked => {
-                    App.cmd("panel", "library");
-                }
-            }
-            RowButton {
-                icon: Icons.plus;
-                label: @tr("Zapisz w bibliotece");
-                tip: @tr("Zapisz zaznaczony tekst albo obiekty do ponownego użycia w innych dokumentach");
-                clicked => {
-                    App.cmd("lib-save", "");
-                }
-            }
-            RowButton {
-                icon: Icons.image;
-                label: @tr("Obrazy");
-                tip: @tr("Panel z obrazami: osadzone i linkowane, rozdzielczość, łącza do plików");
-                active: App.left-panel == "images";
-                clicked => {
-                    App.cmd("panel", "images");
+            MenuButton {
+                icon: Icons.file-text;
+                label: @tr("Metatagi");
+                tip: @tr("Wstaw metadane dokumentu jako pole – zmieniają się razem z metadanymi");
+                items: [
+                    { id: "title", label: @tr("Tytuł"), icon: Icons.heading },
+                    { id: "author", label: @tr("Autor"), icon: Icons.pen-line },
+                    { id: "subject", label: @tr("Temat"), icon: Icons.file-text },
+                    { id: "keywords", label: @tr("Słowa kluczowe"), icon: Icons.hash },
+                    { id: "created", label: @tr("Data utworzenia"), icon: Icons.calendar },
+                    { id: "modified", label: @tr("Data ostatniej zmiany"), icon: Icons.clock },
+                    { id: "-" },
+                    { id: "edit", label: @tr("Edytuj metadane…"), icon: Icons.square-pen },
+                ];
+                menu-w: 230px;
+                picked(id) => {
+                    if id == "edit" {
+                        App.cmd("meta-edit", "");
+                    } else {
+                        App.cmd("field", id);
+                    }
                 }
             }
         }
     }
     Group {
         title: @tr("Nagłówek i stopka");
-        last: true;
+        BigMenuButton {
+            icon: Icons.panel-top;
+            label: @tr("Nagłówek");
+            tip: @tr("Tekst u góry każdej strony");
+            active: App.has-header;
+            items: App.has-header ? [
+                { id: "header-edit", label: @tr("Edytuj nagłówek"), icon: Icons.square-pen },
+                { id: "header-remove", label: @tr("Usuń nagłówek z tej sekcji"), icon: Icons.trash-2 },
+            ] : [
+                { id: "header-edit", label: @tr("Dodaj nagłówek"), icon: Icons.plus },
+            ];
+            menu-w: 240px;
+            picked(id) => {
+                App.cmd(id, "");
+            }
+        }
+        BigMenuButton {
+            icon: Icons.panel-bottom;
+            label: @tr("Stopka");
+            tip: @tr("Tekst u dołu każdej strony (z numerem strony)");
+            active: App.has-footer;
+            items: App.has-footer ? [
+                { id: "footer-edit", label: @tr("Edytuj stopkę"), icon: Icons.square-pen },
+                { id: "footer-remove", label: @tr("Usuń stopkę z tej sekcji"), icon: Icons.trash-2 },
+            ] : [
+                { id: "footer-edit", label: @tr("Dodaj stopkę"), icon: Icons.plus },
+            ];
+            menu-w: 240px;
+            picked(id) => {
+                App.cmd(id, "");
+            }
+        }
         Col {
-            RowButton {
-                icon: Icons.panel-top;
-                label: App.has-header ? @tr("Edytuj nagłówek") : @tr("Dodaj nagłówek");
-                tip: @tr("Tekst u góry każdej strony");
-                clicked => {
-                    App.cmd("header-edit", "");
-                }
-            }
-            RowButton {
-                icon: Icons.panel-bottom;
-                label: App.has-footer ? @tr("Edytuj stopkę") : @tr("Dodaj stopkę");
-                tip: @tr("Tekst u dołu każdej strony (z numerem strony)");
-                clicked => {
-                    App.cmd("footer-edit", "");
-                }
-            }
             RowButton {
                 icon: Icons.files;
                 label: @tr("Inna pierwsza strona");
@@ -1230,28 +1490,8 @@ component InsertTab inherits HorizontalLayout {
                     App.cmd("diff-first", "");
                 }
             }
-        }
-        Col {
             RowButton {
-                tip: @tr("Usuń nagłówek z tej sekcji");
-                icon: Icons.trash-2;
-                label: @tr("Usuń nagłówek");
-                enabled: App.has-header;
-                clicked => {
-                    App.cmd("header-remove", "");
-                }
-            }
-            RowButton {
-                tip: @tr("Usuń stopkę z tej sekcji");
-                icon: Icons.trash-2;
-                label: @tr("Usuń stopkę");
-                enabled: App.has-footer;
-                clicked => {
-                    App.cmd("footer-remove", "");
-                }
-            }
-            RowButton {
-                icon: Icons.book-a;
+                icon: Icons.book-open;
                 label: @tr("Inne parzyste");
                 tip: @tr("Osobny nagłówek i stopka stron parzystych – układ lustrzany jak w książce");
                 active: App.odd-even;
@@ -1259,16 +1499,14 @@ component InsertTab inherits HorizontalLayout {
                     App.cmd("odd-even", "");
                 }
             }
-        }
-        Col {
             MenuButton {
-                icon: Icons.panel-top;
-                label: @tr("Żywa pagina");
-                tip: @tr("Tytuł bieżącego rozdziału w nagłówku każdej strony");
+                icon: Icons.heading;
+                label: @tr("Tytuł rozdziału");
+                tip: @tr("Wstaw do nagłówka tytuł bieżącego rozdziału – zmienia się sam na każdej stronie");
                 items: [
                     { id: "1", label: @tr("Rozdział (Nagłówek 1)") },
                     { id: "2", label: @tr("Podrozdział (Nagłówek 2)") },
-                    { id: "3", label: @tr("Hasło (Nagłówek 3)") },
+                    { id: "3", label: @tr("Punkt (Nagłówek 3)") },
                 ];
                 menu-w: 240px;
                 picked(id) => {
@@ -1277,133 +1515,68 @@ component InsertTab inherits HorizontalLayout {
             }
         }
     }
+    Group {
+        title: @tr("Biblioteka");
+        optional: true;
+        last: true;
+        BigButton {
+            icon: Icons.book-a;
+            label: @tr("Biblioteka");
+            tip: @tr("Panel z zapisanymi fragmentami tekstu i obiektami do wstawienia");
+            active: App.left-panel == "library";
+            clicked => {
+                App.cmd("panel", "library");
+            }
+        }
+        Col {
+            RowButton {
+                icon: Icons.plus;
+                label: @tr("Zapisz zaznaczenie");
+                tip: @tr("Zapisz zaznaczony tekst albo obiekty do ponownego użycia w innych dokumentach");
+                clicked => {
+                    App.cmd("lib-save", "");
+                }
+            }
+        }
+    }
 }
 
-component DesignTab inherits HorizontalLayout {
-    alignment: start;
-    Group {
-        title: @tr("Motyw dokumentu");
-        for t in App.doc-themes: Rectangle {
-            width: 76px * Theme.scale;
-            height: 66px * Theme.scale;
-            border-radius: Theme.r-small;
-            background: t.id == App.doc-theme ? Theme.accent-soft : dta.has-hover ? Theme.hover : transparent;
-            border-width: t.id == App.doc-theme ? 1px : 0;
+/// Miniatura strony z obszarem tekstu – proporcje kartki i marginesów na żywo.
+component MarginPreview inherits Rectangle {
+    width: 52px * Theme.scale;
+    height: 66px * Theme.scale;
+    property <length> pw: App.page-aspect >= 1 ? 46px * Theme.scale : 60px * Theme.scale * App.page-aspect;
+    property <length> ph: App.page-aspect >= 1 ? 46px * Theme.scale / App.page-aspect : 60px * Theme.scale;
+    Rectangle {
+        x: (parent.width - root.pw) / 2;
+        y: (parent.height - root.ph) / 2;
+        width: root.pw;
+        height: root.ph;
+        border-radius: 2px;
+        background: #ffffff;
+        border-width: 1px;
+        border-color: Theme.line;
+        Rectangle {
+            x: parent.width * App.m-frac-l;
+            y: parent.height * App.m-frac-t;
+            width: max(2px, parent.width * (1 - App.m-frac-l - App.m-frac-r));
+            height: max(2px, parent.height * (1 - App.m-frac-t - App.m-frac-b));
+            background: Theme.accent.with-alpha(0.14);
+            border-width: 1px;
             border-color: Theme.accent;
-            VerticalLayout {
-                padding: 5px;
-                spacing: 3px;
-                Rectangle {
-                    border-radius: 4px;
-                    background: #ffffff;
-                    height: 36px * Theme.scale;
-                    Text {
-                        text: "Aa";
-                        font-family: t.font;
-                        font-size: 20px * Theme.scale;
-                        color: #222;
-                    }
-                }
-                Text {
-                    text: t.label;
-                    font-family: Theme.font;
-                    font-size: 10px * Theme.scale;
-                    color: Theme.text-dim;
-                    horizontal-alignment: center;
-                    overflow: elide;
-                }
-            }
-            dta := TipArea {
-                tip: @tr("Motyw: {} – kroje i kolory stylów", t.label);
-                clicked => {
-                    App.cmd("doc-theme", t.id);
-                }
+            // Kilka „wierszy tekstu” – od razu widać, ile miejsca zostaje.
+            for i in [0, 1, 2, 3, 4, 5]: Rectangle {
+                x: 2px;
+                y: 3px + i * 4px;
+                width: (parent.width - 4px) * (i == 5 ? 0.6 : 1);
+                height: 1.5px;
+                visible: self.y + 2px < parent.height;
+                background: Theme.accent.with-alpha(0.55);
             }
         }
     }
-    Group {
-        title: @tr("Tło strony");
-        Col {
-            Field {
-                w: 150px;
-                text: App.watermark;
-                placeholder: @tr("Znak wodny, np. PROJEKT");
-                tip: @tr("Ukośny napis w tle każdej strony");
-                accepted(t) => {
-                    App.cmd("watermark", t);
-                }
-            }
-            Row {
-                RowButton {
-                    icon: Icons.sparkles;
-                    label: @tr("POUFNE");
-                    tip: @tr("Znak wodny „POUFNE”");
-                    clicked => {
-                        App.cmd("watermark", @tr("POUFNE"));
-                    }
-                }
-                RowButton {
-                    icon: Icons.x;
-                    label: @tr("Usuń");
-                    tip: @tr("Bez znaku wodnego");
-                    clicked => {
-                        App.cmd("watermark", "");
-                    }
-                }
-            }
-            Switch {
-                label: @tr("Obramowanie strony");
-                tip: @tr("Ramka dookoła każdej strony");
-                on: App.page-border;
-                toggled => {
-                    App.cmd("page-border", "");
-                }
-            }
-        }
-    }
-    Group {
-        title: @tr("Tło i typografia");
-        last: true;
-        ColorPick {
-            big: true;
-            icon: Icons.paint-bucket;
-            current: App.page-color;
-            tip: @tr("Kolor strony");
-            allow-none: false;
-            apply => {
-                App.cmd("page-color", "current");
-            }
-            picked(c) => {
-                App.page-color = c;
-                App.cmd("page-color", "current");
-            }
-        }
-        Col {
-            Switch {
-                label: @tr("Polskie sierotki");
-                tip: @tr("Krótkie wyrazy (a, i, o, u, w, z) nie zostają na końcu wiersza");
-                on: App.orphans;
-                toggled => {
-                    App.cmd("orphans", "");
-                }
-            }
-            Switch {
-                label: @tr("Dzielenie wyrazów");
-                tip: @tr("Automatyczne przenoszenie wyrazów z dywizem (polski i angielski)");
-                on: App.hyphenate;
-                toggled => {
-                    App.cmd("hyphenate", "");
-                }
-            }
-            Switch {
-                label: @tr("Siatka bazowa");
-                tip: @tr("Wiersze treści głównej na wspólnej siatce (równe linie w kolumnach)");
-                on: App.baseline-grid;
-                toggled => {
-                    App.cmd("baseline-grid", "");
-                }
-            }
-        }
+    TipArea {
+        tip: @tr("Podgląd marginesów – obszar tekstu na stronie");
     }
 }
 
@@ -1411,6 +1584,11 @@ component LayoutTab inherits HorizontalLayout {
     alignment: start;
     Group {
         title: @tr("Strona");
+        launcher-tip: @tr("Ustawienia strony – papier, marginesy, kolumny");
+        launcher-icon: Icons.file;
+        launch => {
+            App.cmd("page-dialog", "");
+        }
         BigMenuButton {
             icon: Icons.file;
             label: App.page-size;
@@ -1440,61 +1618,61 @@ component LayoutTab inherits HorizontalLayout {
                 App.cmd("margins", id);
             }
         }
+        // Marginesy: pola z ikonami krawędzi wokół miniatury strony, która pokazuje obszar tekstu.
         Col {
-            Row {
-                Spin {
-                    label: "↑";
-                    tip: @tr("Margines górny");
-                    value: App.m-top;
-                    unit: App.unit;
-                    w: 78px;
-                    changed-value(v) => {
-                        App.cmd("m-top", v);
-                    }
-                    step(d) => {
-                        App.cmd("m-top-step", d);
-                    }
+            IconSpin {
+                icon: Icons.arrow-up-from-line;
+                tip: @tr("Margines górny");
+                value: App.m-top;
+                unit: App.unit;
+                w: 92px;
+                changed-value(v) => {
+                    App.cmd("m-top", v);
                 }
-                Spin {
-                    label: "↓";
-                    tip: @tr("Margines dolny");
-                    value: App.m-bottom;
-                    unit: App.unit;
-                    w: 78px;
-                    changed-value(v) => {
-                        App.cmd("m-bottom", v);
-                    }
-                    step(d) => {
-                        App.cmd("m-bottom-step", d);
-                    }
+                step(d) => {
+                    App.cmd("m-top-step", d);
                 }
             }
-            Row {
-                Spin {
-                    label: "←";
-                    tip: @tr("Margines lewy");
-                    value: App.m-left;
-                    unit: App.unit;
-                    w: 78px;
-                    changed-value(v) => {
-                        App.cmd("m-left", v);
-                    }
-                    step(d) => {
-                        App.cmd("m-left-step", d);
-                    }
+            IconSpin {
+                icon: Icons.arrow-down-to-line;
+                tip: @tr("Margines dolny");
+                value: App.m-bottom;
+                unit: App.unit;
+                w: 92px;
+                changed-value(v) => {
+                    App.cmd("m-bottom", v);
                 }
-                Spin {
-                    label: "→";
-                    tip: @tr("Margines prawy");
-                    value: App.m-right;
-                    unit: App.unit;
-                    w: 78px;
-                    changed-value(v) => {
-                        App.cmd("m-right", v);
-                    }
-                    step(d) => {
-                        App.cmd("m-right-step", d);
-                    }
+                step(d) => {
+                    App.cmd("m-bottom-step", d);
+                }
+            }
+        }
+        MarginPreview {}
+        Col {
+            IconSpin {
+                icon: Icons.arrow-right-from-line;
+                tip: @tr("Margines lewy");
+                value: App.m-left;
+                unit: App.unit;
+                w: 92px;
+                changed-value(v) => {
+                    App.cmd("m-left", v);
+                }
+                step(d) => {
+                    App.cmd("m-left-step", d);
+                }
+            }
+            IconSpin {
+                icon: Icons.arrow-left-to-line;
+                tip: @tr("Margines prawy");
+                value: App.m-right;
+                unit: App.unit;
+                w: 92px;
+                changed-value(v) => {
+                    App.cmd("m-right", v);
+                }
+                step(d) => {
+                    App.cmd("m-right-step", d);
                 }
             }
         }
@@ -1531,14 +1709,31 @@ component LayoutTab inherits HorizontalLayout {
     }
     Group {
         title: App.in-section ? @tr("Kolumny sekcji") : @tr("Kolumny");
-        for n in [1, 2, 3, 4]: IconButton {
-            icon: n == 1 ? Icons.file-text : n == 2 ? Icons.columns-2 : n == 3 ? Icons.columns-3 : Icons.columns-4;
-            tip: n == 1 ? @tr("Jedna kolumna") : @tr("Kolumny: {}", n);
-            active: App.columns == n;
-            size: 36px;
-            icon-size: 20px;
+        BigButton {
+            icon: Icons.file-text;
+            label: @tr("Jedna");
+            tip: @tr("Jedna kolumna");
+            active: App.columns == 1;
             clicked => {
-                App.cmd("columns", n);
+                App.cmd("columns", 1);
+            }
+        }
+        BigMenuButton {
+            icon: App.columns == 3 ? Icons.columns-3 : App.columns >= 4 ? Icons.columns-4 : Icons.columns-2;
+            label: App.columns > 1 ? @tr("Kolumny: {}", App.columns) : @tr("Wiele");
+            tip: @tr("Tekst w kilku kolumnach");
+            active: App.columns > 1;
+            current: App.columns;
+            items: [
+                { id: "2", label: @tr("Dwie kolumny"), icon: Icons.columns-2 },
+                { id: "3", label: @tr("Trzy kolumny"), icon: Icons.columns-3 },
+                { id: "4", label: @tr("Cztery kolumny"), icon: Icons.columns-4 },
+                { id: "5", label: @tr("Pięć kolumn") },
+                { id: "6", label: @tr("Sześć kolumn") },
+            ];
+            menu-w: 200px;
+            picked(id) => {
+                App.cmd("columns", id);
             }
         }
         Col {
@@ -1566,86 +1761,147 @@ component LayoutTab inherits HorizontalLayout {
         }
     }
     Group {
-        title: @tr("Akapit");
-        Col {
-            Spin {
-                label: @tr("Wcięcie ←");
-                tip: @tr("Wcięcie z lewej");
-                value: App.indent-left;
-                unit: App.unit;
-                w: 84px;
-                changed-value(v) => {
-                    App.cmd("indent-left", v);
-                }
-                step(d) => {
-                    App.cmd("indent-left-step", d);
-                }
+        title: @tr("Tło strony");
+        ColorPick {
+            big: true;
+            icon: Icons.paint-bucket;
+            current: App.page-color;
+            tip: @tr("Kolor strony");
+            allow-none: false;
+            apply => {
+                App.cmd("page-color", "current");
             }
-            Spin {
-                label: @tr("Wcięcie →");
-                tip: @tr("Wcięcie z prawej");
-                value: App.indent-right;
-                unit: App.unit;
-                w: 84px;
-                changed-value(v) => {
-                    App.cmd("indent-right", v);
-                }
-                step(d) => {
-                    App.cmd("indent-right-step", d);
-                }
-            }
-            Spin {
-                label: @tr("1. wiersz");
-                tip: @tr("Wcięcie pierwszego wiersza (ujemne – wysunięcie)");
-                value: App.first-line;
-                unit: App.unit;
-                w: 84px;
-                changed-value(v) => {
-                    App.cmd("first-line", v);
-                }
-                step(d) => {
-                    App.cmd("first-line-step", d);
-                }
+            picked(c) => {
+                App.page-color = c;
+                App.cmd("page-color", "current");
             }
         }
         Col {
-            Spin {
-                label: @tr("Przed");
-                tip: @tr("Odstęp przed akapitem (pt)");
-                value: App.space-before;
-                unit: "pt";
-                w: 80px;
-                changed-value(v) => {
-                    App.cmd("space-before", v);
+            Field {
+                w: 150px;
+                text: App.watermark;
+                placeholder: @tr("Znak wodny, np. PROJEKT");
+                tip: @tr("Ukośny napis w tle każdej strony – Enter zatwierdza");
+                accepted(t) => {
+                    App.cmd("watermark", t);
                 }
-                step(d) => {
-                    App.cmd("space-before-step", d);
+            }
+            MenuButton {
+                icon: Icons.droplet;
+                label: @tr("Gotowe napisy");
+                tip: @tr("Gotowe znaki wodne");
+                items: [
+                    { id: "POUFNE", label: @tr("POUFNE") },
+                    { id: "PROJEKT", label: @tr("PROJEKT") },
+                    { id: "KOPIA", label: @tr("KOPIA") },
+                    { id: "WZÓR", label: @tr("WZÓR") },
+                    { id: "PILNE", label: @tr("PILNE") },
+                ];
+                menu-w: 170px;
+                picked(id) => {
+                    App.cmd("watermark", id);
+                }
+            }
+            RowButton {
+                icon: Icons.x;
+                label: @tr("Usuń znak wodny");
+                tip: @tr("Bez znaku wodnego");
+                enabled: App.watermark != "";
+                clicked => {
+                    App.cmd("watermark", "");
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Obramowanie strony");
+        BigMenuButton {
+            icon: Icons.square-dashed;
+            label: App.page-border-style == "none" ? @tr("Brak") : App.page-border-style == "double" ? @tr("Podwójna") : App.page-border-style == "dashed" ? @tr("Kreskowana") : App.page-border-style == "dotted" ? @tr("Kropkowana") : @tr("Pojedyncza");
+            tip: @tr("Styl ramki dookoła każdej strony");
+            active: App.page-border-style != "none";
+            current: App.page-border-style;
+            items: [
+                { id: "single", label: @tr("Pojedyncza linia") },
+                { id: "double", label: @tr("Podwójna linia") },
+                { id: "dashed", label: @tr("Kreskowana") },
+                { id: "dotted", label: @tr("Kropkowana") },
+                { id: "-" },
+                { id: "none", label: @tr("Bez obramowania") },
+            ];
+            menu-w: 200px;
+            picked(id) => {
+                App.cmd("page-border", id);
+            }
+        }
+        Col {
+            ColorPick {
+                icon: Icons.square;
+                current: App.page-border-color;
+                tip: @tr("Kolor obramowania strony");
+                allow-none: false;
+                apply => {
+                    App.cmd("page-border-color", "");
+                }
+                picked(c) => {
+                    App.page-border-color = c;
+                    App.cmd("page-border-color", "");
                 }
             }
             Spin {
-                label: @tr("Po");
-                tip: @tr("Odstęp po akapicie (pt)");
-                value: App.space-after;
+                label: @tr("Grubość");
+                tip: @tr("Grubość linii obramowania (pt)");
+                value: App.page-border-w;
                 unit: "pt";
                 w: 80px;
                 changed-value(v) => {
-                    App.cmd("space-after", v);
+                    App.cmd("page-border-w", v);
                 }
                 step(d) => {
-                    App.cmd("space-after-step", d);
+                    App.cmd("page-border-w-step", d);
                 }
             }
             Spin {
-                label: @tr("Światło");
-                tip: @tr("Odstępy między znakami zaznaczenia (pt)");
-                value: App.tracking;
+                label: @tr("Odstęp");
+                tip: @tr("Odstęp ramki od krawędzi kartki (pt)");
+                value: App.page-border-inset;
                 unit: "pt";
                 w: 80px;
                 changed-value(v) => {
-                    App.cmd("tracking", v);
+                    App.cmd("page-border-inset", v);
                 }
                 step(d) => {
-                    App.cmd("tracking-step", d);
+                    App.cmd("page-border-inset-step", d);
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Typografia");
+        optional: true;
+        Col {
+            Switch {
+                label: @tr("Polskie sierotki");
+                tip: @tr("Krótkie wyrazy (a, i, o, u, w, z) nie zostają na końcu wiersza");
+                on: App.orphans;
+                toggled => {
+                    App.cmd("orphans", "");
+                }
+            }
+            Switch {
+                label: @tr("Dzielenie wyrazów");
+                tip: @tr("Automatyczne przenoszenie wyrazów z dywizem (polski i angielski)");
+                on: App.hyphenate;
+                toggled => {
+                    App.cmd("hyphenate", "");
+                }
+            }
+            Switch {
+                label: @tr("Siatka bazowa");
+                tip: @tr("Wiersze treści głównej na wspólnej siatce (równe linie w kolumnach)");
+                on: App.baseline-grid;
+                toggled => {
+                    App.cmd("baseline-grid", "");
                 }
             }
         }
@@ -1768,7 +2024,30 @@ component LayoutTab inherits HorizontalLayout {
 component ShapesTab inherits HorizontalLayout {
     alignment: start;
     Group {
-        title: @tr("Kształt tekstu");
+        title: @tr("Zamiana");
+        BigMenuButton {
+            icon: Icons.wand-sparkles;
+            label: @tr("Tekst w kształt");
+            tip: @tr("Zaznaczony tekst (albo bieżący akapit) staje się kształtem tekstu w tym samym miejscu strony – reszta treści go opływa");
+            tint: Theme.accent;
+            items: Menus.text-shapes;
+            menu-w: 230px;
+            picked(id) => {
+                App.cmd("text-to-shape", id);
+            }
+        }
+        BigButton {
+            icon: Icons.text-cursor-input;
+            label: @tr("Kształt w tekst");
+            tip: @tr("Tekst z zaznaczonego kształtu wraca do treści dokumentu, a kształt znika");
+            enabled: App.obj-kind == "text";
+            clicked => {
+                App.cmd("shape-to-text", "");
+            }
+        }
+    }
+    Group {
+        title: @tr("Nowy kształt tekstu");
         BigButton {
             icon: Icons.pen-tool;
             label: @tr("Rysuj węzłami");
@@ -1790,7 +2069,7 @@ component ShapesTab inherits HorizontalLayout {
             }
         }
         BigButton {
-            icon: Icons.type;
+            icon: Icons.text-select;
             label: @tr("Ramka");
             tip: @tr("Prostokątna ramka tekstowa");
             active: App.tool == 1;
@@ -2097,7 +2376,7 @@ component ShapesTab inherits HorizontalLayout {
             }
             MenuButton {
                 icon: Icons.layers;
-                label: @tr("Strony");
+                label: @tr("Na stronach");
                 tip: @tr("Element strony wzorcowej: powtarzaj obiekt na wszystkich, nieparzystych albo parzystych stronach");
                 items: Menus.repeats;
                 current: App.obj-repeat;
@@ -2106,6 +2385,8 @@ component ShapesTab inherits HorizontalLayout {
                     App.cmd("repeat", id);
                 }
             }
+        }
+        Col {
             Spin {
                 label: @tr("Narożniki");
                 tip: @tr("Zaokrąglenie narożników prostokąta (pt)");
@@ -2146,20 +2427,25 @@ component RefsTab inherits HorizontalLayout {
     alignment: start;
     Group {
         title: @tr("Spis treści");
-        BigButton {
+        BigMenuButton {
             icon: Icons.table-of-contents;
             label: @tr("Spis treści");
-            tip: @tr("Wstaw spis treści z nagłówków (z numerami stron)");
-            clicked => {
-                App.cmd("toc", "");
+            tip: @tr("Spis treści z nagłówków, z numerami stron");
+            items: [
+                { id: "toc", label: @tr("Wstaw spis treści w miejscu kursora"), icon: Icons.table-of-contents },
+                { id: "toc-update", label: @tr("Aktualizuj istniejący spis"), icon: Icons.refresh-cw },
+            ];
+            menu-w: 260px;
+            picked(id) => {
+                App.cmd(id, "");
             }
         }
         BigButton {
-            icon: Icons.refresh-cw;
-            label: @tr("Aktualizuj");
-            tip: @tr("Odśwież spis treści");
+            icon: Icons.refresh-all;
+            label: @tr("Aktualizuj wszystko");
+            tip: @tr("Odśwież spis treści, indeks, numery podpisów i odsyłacze naraz");
             clicked => {
-                App.cmd("toc-update", "");
+                App.cmd("refs-update", "");
             }
         }
     }
@@ -2173,15 +2459,15 @@ component RefsTab inherits HorizontalLayout {
                 App.cmd("footnote", "");
             }
         }
-        Col {
-            RowButton {
-                icon: Icons.file-text;
-                label: @tr("Przypis końcowy");
-                tip: @tr("Wstaw przypis zebrany na końcu dokumentu");
-                clicked => {
-                    App.cmd("endnote", "");
-                }
+        BigButton {
+            icon: Icons.arrow-down-to-line;
+            label: @tr("Przypis końcowy");
+            tip: @tr("Wstaw przypis zebrany na końcu dokumentu (numeracja rzymska)");
+            clicked => {
+                App.cmd("endnote", "");
             }
+        }
+        Col {
             RowButton {
                 icon: Icons.undo-2;
                 label: @tr("Wróć do tekstu");
@@ -2194,9 +2480,21 @@ component RefsTab inherits HorizontalLayout {
         }
     }
     Group {
+        title: @tr("Podpisy");
+        BigMenuButton {
+            icon: Icons.captions;
+            label: @tr("Wstaw podpis");
+            tip: @tr("Podpis rysunku, tabeli albo wzoru z automatycznym numerem");
+            items: Menus.captions;
+            picked(id) => {
+                App.cmd("caption", id);
+            }
+        }
+    }
+    Group {
         title: @tr("Odsyłacze");
         BigButton {
-            icon: Icons.pin;
+            icon: Icons.bookmark;
             label: @tr("Zakładka");
             tip: @tr("Oznacz to miejsce jako cel odsyłaczy (nazwa z zaznaczenia albo akapitu)");
             clicked => {
@@ -2206,7 +2504,7 @@ component RefsTab inherits HorizontalLayout {
         BigMenuButton {
             icon: Icons.link-2;
             label: @tr("Odsyłacz");
-            tip: @tr("„zob. s. 12”, „rys. 3” – numer i strona aktualizują się same");
+            tip: @tr("„zob. s. 12”, „rys. 3” – numer i strona aktualizują się same. Cele: zakładki i podpisy.");
             items: App.ref-targets;
             menu-w: 320px;
             picked(id) => {
@@ -2216,6 +2514,15 @@ component RefsTab inherits HorizontalLayout {
     }
     Group {
         title: @tr("Indeks");
+        last: true;
+        BigButton {
+            icon: Icons.book-a;
+            label: @tr("Wstaw indeks");
+            tip: @tr("Wstaw albo odśwież skorowidz alfabetyczny z numerami stron");
+            clicked => {
+                App.cmd("index", "");
+            }
+        }
         Col {
             RowButton {
                 icon: Icons.hash;
@@ -2234,200 +2541,11 @@ component RefsTab inherits HorizontalLayout {
                 }
             }
         }
-        BigButton {
-            icon: Icons.book-a;
-            label: @tr("Indeks");
-            tip: @tr("Wstaw albo odśwież skorowidz alfabetyczny z numerami stron");
-            clicked => {
-                App.cmd("index", "");
-            }
-        }
-    }
-    Group {
-        title: @tr("Podpisy i nawigacja");
-        last: true;
-        BigMenuButton {
-            icon: Icons.captions;
-            label: @tr("Podpis");
-            tip: @tr("Podpis rysunku, tabeli albo wzoru z automatycznym numerem");
-            items: Menus.captions;
-            picked(id) => {
-                App.cmd("caption", id);
-            }
-        }
-        BigButton {
-            icon: Icons.list-tree;
-            label: @tr("Nawigator");
-            tip: @tr("Panel z konspektem dokumentu");
-            active: App.left-panel == "nav";
-            clicked => {
-                App.cmd("panel", "nav");
-            }
-        }
     }
 }
 
 component ReviewTab inherits HorizontalLayout {
     alignment: start;
-    Group {
-        title: @tr("Zmiany");
-        BigButton {
-            icon: Icons.pen-line;
-            label: @tr("Śledź zmiany");
-            tip: @tr("Oznaczaj nowy tekst i usunięcia – do akceptacji albo odrzucenia");
-            active: App.track;
-            clicked => {
-                App.cmd("track-toggle", "");
-            }
-        }
-        Col {
-            RowButton {
-                icon: Icons.check;
-                label: @tr("Akceptuj");
-                tip: @tr("Zaakceptuj zmianę w miejscu kursora");
-                clicked => {
-                    App.cmd("rev-accept", "");
-                }
-            }
-            RowButton {
-                icon: Icons.x;
-                label: @tr("Odrzuć");
-                tip: @tr("Odrzuć zmianę w miejscu kursora");
-                clicked => {
-                    App.cmd("rev-reject", "");
-                }
-            }
-            RowButton {
-                icon: Icons.chevron-right;
-                label: App.rev-count > 0 ? @tr("Następna ({})", App.rev-count) : @tr("Następna");
-                tip: @tr("Przejdź do następnej zmiany");
-                clicked => {
-                    App.cmd("rev-next", "");
-                }
-            }
-        }
-        Col {
-            RowButton {
-                icon: Icons.list-checks;
-                label: @tr("Akceptuj wszystkie");
-                tip: @tr("Zaakceptuj wszystkie zmiany w dokumencie");
-                enabled: App.rev-count > 0;
-                clicked => {
-                    App.cmd("rev-accept-all", "");
-                }
-            }
-            RowButton {
-                icon: Icons.eraser;
-                label: @tr("Odrzuć wszystkie");
-                tip: @tr("Odrzuć wszystkie zmiany – wraca tekst sprzed zmian");
-                enabled: App.rev-count > 0;
-                clicked => {
-                    App.cmd("rev-reject-all", "");
-                }
-            }
-        }
-    }
-    Group {
-        title: @tr("Komentarze i wersje");
-        BigButton {
-            icon: Icons.message-square-quote;
-            label: @tr("Komentarz");
-            tip: @tr("Dodaj komentarz do zaznaczonego miejsca");
-            clicked => {
-                App.cmd("comment", "");
-            }
-        }
-        Col {
-            RowButton {
-                icon: Icons.message-square-quote;
-                label: @tr("Komentarze");
-                tip: @tr("Panel komentarzy: odpowiedzi, rozwiązane, przejście do miejsca");
-                active: App.left-panel == "comments";
-                clicked => {
-                    App.cmd("panel", "comments");
-                }
-            }
-            RowButton {
-                icon: Icons.history;
-                label: @tr("Wersje");
-                tip: @tr("Historia wersji zapisana w pliku dokumentu");
-                active: App.left-panel == "versions";
-                clicked => {
-                    App.cmd("panel", "versions");
-                }
-            }
-            RowButton {
-                icon: Icons.save;
-                label: @tr("Zapisz wersję");
-                tip: @tr("Zapamiętaj obecną treść jako wersję (w pliku .odtp)");
-                clicked => {
-                    App.cmd("version-save", "");
-                }
-            }
-        }
-    }
-    Group {
-        title: @tr("Druk");
-        BigButton {
-            icon: Icons.badge-info;
-            label: @tr("Preflight");
-            tip: @tr("Kontrola przed drukiem: nadmiar tekstu, brakujące pliki i czcionki, rozdzielczość, spady");
-            active: App.left-panel == "preflight";
-            clicked => {
-                App.cmd("preflight", "");
-            }
-        }
-        Col {
-            RowButton {
-                icon: Icons.printer;
-                label: @tr("PDF do druku");
-                tip: @tr("Zapisz PDF dla drukarni: CMYK, spady i znaczniki cięcia");
-                clicked => {
-                    App.cmd("export", "pdf-print");
-                }
-            }
-            RowButton {
-                icon: Icons.palette;
-                label: @tr("Kolory dokumentu");
-                tip: @tr("Próbki kolorów: dokładne CMYK i kolory dodatkowe (Pantone)");
-                active: App.left-panel == "swatches";
-                clicked => {
-                    App.cmd("panel", "swatches");
-                }
-            }
-            Spin {
-                label: @tr("Spad");
-                tip: @tr("Spad – ile tła i obrazów wychodzi poza kartkę do obcięcia (mm, zwykle 3)");
-                value: App.print-bleed;
-                unit: "mm";
-                w: 60px;
-                changed-value(v) => {
-                    App.cmd("print-bleed", v);
-                }
-                step(d) => {
-                    App.cmd("print-bleed-step", d);
-                }
-            }
-        }
-        Col {
-            Switch {
-                label: @tr("Znaczniki cięcia");
-                tip: @tr("Kreski w narożnikach pokazujące, gdzie drukarnia przytnie kartkę");
-                on: App.print-marks;
-                toggled => {
-                    App.cmd("print-marks", "");
-                }
-            }
-            Switch {
-                label: @tr("Kolory CMYK");
-                tip: @tr("Zapisz kolory w CMYK (farby drukarskie) zamiast RGB (ekran)");
-                on: App.print-cmyk;
-                toggled => {
-                    App.cmd("print-cmyk", "");
-                }
-            }
-        }
-    }
     Group {
         title: @tr("Pisownia");
         BigButton {
@@ -2447,41 +2565,190 @@ component ReviewTab inherits HorizontalLayout {
                     App.cmd("spell-live", "");
                 }
             }
-            RowButton {
+            MenuButton {
                 icon: Icons.languages;
-                label: @tr("Polski");
-                tip: @tr("Język zaznaczonego tekstu: polski");
-                clicked => {
-                    App.cmd("lang", "pl");
+                label: @tr("Język tekstu");
+                tip: @tr("Język zaznaczonego tekstu – pisownia i dzielenie wyrazów");
+                items: [
+                    { id: "pl", label: @tr("Polski") },
+                    { id: "en", label: @tr("Angielski") },
+                ];
+                menu-w: 170px;
+                picked(id) => {
+                    App.cmd("lang", id);
                 }
             }
             RowButton {
-                icon: Icons.languages;
-                label: @tr("Angielski");
-                tip: @tr("Język zaznaczonego tekstu: angielski");
+                icon: Icons.book-a;
+                label: @tr("Mój słownik");
+                tip: @tr("Słownik użytkownika – wyrazy dodane do sprawdzania pisowni");
+                active: App.left-panel == "dict";
                 clicked => {
-                    App.cmd("lang", "en");
+                    App.cmd("user-dict", "");
                 }
             }
         }
     }
     Group {
-        title: @tr("Narzędzia");
+        title: @tr("Komentarze");
+        BigButton {
+            icon: Icons.message-square-quote;
+            label: @tr("Nowy komentarz");
+            tip: @tr("Dodaj komentarz do zaznaczonego miejsca");
+            clicked => {
+                App.cmd("comment", "");
+            }
+        }
+        BigButton {
+            icon: Icons.panel-left;
+            label: @tr("Wszystkie komentarze");
+            tip: @tr("Panel komentarzy: odpowiedzi, rozwiązane, przejście do miejsca");
+            active: App.left-panel == "comments";
+            clicked => {
+                App.cmd("panel", "comments");
+            }
+        }
+    }
+    Group {
+        title: @tr("Śledzenie zmian");
+        BigButton {
+            icon: Icons.square-pen;
+            label: @tr("Śledź zmiany");
+            tip: @tr("Oznaczaj nowy tekst i usunięcia – do akceptacji albo odrzucenia");
+            active: App.track;
+            tint: App.track ? Theme.accent : Theme.text;
+            clicked => {
+                App.cmd("track-toggle", "");
+            }
+        }
+        BigMenuButton {
+            icon: Icons.check;
+            label: @tr("Akceptuj");
+            tip: @tr("Zaakceptuj zmianę w miejscu kursora albo wszystkie");
+            items: [
+                { id: "rev-accept", label: @tr("Akceptuj tę zmianę"), icon: Icons.check },
+                { id: "rev-accept-all", label: @tr("Akceptuj wszystkie zmiany"), icon: Icons.list-checks },
+            ];
+            menu-w: 230px;
+            picked(id) => {
+                App.cmd(id, "");
+            }
+        }
+        BigMenuButton {
+            icon: Icons.x;
+            label: @tr("Odrzuć");
+            tip: @tr("Odrzuć zmianę w miejscu kursora albo wszystkie");
+            items: [
+                { id: "rev-reject", label: @tr("Odrzuć tę zmianę"), icon: Icons.x },
+                { id: "rev-reject-all", label: @tr("Odrzuć wszystkie zmiany"), icon: Icons.eraser },
+            ];
+            menu-w: 230px;
+            picked(id) => {
+                App.cmd(id, "");
+            }
+        }
+        BigButton {
+            icon: Icons.chevron-right;
+            label: App.rev-count > 0 ? @tr("Następna ({})", App.rev-count) : @tr("Następna");
+            tip: @tr("Przejdź do następnej zmiany");
+            enabled: App.rev-count > 0;
+            clicked => {
+                App.cmd("rev-next", "");
+            }
+        }
+    }
+    Group {
+        title: @tr("Wersje");
+        BigButton {
+            icon: Icons.save;
+            label: @tr("Zapisz wersję");
+            tip: @tr("Zapamiętaj obecną treść jako wersję (w pliku .odtp)");
+            clicked => {
+                App.cmd("version-save", "");
+            }
+        }
+        BigButton {
+            icon: Icons.history;
+            label: @tr("Historia");
+            tip: @tr("Historia wersji zapisana w pliku dokumentu – podgląd i przywracanie");
+            active: App.left-panel == "versions";
+            clicked => {
+                App.cmd("panel", "versions");
+            }
+        }
+    }
+    Group {
+        title: @tr("Druk");
+        BigButton {
+            icon: Icons.list-checks;
+            label: @tr("Preflight");
+            tip: @tr("Kontrola przed drukiem: nadmiar tekstu, brakujące pliki i czcionki, rozdzielczość, spady");
+            active: App.left-panel == "preflight";
+            clicked => {
+                App.cmd("preflight", "");
+            }
+        }
+        BigButton {
+            icon: Icons.printer;
+            label: @tr("PDF do druku");
+            tip: @tr("Zapisz PDF dla drukarni: CMYK, spady i znaczniki cięcia");
+            clicked => {
+                App.cmd("export", "pdf-print");
+            }
+        }
+        Col {
+            Switch {
+                label: @tr("Znaczniki cięcia");
+                tip: @tr("Kreski w narożnikach pokazujące, gdzie drukarnia przytnie kartkę");
+                on: App.print-marks;
+                toggled => {
+                    App.cmd("print-marks", "");
+                }
+            }
+            Switch {
+                label: @tr("Kolory CMYK");
+                tip: @tr("Zapisz kolory w CMYK (farby drukarskie) zamiast RGB (ekran)");
+                on: App.print-cmyk;
+                toggled => {
+                    App.cmd("print-cmyk", "");
+                }
+            }
+            Spin {
+                label: @tr("Spad");
+                tip: @tr("Spad – ile tła i obrazów wychodzi poza kartkę do obcięcia (mm, zwykle 3)");
+                value: App.print-bleed;
+                unit: "mm";
+                w: 60px;
+                changed-value(v) => {
+                    App.cmd("print-bleed", v);
+                }
+                step(d) => {
+                    App.cmd("print-bleed-step", d);
+                }
+            }
+        }
+        Col {
+            RowButton {
+                icon: Icons.palette;
+                label: @tr("Kolory dokumentu");
+                tip: @tr("Próbki kolorów: dokładne CMYK i kolory dodatkowe (Pantone)");
+                active: App.left-panel == "swatches";
+                clicked => {
+                    App.cmd("panel", "swatches");
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Statystyka");
         last: true;
+        optional: true;
         BigButton {
             icon: Icons.sigma;
             label: @tr("Statystyka");
             tip: @tr("Wyrazy, znaki, akapity i strony");
             clicked => {
                 App.cmd("stats", "");
-            }
-        }
-        BigButton {
-            icon: Icons.book-a;
-            label: @tr("Słownik");
-            tip: @tr("Słownik użytkownika – dodane wyrazy");
-            clicked => {
-                App.cmd("user-dict", "");
             }
         }
     }
@@ -2507,15 +2774,16 @@ component ViewTab inherits HorizontalLayout {
                 App.cmd("zoom-in", "");
             }
         }
-        Col {
-            RowButton {
-                tip: @tr("Powiększenie 100% – rzeczywisty rozmiar");
-                icon: Icons.scan;
-                label: "100%";
-                clicked => {
-                    App.cmd("zoom", "100");
-                }
+        BigButton {
+            tip: @tr("Powiększenie 100% – rzeczywisty rozmiar kartki na ekranie");
+            icon: Icons.scan;
+            label: "100%";
+            active: App.zoom == 100;
+            clicked => {
+                App.cmd("zoom", "100");
             }
+        }
+        Col {
             RowButton {
                 tip: @tr("Dopasuj powiększenie do szerokości strony");
                 icon: Icons.move-horizontal;
@@ -2546,14 +2814,6 @@ component ViewTab inherits HorizontalLayout {
                 }
             }
             Switch {
-                label: @tr("Linijka");
-                tip: @tr("Linijka z suwakami wcięć i tabulatorami");
-                on: App.ruler-on;
-                toggled => {
-                    App.cmd("ruler-toggle", "");
-                }
-            }
-            Switch {
                 label: @tr("Linie pomocnicze");
                 tip: @tr("Marginesy, kolumny i kontury ramek");
                 on: App.guides;
@@ -2570,6 +2830,42 @@ component ViewTab inherits HorizontalLayout {
                 }
             }
         }
+        Col {
+            Switch {
+                label: @tr("Linijka");
+                tip: @tr("Linijka z suwakami wcięć i tabulatorami");
+                on: App.ruler-on;
+                toggled => {
+                    App.cmd("ruler-toggle", "");
+                }
+            }
+            Switch {
+                label: @tr("Linijka pionowa");
+                tip: @tr("Linijka po lewej stronie – wysokość strony i marginesy górny i dolny");
+                on: App.ruler-v-on;
+                toggled => {
+                    App.cmd("ruler-v-toggle", "");
+                }
+            }
+            MenuButton {
+                icon: Icons.list-ordered;
+                label: App.line-numbers > 0 ? @tr("Numery wierszy: co {}", App.line-numbers) : @tr("Numery wierszy");
+                tip: @tr("Numeracja wierszy na lewym marginesie – od 1 na każdej stronie, także w PDF i DOCX");
+                active: App.line-numbers > 0;
+                current: App.line-numbers;
+                items: [
+                    { id: "1", label: @tr("Każdy wiersz") },
+                    { id: "5", label: @tr("Co 5 wierszy") },
+                    { id: "10", label: @tr("Co 10 wierszy") },
+                    { id: "-" },
+                    { id: "0", label: @tr("Bez numeracji") },
+                ];
+                menu-w: 190px;
+                picked(id) => {
+                    App.cmd("line-numbers", id);
+                }
+            }
+        }
     }
     Group {
         title: @tr("Interfejs");
@@ -2581,14 +2877,6 @@ component ViewTab inherits HorizontalLayout {
                 tip: @tr("Motyw interfejsu");
                 picked(i) => {
                     App.cmd("theme", i);
-                }
-            }
-            Switch {
-                tip: @tr("Zwiń wstążkę – karty rozwijają się po kliknięciu");
-                label: @tr("Zwinięta wstążka");
-                on: App.ribbon-collapsed;
-                toggled => {
-                    App.cmd("ribbon-collapse", "");
                 }
             }
         }
@@ -2641,7 +2929,6 @@ component CustomTab inherits HorizontalLayout {
 component TabButton inherits Rectangle {
     in property <string> label;
     in property <int> index;
-    in property <bool> dot;
     in property <string> tip;
     width: tt.preferred-width + 22px;
     tt := Text {
@@ -2650,14 +2937,6 @@ component TabButton inherits Rectangle {
         font-size: Theme.fs;
         font-weight: App.tab == root.index ? 600 : 400;
         color: App.tab == root.index ? Theme.text : tta.has-hover ? Theme.text : Theme.text-dim;
-    }
-    if root.dot: Rectangle {
-        x: parent.width - 9px;
-        y: 7px;
-        width: 5px;
-        height: 5px;
-        border-radius: 2.5px;
-        background: Theme.accent;
     }
     Rectangle {
         y: parent.height - 3px;
@@ -2707,11 +2986,11 @@ export component RibbonTabs inherits Rectangle {
                 }
             }
         }
-        for t[i] in [@tr("Narzędzia główne"), @tr("Wstawianie"), @tr("Projekt"), @tr("Układ"), @tr("Kształty tekstu"), @tr("Odwołania"), @tr("Recenzja"), @tr("Widok")]: TabButton {
+        // Dawna karta „Projekt” (indeks 2) usunięta – pozostałe zachowują numery.
+        for t[i] in [@tr("Narzędzia główne"), @tr("Wstawianie"), @tr("Układ"), @tr("Kształty tekstu"), @tr("Odwołania"), @tr("Recenzja"), @tr("Widok")]: TabButton {
             label: t;
-            index: i;
-            dot: i == 4;
-            tip: [@tr("Schowek, czcionka, akapit i style"), @tr("Strony, obrazy, kształty, tabele, wykresy, tekst i nagłówki"), @tr("Motyw dokumentu, kolory, znak wodny i obramowanie strony"), @tr("Marginesy, orientacja, kolumny, sekcje, podziały i układ obiektów"), @tr("Kształty tekstu: tekst w dowolnym konturze z węzłów, opływanie, łączenie ramek"), @tr("Spis treści, przypisy, podpisy i odsyłacze"), @tr("Pisownia, język, komentarze i statystyki"), @tr("Powiększenie, linijka, znaki formatowania i panele")][i];
+            index: i < 2 ? i : i + 1;
+            tip: [@tr("Schowek, czcionka, akapit i style"), @tr("Strony, obrazy, kształty, tabele, wykresy, tekst i nagłówki"), @tr("Marginesy, orientacja, kolumny, tło i obramowanie strony, typografia, układ obiektów"), @tr("Kształty tekstu: tekst w dowolnym konturze z węzłów, opływanie, łączenie ramek"), @tr("Spis treści, przypisy, podpisy i odsyłacze"), @tr("Pisownia, język, komentarze i statystyki"), @tr("Powiększenie, linijka, znaki formatowania i panele")][i];
         }
         // Karty skrótów (opcjonalne, do trzech) – po kartach stałych.
         for c[j] in App.custom-tabs: TabButton {
@@ -2725,17 +3004,55 @@ export component RibbonTabs inherits Rectangle {
 export component RibbonBody inherits Rectangle {
     height: Theme.ribbon-h;
     background: Theme.panel;
+    // Dopasowanie do szerokości: gdy karta się nie mieści, podnosimy poziom zwężenia
+    // (Theme.ribbon-level) i zapamiętujemy szerokość, jakiej potrzebował poprzedni poziom –
+    // po poszerzeniu okna ponad nią wracamy poziom niżej. Gdy i poziom 3 nie wystarcza, zostaje przewijanie.
+    property <length> need: hl.preferred-width;
+    property <length> need0;
+    property <length> need1;
+    property <length> need2;
+    function fit() {
+        if (root.need > root.width + 1px && Theme.ribbon-level < 3) {
+            if (Theme.ribbon-level == 0) {
+                root.need0 = root.need;
+            } else if (Theme.ribbon-level == 1) {
+                root.need1 = root.need;
+            } else {
+                root.need2 = root.need;
+            }
+            Theme.ribbon-level += 1;
+        } else if (Theme.ribbon-level > 0 && root.width >= (Theme.ribbon-level == 1 ? root.need0 : Theme.ribbon-level == 2 ? root.need1 : root.need2)) {
+            Theme.ribbon-level -= 1;
+        }
+    }
+    // Inna karta – inne szerokości: zaczynamy od pełnej wstążki.
+    property <int> tab: App.tab;
+    changed tab => {
+        Theme.ribbon-level = 0;
+        root.fit();
+    }
+    changed need => {
+        root.fit();
+    }
+    changed width => {
+        root.fit();
+    }
+    init => {
+        root.fit();
+    }
     Flickable {
         content-width: max(self.width, hl.preferred-width);
         content-height: self.height;
         hl := HorizontalLayout {
             height: Theme.ribbon-h;
             padding-left: 6px;
-            padding-right: 6px;
+            // Miejsce na przycisk zwijania w prawym dolnym rogu.
+            padding-right: 30px;
             alignment: start;
-            if App.tab == 0: HomeTab {}
+            if App.tab == 0: HomeTab {
+                avail: root.width;
+            }
             if App.tab == 1: InsertTab {}
-            if App.tab == 2: DesignTab {}
             if App.tab == 3: LayoutTab {}
             if App.tab == 4: ShapesTab {}
             if App.tab == 5: RefsTab {}
@@ -2744,6 +3061,20 @@ export component RibbonBody inherits Rectangle {
             if App.tab >= 8 && App.tab - 8 < App.custom-tabs.length: CustomTab {
                 index: App.tab - 8;
             }
+        }
+    }
+    // Jak w Wordzie: prawy dolny róg wstążki – zwiń, a na wysuniętej (zwiniętej) wstążce – przypnij.
+    IconButton {
+        x: parent.width - self.width - 6px;
+        y: parent.height - self.height - 5px;
+        size: 22px * Theme.scale;
+        icon-size: 14px * Theme.scale;
+        icon: App.ribbon-collapsed ? Icons.pin : Icons.chevron-up;
+        tint: Theme.text-dim;
+        tip: App.ribbon-collapsed ? @tr("Przypnij wstążkę (Ctrl+F1)") : @tr("Zwiń wstążkę (Ctrl+F1)");
+        clicked => {
+            App.ribbon-peek = false;
+            App.cmd("ribbon-collapse", "");
         }
     }
 }

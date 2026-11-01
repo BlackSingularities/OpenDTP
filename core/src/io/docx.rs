@@ -163,6 +163,10 @@ fn rpr(f: &CharFmt, out: &mut String) {
     if f.outline.is_some_and(|o| o > 0.0) {
         s.push_str("<w:outline/>");
     }
+    // Poświata nie ma odpowiednika w podstawowym DOCX – zapisujemy ją jak cień.
+    if f.effect.is_some_and(|e| e != TextEffect::None) {
+        s.push_str("<w:shadow/>");
+    }
     if let Some(c) = f.color {
         let _ = write!(s, r#"<w:color w:val="{}"/>"#, c.hex6());
     }
@@ -223,6 +227,7 @@ fn num_id(k: ListKind) -> u32 {
         ListKind::UpperLetter => 8,
         ListKind::LowerRoman => 9,
         ListKind::UpperRoman => 10,
+        ListKind::Multi => 11,
     }
 }
 
@@ -402,6 +407,10 @@ fn runs_xml(ctx: &mut Ctx, runs: &[Run], out: &mut String) {
                 Field::Ref(id, RefKind::Page) => format!(r#"PAGEREF _Ref{id} \h"#),
                 Field::Ref(id, _) => format!(r#"REF _Ref{id} \h"#),
                 Field::Running(n) => format!(r#"STYLEREF "heading {}""#, n.clamp(1, 3)),
+                Field::Meta(MetaKey::Subject) => "SUBJECT".to_string(),
+                Field::Meta(MetaKey::Keywords) => "KEYWORDS".to_string(),
+                Field::Meta(MetaKey::Created) => r#"CREATEDATE \@ "dd.MM.yyyy""#.to_string(),
+                Field::Meta(MetaKey::Modified) => r#"SAVEDATE \@ "dd.MM.yyyy""#.to_string(),
                 Field::Anchor(_) | Field::Footnote(_) | Field::Bookmark(_) | Field::IndexMark(_) | Field::Comment(_) => String::new(),
             };
             // Podpis jest celem odsyłaczy – numer otaczamy zakładką.
@@ -935,12 +944,15 @@ fn numbering_xml() -> String {
         (ListKind::UpperLetter, "upperLetter", "%1."),
         (ListKind::LowerRoman, "lowerRoman", "%1."),
         (ListKind::UpperRoman, "upperRoman", "%1."),
+        (ListKind::Multi, "decimal", "%1."),
     ];
     for (k, fmt, txt) in kinds {
         let id = num_id(k);
         let _ = write!(s, r#"<w:abstractNum w:abstractNumId="{id}"><w:multiLevelType w:val="hybridMultilevel"/>"#);
         for lvl in 0..9 {
-            let text = if fmt == "bullet" { if k == ListKind::Bullet { ["•", "◦", "▪"][lvl % 3].to_string() } else { txt.to_string() } } else { txt.replace("%1", &format!("%{}", lvl + 1)) };
+            let text = if k == ListKind::Multi {
+                (1..=lvl + 1).map(|i| format!("%{i}.")).collect::<String>()
+            } else if fmt == "bullet" { if k == ListKind::Bullet { ["•", "◦", "▪"][lvl % 3].to_string() } else { txt.to_string() } } else { txt.replace("%1", &format!("%{}", lvl + 1)) };
             let left = 360 * (lvl + 1);
             let _ = write!(
                 s,
@@ -1035,9 +1047,13 @@ pub fn export(doc: &Document, layout: &Layout, opts: &DocxOpts) -> Result<Vec<u8
     let sect_of = |ps: &PageSetup, continuous: bool, first: bool| format!(
         concat!(
             r#"<w:sectPr>{refs}{ty}<w:pgSz w:w="{w}" w:h="{h}"{orient}/><w:pgMar w:top="{t}" w:right="{r}" w:bottom="{b}" w:left="{l}" w:header="{hd}" w:footer="{fd}" w:gutter="0"/>"#,
-            r#"{borders}{start}<w:cols w:num="{cols}" w:space="{gap}"{sep}/>{title}</w:sectPr>"#
+            r#"{borders}{lnnum}{start}<w:cols w:num="{cols}" w:space="{gap}"{sep}/>{title}</w:sectPr>"#
         ),
         refs = sect_refs,
+        lnnum = match doc.settings.line_numbers {
+            0 => String::new(),
+            n => format!(r#"<w:lnNumType w:countBy="{n}" w:distance="284" w:restart="newPage"/>"#),
+        },
         ty = if continuous { r#"<w:type w:val="continuous"/>"# } else { "" },
         w = tw(ps.width),
         h = tw(ps.height),
@@ -1058,7 +1074,15 @@ pub fn export(doc: &Document, layout: &Layout, opts: &DocxOpts) -> Result<Vec<u8
                 let sz = (b.width * 8.0).round().clamp(2.0, 96.0) as i64;
                 let sp = ps.border_inset.round().clamp(0.0, 31.0) as i64;
                 let c = b.color.hex6();
-                let v = if b.dash.len() >= 2 { "dashed" } else { "single" };
+                let v = if ps.border_double {
+                    "double"
+                } else if b.dash.first().is_some_and(|d| *d <= b.width * 1.5) {
+                    "dotted"
+                } else if b.dash.len() >= 2 {
+                    "dashed"
+                } else {
+                    "single"
+                };
                 format!(r#"<w:pgBorders w:offsetFrom="page"><w:top w:val="{v}" w:sz="{sz}" w:space="{sp}" w:color="{c}"/><w:left w:val="{v}" w:sz="{sz}" w:space="{sp}" w:color="{c}"/><w:bottom w:val="{v}" w:sz="{sz}" w:space="{sp}" w:color="{c}"/><w:right w:val="{v}" w:sz="{sz}" w:space="{sp}" w:color="{c}"/></w:pgBorders>"#)
             }
             _ => String::new(),

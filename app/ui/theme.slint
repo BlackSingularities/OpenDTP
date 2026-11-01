@@ -44,4 +44,7 @@ export global Theme {
     out property <length> fs-big: 15px * scale;
     out property <length> row: (dense ? 26px : 30px) * scale;
     out property <length> ribbon-h: (dense ? 96px : 104px) * scale;
+    // Zwężanie wstążki na wąskim oknie (jak w Wordzie): 0 – pełna, 1 – małe przyciski bez podpisów,
+    // 2 – także duże bez podpisów i węższa galeria stylów, 3 – ukryte grupy mniej ważne.
+    in-out property <int> ribbon-level;
 }

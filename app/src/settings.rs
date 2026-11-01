@@ -55,6 +55,10 @@ pub struct Prefs {
     pub ai_temp: f32,
     pub ai_base: String,
     pub ruler: bool,
+    /// Gęstość ekranu w pikselach na cal do skali 100% (0 – automatycznie z EDID monitora).
+    pub screen_ppi: f32,
+    /// Linijka pionowa po lewej stronie płótna.
+    pub ruler_v: bool,
 }
 
 impl Default for Prefs {
@@ -98,6 +102,8 @@ impl Default for Prefs {
             ai_model: String::new(),
             ai_temp: 0.7,
             ai_base: String::new(),
+            screen_ppi: 0.0,
+            ruler_v: false,
             ruler: true,
         }
     }

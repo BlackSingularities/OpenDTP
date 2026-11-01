@@ -20,6 +20,10 @@ pub struct View {
     /// Powiększenie (1.0 = 100%).
     pub zoom: f32,
     pub dpr: f32,
+    /// Trwa animacja powiększenia – strony z obrazem tylko skalujemy, bez przerysowania.
+    pub animating: bool,
+    /// Fizyczne piksele na cal ekranu (0 – nieznane, umowne 96 na skalę Windows).
+    pub screen_ppi: f32,
     pub vx: f32,
     pub vy: f32,
     pub vw: f32,
@@ -42,6 +46,8 @@ impl View {
         View {
             zoom: 1.0,
             dpr: 1.0,
+            animating: false,
+            screen_ppi: 0.0,
             vx: 0.0,
             vy: 0.0,
             vw: 1200.0,
@@ -63,9 +69,19 @@ impl View {
         ModelRc::from(self.model.clone())
     }
 
+    /// Piksele logiczne na cal przy 100%: z fizycznej gęstości ekranu, żeby 100% oznaczało
+    /// rzeczywisty rozmiar kartki; bez niej – umowne 96 jak w Windows.
+    pub fn lppi(&self) -> f32 {
+        if self.screen_ppi > 0.0 && self.dpr > 0.0 {
+            self.screen_ppi / self.dpr
+        } else {
+            96.0
+        }
+    }
+
     /// Piksele logiczne na punkt.
     pub fn k(&self) -> f32 {
-        self.zoom * 96.0 / 72.0
+        self.zoom * self.lppi() / 72.0
     }
 
     /// Przelicza położenia stron; zwraca, czy coś się zmieniło.
@@ -145,6 +161,9 @@ impl View {
                 continue;
             }
             if self.rendered[i] == Some((ed.version, zkey)) {
+                continue;
+            }
+            if self.animating && self.model.row_data(i).is_some_and(|r| r.img.size().width > 0) {
                 continue;
             }
             let scale = self.k() * self.dpr;
@@ -325,12 +344,12 @@ impl View {
     }
 
     pub fn fit_width(&self, ed: &Editor) -> f32 {
-        ((self.vw - 2.0 * GAP) / (ed.doc.page.width * 96.0 / 72.0)).clamp(0.25, 4.0)
+        ((self.vw - 2.0 * GAP) / (ed.doc.page.width * self.lppi() / 72.0)).clamp(0.25, 4.0)
     }
 
     pub fn fit_page(&self, ed: &Editor) -> f32 {
-        let a = (self.vw - 2.0 * GAP) / (ed.doc.page.width * 96.0 / 72.0);
-        let b = (self.vh - 2.0 * GAP) / (ed.doc.page.height * 96.0 / 72.0);
+        let a = (self.vw - 2.0 * GAP) / (ed.doc.page.width * self.lppi() / 72.0);
+        let b = (self.vh - 2.0 * GAP) / (ed.doc.page.height * self.lppi() / 72.0);
         a.min(b).clamp(0.25, 4.0)
     }
 }

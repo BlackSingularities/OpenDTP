@@ -1014,7 +1014,11 @@ impl Engine {
                         counters[d] = 0;
                         last_kind[d] = None;
                     }
-                    Some(l.kind.marker(counters[lv], l.level))
+                    if l.kind == ListKind::Multi {
+                        Some(counters[..=lv].iter().map(|c| c.max(&1).to_string()).collect::<Vec<_>>().join(".") + ".")
+                    } else {
+                        Some(l.kind.marker(counters[lv], l.level))
+                    }
                 }
                 None => {
                     counters = [0; 9];
@@ -1107,7 +1111,8 @@ impl Engine {
 
         // Treść główna – kilka przebiegów, aż miejsce na przypisy dolne przestanie się zmieniać.
         let notes = doc.note_numbers();
-        let ext = FieldExtra { seqs: doc.seq_numbers(), targets: self.targets.clone() };
+        let m = &doc.meta;
+        let ext = FieldExtra { seqs: doc.seq_numbers(), targets: self.targets.clone(), meta: [m.subject.clone(), m.keywords.clone(), crate::util::short_date(&m.created), crate::util::short_date(&m.modified)] };
         let fv = FieldValues { page: doc.page.first_number, pages: 0, title: &title, author: &author, notes: &notes, ext: Some(&ext), running: "" };
         let prep = self.prep(doc, &doc.body, &fv);
         let mut reserve: HashMap<usize, f32> = HashMap::new();

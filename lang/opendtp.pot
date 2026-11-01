@@ -2735,3 +2735,600 @@ msgstr ""
 
 msgid "TABULATORY"
 msgstr ""
+
+msgid "Pisanie"
+msgstr ""
+
+msgid "Pliki"
+msgstr ""
+
+msgid "Pasek i wstążka"
+msgstr ""
+
+msgid "Sztuczna inteligencja"
+msgstr ""
+
+msgid "Aktualizacje"
+msgstr ""
+
+msgid "1.1. Wielopoziomowa"
+msgstr ""
+
+msgid "Aktualizuj bieżący styl według zaznaczenia"
+msgstr ""
+
+msgid "Bez efektu"
+msgstr ""
+
+msgid "Bez obramowania"
+msgstr ""
+
+msgid "Cienka ramka"
+msgstr ""
+
+msgid "Efekty tekstu: cień, poświata"
+msgstr ""
+
+msgid "Gruba ramka"
+msgstr ""
+
+msgid "Inicjał – duża pierwsza litera na 3 wiersze"
+msgstr ""
+
+msgid "Komentarz…"
+msgstr ""
+
+msgid "Kontur tekstu"
+msgstr ""
+
+msgid "Lista wielopoziomowa (1. / 1.1. / 1.1.1.) – poziom zmieniasz klawiszem Tab"
+msgstr ""
+
+msgid "Obramowanie akapitu"
+msgstr ""
+
+msgid "Odstęp po akapicie +6 pt"
+msgstr ""
+
+msgid "Odstęp przed akapitem +6 pt"
+msgstr ""
+
+msgid "Opcje"
+msgstr ""
+
+msgid "Poświata"
+msgstr ""
+
+msgid "Przejdź do"
+msgstr ""
+
+msgid "Przejdź do strony, nagłówka albo komentarza"
+msgstr ""
+
+msgid "Rozstrzel znaki (+0,5 pt)"
+msgstr ""
+
+msgid "Sortuj A → Z"
+msgstr ""
+
+msgid "Sortuj Z → A"
+msgstr ""
+
+msgid "Sortuj zaznaczone akapity alfabetycznie"
+msgstr ""
+
+msgid "Strona lub nagłówek…"
+msgstr ""
+
+msgid "Tylko tekst – dopasuj do otoczenia"
+msgstr ""
+
+msgid "Usuń odstępy przed i po akapicie"
+msgstr ""
+
+msgid "Utwórz styl z zaznaczenia"
+msgstr ""
+
+msgid "Wklej specjalnie – z formatowaniem albo jako sam tekst"
+msgstr ""
+
+msgid "Zachowaj formatowanie"
+msgstr ""
+
+msgid "Zagęść znaki (−0,5 pt)"
+msgstr ""
+
+msgid "Zaokrąglona ramka"
+msgstr ""
+
+msgid "Rzeczywisty rozmiar przy 100%"
+msgstr ""
+
+msgid "Wykryto {} ppi – przyłóż linijkę: pasek ma mieć 10 cm"
+msgstr ""
+
+msgid "Nie wykryto ekranu – wpisz ppi, aż pasek będzie miał 10 cm"
+msgstr ""
+
+msgid "auto"
+msgstr ""
+
+msgid "Piksele na cal Twojego ekranu; puste – automatycznie"
+msgstr ""
+
+msgid "Ustawienia strony"
+msgstr ""
+
+msgid "Ustawienia strony – papier, marginesy, kolumny"
+msgstr ""
+
+msgid "PAPIER"
+msgstr ""
+
+msgid "MARGINESY"
+msgstr ""
+
+msgid "KOLUMNY"
+msgstr ""
+
+msgid "KOLUMNY SEKCJI"
+msgstr ""
+
+msgid "Wysokość strony"
+msgstr ""
+
+msgid "Gotowe zestawy marginesów"
+msgstr ""
+
+msgid "Liczba kolumn"
+msgstr ""
+
+msgid "Linia między kolumnami"
+msgstr ""
+
+msgid "Zamknij okno"
+msgstr ""
+
+msgid "Podział sekcji"
+msgstr ""
+
+msgid "Symbole i pola"
+msgstr ""
+
+msgid "Stopka"
+msgstr ""
+
+msgid "Usuń nagłówek z tej sekcji"
+msgstr ""
+
+msgid "Usuń stopkę z tej sekcji"
+msgstr ""
+
+msgid "Tytuł rozdziału"
+msgstr ""
+
+msgid "Tytuł podrozdziału"
+msgstr ""
+
+msgid "Tytuł rozdziału w nagłówku"
+msgstr ""
+
+msgid "Wstaw do nagłówka tytuł bieżącego rozdziału – zmienia się sam na każdej stronie"
+msgstr ""
+
+msgid "Punkt (Nagłówek 3)"
+msgstr ""
+
+msgid "Zapisz zaznaczenie"
+msgstr ""
+
+msgid "Przypnij wstążkę (Ctrl+F1)"
+msgstr ""
+
+msgid "Strona tytułowa"
+msgstr ""
+
+msgid "Wstaw stronę tytułową na początek dokumentu – tytuł, temat i autor z metadanych"
+msgstr ""
+
+msgid "Klasyczna – wyśrodkowana"
+msgstr ""
+
+msgid "Pas koloru u góry"
+msgstr ""
+
+msgid "Minimalna – tytuł na dole"
+msgstr ""
+
+msgid "Podtytuł lub temat"
+msgstr ""
+
+msgid "Znak wodny"
+msgstr ""
+
+msgid "PROJEKT"
+msgstr ""
+
+msgid "KOPIA"
+msgstr ""
+
+msgid "WZÓR"
+msgstr ""
+
+msgid "PILNE"
+msgstr ""
+
+msgid "Własny napis…"
+msgstr ""
+
+msgid "Usuń znak wodny"
+msgstr ""
+
+msgid "Kod QR albo kod kreskowy"
+msgstr ""
+
+msgid "Kod QR…"
+msgstr ""
+
+msgid "Kod kreskowy…"
+msgstr ""
+
+msgid "Kod QR lub kreskowy"
+msgstr ""
+
+msgid "Rodzaj kodu"
+msgstr ""
+
+msgid "Kod QR"
+msgstr ""
+
+msgid "Kod kreskowy (Code 128)"
+msgstr ""
+
+msgid "Adres strony, tekst, numer telefonu…"
+msgstr ""
+
+msgid "Litery bez polskich znaków, cyfry i interpunkcja"
+msgstr ""
+
+msgid "Wstaw kod jako obraz wektorowy"
+msgstr ""
+
+msgid "Wpisz treść kodu"
+msgstr ""
+
+msgid "Kod kreskowy przyjmuje tylko znaki ASCII (litery bez polskich znaków, cyfry, interpunkcję)"
+msgstr ""
+
+msgid "Symbole i metatagi"
+msgstr ""
+
+msgid "Metatagi"
+msgstr ""
+
+msgid "Wstaw metadane dokumentu jako pole – zmieniają się razem z metadanymi"
+msgstr ""
+
+msgid "Temat"
+msgstr ""
+
+msgid "Słowa kluczowe"
+msgstr ""
+
+msgid "Data utworzenia"
+msgstr ""
+
+msgid "Data ostatniej zmiany"
+msgstr ""
+
+msgid "Edytuj metadane…"
+msgstr ""
+
+msgid "Edytuj metadane dokumentu"
+msgstr ""
+
+msgid "Temat dokumentu – pole „Temat” we właściwościach pliku i metatag"
+msgstr ""
+
+msgid "Słowa kluczowe oddzielone przecinkami – do wyszukiwania i metatagów"
+msgstr ""
+
+msgid "Marginesy, orientacja, kolumny, tło i obramowanie strony, typografia, układ obiektów"
+msgstr ""
+
+msgid "Ukośny napis w tle każdej strony – Enter zatwierdza"
+msgstr ""
+
+msgid "Gotowe napisy"
+msgstr ""
+
+msgid "Gotowe znaki wodne"
+msgstr ""
+
+msgid "Podwójna"
+msgstr ""
+
+msgid "Kreskowana"
+msgstr ""
+
+msgid "Kropkowana"
+msgstr ""
+
+msgid "Pojedyncza"
+msgstr ""
+
+msgid "Styl ramki dookoła każdej strony"
+msgstr ""
+
+msgid "Pojedyncza linia"
+msgstr ""
+
+msgid "Podwójna linia"
+msgstr ""
+
+msgid "Kolor obramowania strony"
+msgstr ""
+
+msgid "Grubość"
+msgstr ""
+
+msgid "Grubość linii obramowania (pt)"
+msgstr ""
+
+msgid "Odstęp ramki od krawędzi kartki (pt)"
+msgstr ""
+
+msgid "Typografia"
+msgstr ""
+
+msgid "Najpierw wybierz styl obramowania"
+msgstr ""
+
+msgid "Podgląd marginesów – obszar tekstu na stronie"
+msgstr ""
+
+msgid "Jedna"
+msgstr ""
+
+msgid "Wiele"
+msgstr ""
+
+msgid "Tekst w kilku kolumnach"
+msgstr ""
+
+msgid "Cztery kolumny"
+msgstr ""
+
+msgid "Pięć kolumn"
+msgstr ""
+
+msgid "Sześć kolumn"
+msgstr ""
+
+msgid "Linijka pionowa"
+msgstr ""
+
+msgid "Linijka po lewej stronie – wysokość strony i marginesy górny i dolny"
+msgstr ""
+
+msgid "Numery wierszy"
+msgstr ""
+
+msgid "Numery wierszy: co {}"
+msgstr ""
+
+msgid "Numeracja wierszy na lewym marginesie – od 1 na każdej stronie, także w PDF i DOCX"
+msgstr ""
+
+msgid "Każdy wiersz"
+msgstr ""
+
+msgid "Co 5 wierszy"
+msgstr ""
+
+msgid "Co 10 wierszy"
+msgstr ""
+
+msgid "Bez numeracji"
+msgstr ""
+
+msgid "Zamiana"
+msgstr ""
+
+msgid "Tekst w kształt"
+msgstr ""
+
+msgid "Zaznaczony tekst (albo bieżący akapit) staje się kształtem tekstu w tym samym miejscu strony – reszta treści go opływa"
+msgstr ""
+
+msgid "Kształt w tekst"
+msgstr ""
+
+msgid "Tekst z zaznaczonego kształtu wraca do treści dokumentu, a kształt znika"
+msgstr ""
+
+msgid "Nowy kształt tekstu"
+msgstr ""
+
+msgid "Na stronach"
+msgstr ""
+
+msgid "Zaznacz tekst w treści dokumentu (poza ramkami)"
+msgstr ""
+
+msgid "Zaznacz tekst albo ustaw kursor w akapicie, który ma się stać kształtem"
+msgstr ""
+
+msgid "Tekst jest teraz kształtem – zmień kształt węzłami, dodaj wypełnienie albo obrys"
+msgstr ""
+
+msgid "Zaznacz kształt albo ramkę z tekstem"
+msgstr ""
+
+msgid "Ten obiekt nie zawiera tekstu"
+msgstr ""
+
+msgid "Zamień tekst w kształt (koło)"
+msgstr ""
+
+msgid "Zamień kształt z powrotem w tekst"
+msgstr ""
+
+msgid "Spis treści z nagłówków, z numerami stron"
+msgstr ""
+
+msgid "Wstaw spis treści w miejscu kursora"
+msgstr ""
+
+msgid "Aktualizuj istniejący spis"
+msgstr ""
+
+msgid "Aktualizuj wszystko"
+msgstr ""
+
+msgid "Odśwież spis treści, indeks, numery podpisów i odsyłacze naraz"
+msgstr ""
+
+msgid "Zaktualizowano spis treści, indeks, numery podpisów i odsyłacze"
+msgstr ""
+
+msgid "Wstaw przypis zebrany na końcu dokumentu (numeracja rzymska)"
+msgstr ""
+
+msgid "Podpisy"
+msgstr ""
+
+msgid "Wstaw podpis"
+msgstr ""
+
+msgid "„zob. s. 12”, „rys. 3” – numer i strona aktualizują się same. Cele: zakładki i podpisy."
+msgstr ""
+
+msgid "Wstaw indeks"
+msgstr ""
+
+msgid "Aktualizuj spis treści, indeks i odsyłacze"
+msgstr ""
+
+msgid "Język tekstu"
+msgstr ""
+
+msgid "Język zaznaczonego tekstu – pisownia i dzielenie wyrazów"
+msgstr ""
+
+msgid "Mój słownik"
+msgstr ""
+
+msgid "Słownik użytkownika – wyrazy dodane do sprawdzania pisowni"
+msgstr ""
+
+msgid "Komentarze"
+msgstr ""
+
+msgid "Nowy komentarz"
+msgstr ""
+
+msgid "Wszystkie komentarze"
+msgstr ""
+
+msgid "Śledzenie zmian"
+msgstr ""
+
+msgid "Zaakceptuj zmianę w miejscu kursora albo wszystkie"
+msgstr ""
+
+msgid "Akceptuj tę zmianę"
+msgstr ""
+
+msgid "Akceptuj wszystkie zmiany"
+msgstr ""
+
+msgid "Odrzuć zmianę w miejscu kursora albo wszystkie"
+msgstr ""
+
+msgid "Odrzuć tę zmianę"
+msgstr ""
+
+msgid "Odrzuć wszystkie zmiany"
+msgstr ""
+
+msgid "Wersje"
+msgstr ""
+
+msgid "Historia"
+msgstr ""
+
+msgid "Historia wersji zapisana w pliku dokumentu – podgląd i przywracanie"
+msgstr ""
+
+msgid "Powiększenie 100% – rzeczywisty rozmiar kartki na ekranie"
+msgstr ""
+
+msgid "Okładka, spis treści, wykres, tabela"
+msgstr ""
+
+msgid "Papier firmowy z logo i stopką"
+msgstr ""
+
+msgid "Winieta, trzy łamy, cytat, ilustracja"
+msgstr ""
+
+msgid "Rozdział, kolumny, przykłady, tabela"
+msgstr ""
+
+msgid "Gradient, tekst w kole i na łuku"
+msgstr ""
+
+msgid "CV"
+msgstr ""
+
+msgid "Kolumna boczna, umiejętności, doświadczenie"
+msgstr ""
+
+msgid "Zaproszenie"
+msgstr ""
+
+msgid "Podwójna ramka, ornamenty, tekst na łuku"
+msgstr ""
+
+msgid "Dyplom"
+msgstr ""
+
+msgid "Strona pozioma, pieczęć, podpisy"
+msgstr ""
+
+msgid "Menu"
+msgstr ""
+
+msgid "Elegancka karta dań z cenami"
+msgstr ""
+
+msgid "Faktura"
+msgstr ""
+
+msgid "Dane stron, tabela pozycji, suma"
+msgstr ""
+
+msgid "Plakat"
+msgstr ""
+
+msgid "Koncert: wielki napis, winyl, łuk"
+msgstr ""
+
+msgid "Kartka z życzeniami"
+msgstr ""
+
+msgid "Serca, gwiazdki, życzenia w kole"
+msgstr ""
+
+msgid "Broszura"
+msgstr ""
+
+msgid "Składana na trzy, strona pozioma"
+msgstr ""
+
+msgid "Rozdział książki"
+msgstr ""
+
+msgid "Format A5, inicjał, pagina"
+msgstr ""

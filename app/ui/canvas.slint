@@ -65,6 +65,50 @@ component RulerMark inherits Rectangle {
     }
 }
 
+/// Linijka pionowa: wysokość strony z kursorem, obszar tekstu między marginesami górnym i dolnym.
+component VRuler inherits Rectangle {
+    width: 22px;
+    background: Theme.panel;
+    // Początek płótna (pod linijką poziomą) + położenie strony w przewijanym widoku.
+    in property <length> top;
+    property <length> oy: root.top + App.ruler-page-y + App.view-y - self.y;
+    property <length> k: App.ruler-k * 1px;
+    Rectangle {
+        x: parent.width - 1px;
+        width: 1px;
+        background: Theme.line;
+    }
+    Rectangle {
+        y: root.oy + App.ruler-v-c0 * root.k;
+        x: 4px;
+        height: max(0, (App.ruler-v-c1 - App.ruler-v-c0) * root.k);
+        width: 14px;
+        background: Theme.raised;
+        border-radius: 2px;
+    }
+    for t[i] in 90: Rectangle {
+        property <float> pt: i * App.ruler-tick / 2;
+        y: root.oy + self.pt * root.k;
+        x: mod(i, 2) == 0 ? 12px : 15px;
+        height: 1px;
+        width: mod(i, 2) == 0 ? 6px : 3px;
+        background: Theme.text-faint;
+        visible: self.y > 0 && self.y < root.height && self.pt <= App.ruler-page-h;
+    }
+    for t[i] in 45: Text {
+        y: root.oy + i * App.ruler-tick * root.k - 6px;
+        x: 0;
+        width: 12px;
+        height: 12px;
+        text: i == 0 ? "" : i;
+        font-size: 9px;
+        color: Theme.text-faint;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        visible: self.y > 0 && self.y < root.height && i * App.ruler-tick <= App.ruler-page-h;
+    }
+}
+
 component Ruler inherits Rectangle {
     height: 22px;
     background: Theme.panel;
@@ -162,11 +206,27 @@ export component Canvas inherits Rectangle {
     changed height => {
         App.viewport(-fl.viewport-x, -fl.viewport-y, self.width, self.height);
     }
+    property <length> vr: App.ruler-v-on ? 22px : 0px;
     if App.ruler-on: Ruler {
         y: 0;
-        width: parent.width;
+        // Pod linijką pionową narożnik; skala przesunięta o jej szerokość.
+        x: root.vr;
+        width: parent.width - root.vr;
+    }
+    if App.ruler-on && App.ruler-v-on: Rectangle {
+        width: 22px;
+        height: 22px;
+        background: Theme.panel;
+    }
+    if App.ruler-v-on: VRuler {
+        x: 0;
+        y: App.ruler-on ? 22px : 0px;
+        height: parent.height - self.y;
+        top: self.y;
     }
     fs := FocusScope {
+        x: root.vr;
+        width: parent.width - root.vr;
         y: App.ruler-on ? 22px : 0px;
         height: parent.height - self.y;
         key-pressed(e) => {
@@ -417,7 +477,13 @@ export component Canvas inherits Rectangle {
                             App.wheel-zoom(e.delta-y / 1px, self.mouse-x, self.mouse-y);
                             return accept;
                         }
-                        return reject;
+                        // Shift + kółko – w poziomie.
+                        if (e.modifiers.shift && e.delta-x == 0) {
+                            App.wheel-scroll(e.delta-y / 1px, 0);
+                        } else {
+                            App.wheel-scroll(e.delta-x / 1px, e.delta-y / 1px);
+                        }
+                        return accept;
                     }
                 }
             }

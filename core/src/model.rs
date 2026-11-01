@@ -158,9 +158,22 @@ pub struct CharFmt {
     /// Funkcje OpenType oddzielone przecinkami, np. „onum,tnum,ss01”.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub features: Option<String>,
+    /// Efekt tekstu: cień albo poświata.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub effect: Option<TextEffect>,
     /// Śledzona zmiana: tekst wstawiony albo usunięty (do akceptacji lub odrzucenia).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rev: Option<Rev>,
+}
+
+/// Efekt rysowany pod tekstem.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum TextEffect {
+    #[default]
+    None,
+    Shadow,
+    Glow,
 }
 
 /// Rodzaj śledzonej zmiany.
@@ -216,7 +229,7 @@ impl CharFmt {
     /// Nakłada `o` na siebie (pola ustawione w `o` wygrywają).
     pub fn merge(&mut self, o: &CharFmt) {
         macro_rules! m { ($($f:ident),*) => { $( if o.$f.is_some() { self.$f = o.$f.clone(); } )* } }
-        m!(font, size, bold, italic, underline, strike, color, highlight, script, caps, tracking, scale, baseline, lang, link, ligatures, outline, kerning, features);
+        m!(font, size, bold, italic, underline, strike, color, highlight, script, caps, tracking, scale, baseline, lang, link, ligatures, outline, kerning, features, effect);
     }
 
     pub fn is_empty(&self) -> bool {
@@ -246,6 +259,7 @@ pub struct CharProps {
     pub outline: f32,
     pub kerning: bool,
     pub features: String,
+    pub effect: TextEffect,
 }
 
 impl Default for CharProps {
@@ -270,6 +284,7 @@ impl Default for CharProps {
             outline: 0.0,
             kerning: true,
             features: String::new(),
+            effect: TextEffect::None,
         }
     }
 }
@@ -280,7 +295,7 @@ impl CharProps {
             self.font = v.clone();
         }
         macro_rules! a { ($($f:ident),*) => { $( if let Some(v) = f.$f { self.$f = v; } )* } }
-        a!(size, bold, italic, underline, strike, color, highlight, script, caps, tracking, scale, baseline, ligatures, outline, kerning);
+        a!(size, bold, italic, underline, strike, color, highlight, script, caps, tracking, scale, baseline, ligatures, outline, kerning, effect);
         if let Some(v) = &f.features {
             self.features = v.clone();
         }
@@ -372,6 +387,8 @@ pub enum ListKind {
     UpperLetter,
     LowerRoman,
     UpperRoman,
+    /// Wielopoziomowa: 1. / 1.1. / 1.1.1. (pełny numer składa układ z liczników poziomów).
+    Multi,
 }
 
 impl ListKind {
@@ -392,6 +409,7 @@ impl ListKind {
             ListKind::UpperLetter => format!("{}.", letters(n).to_uppercase()),
             ListKind::LowerRoman => format!("{}.", roman(n).to_lowercase()),
             ListKind::UpperRoman => format!("{}.", roman(n)),
+            ListKind::Multi => format!("{n}."),
         }
     }
 }
@@ -600,8 +618,26 @@ pub enum Field {
     IndexMark(u64),
     /// Żywa pagina: nagłówek rozdziału (poziom 1–3) obowiązujący na danej stronie.
     Running(u8),
+    /// Metadana dokumentu (temat, słowa kluczowe, daty utworzenia i zmiany).
+    Meta(MetaKey),
     /// Komentarz w tym miejscu (treść w `Document::comments`).
     Comment(u64),
+}
+
+/// Która metadana dokumentu – pole `Field::Meta`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum MetaKey {
+    Subject,
+    Keywords,
+    Created,
+    Modified,
+}
+
+impl MetaKey {
+    pub fn index(self) -> usize {
+        self as usize
+    }
 }
 
 /// Co pokazuje odsyłacz.
@@ -1286,6 +1322,9 @@ pub struct PageSetup {
     pub border: Option<StrokeStyle>,
     #[serde(default = "border_inset")]
     pub border_inset: f32,
+    /// Obramowanie strony podwójną linią.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub border_double: bool,
 }
 
 fn border_inset() -> f32 {
@@ -1325,6 +1364,7 @@ impl Default for PageSetup {
             watermark: String::new(),
             border: None,
             border_inset: border_inset(),
+            border_double: false,
         }
     }
 }
@@ -1445,6 +1485,13 @@ pub struct DocSettings {
     /// Siatka bazowa (punkty, 0 – wyłączona).
     #[serde(default)]
     pub baseline_grid: f32,
+    /// Numeracja wierszy treści na lewym marginesie co tyle wierszy (0 – wyłączona), od 1 na każdej stronie.
+    #[serde(default, skip_serializing_if = "is_zero_u8")]
+    pub line_numbers: u8,
+}
+
+fn is_zero_u8(v: &u8) -> bool {
+    *v == 0
 }
 
 fn pl() -> String {
@@ -1453,7 +1500,7 @@ fn pl() -> String {
 
 impl Default for DocSettings {
     fn default() -> Self {
-        DocSettings { lang: pl(), orphans: true, hyphenate: false, baseline_grid: 0.0 }
+        DocSettings { lang: pl(), orphans: true, hyphenate: false, baseline_grid: 0.0, line_numbers: 0 }
     }
 }
 

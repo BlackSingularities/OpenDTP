@@ -109,7 +109,9 @@ export component BigButton inherits Rectangle {
     in property <bool> menu;
     in property <color> tint: Theme.text;
     callback clicked();
-    min-width: max(48px * Theme.scale, t.preferred-width + 12px);
+    // Na wąskiej wstążce (poziom 2+) sama ikona – podpis zostaje w podpowiedzi.
+    property <bool> bare: Theme.ribbon-level >= 2;
+    min-width: root.bare ? 40px * Theme.scale : max(48px * Theme.scale, t.preferred-width + 12px);
     height: 66px * Theme.scale;
     border-radius: Theme.r-small;
     background: !enabled ? transparent : ta.pressed ? Theme.press : active ? Theme.accent-soft : ta.has-hover ? Theme.hover : transparent;
@@ -131,7 +133,7 @@ export component BigButton inherits Rectangle {
             alignment: center;
             spacing: 2px;
             t := Text {
-                text: root.label;
+                text: root.bare ? "" : root.label;
                 font-family: Theme.font;
                 font-size: Theme.fs-small;
                 color: root.enabled ? Theme.text : Theme.text-faint;
@@ -165,6 +167,8 @@ export component RowButton inherits Rectangle {
     in property <bool> active;
     in property <bool> enabled: true;
     in property <bool> menu;
+    // Na wąskiej wstążce (poziom 1+) sama ikona; poza wstążką – zawsze z podpisem.
+    in property <bool> compactable: true;
     callback clicked();
     height: 24px * Theme.scale;
     min-width: hl.preferred-width;
@@ -182,7 +186,7 @@ export component RowButton inherits Rectangle {
             y: (parent.height - self.height) / 2;
             colorize: !root.enabled ? Theme.text-faint : root.active ? Theme.accent : Theme.text;
         }
-        if root.label != "": Text {
+        if root.label != "" && !(root.compactable && Theme.ribbon-level >= 1): Text {
             text: root.label;
             font-family: Theme.font;
             font-size: Theme.fs-small;
@@ -210,6 +214,18 @@ export component RowButton inherits Rectangle {
 export component Group inherits Rectangle {
     in property <string> title;
     in property <bool> last;
+    // Przycisk „wszystkie ustawienia” w prawym końcu nagłówka (jak w Wordzie); pusty tip = brak.
+    in property <string> launcher-tip;
+    in property <image> launcher-icon: Icons.sliders-horizontal;
+    callback launch();
+    // Grupa mniej ważna – znika jako pierwsza, gdy wstążka się nie mieści (poziom 3).
+    in property <bool> optional;
+    property <bool> hidden: root.optional && Theme.ribbon-level >= 3;
+    visible: !root.hidden;
+    width: root.hidden ? 0px : self.preferred-width;
+    clip: root.hidden;
+    // Każda grupa na pełną wysokość wstążki – ramki i nagłówki wszystkich grup równo u dołu.
+    height: Theme.ribbon-h;
     HorizontalLayout {
         spacing: 0;
         padding-top: 3px;
@@ -231,15 +247,35 @@ export component Group inherits Rectangle {
                     alignment: start;
                     @children
                 }
-                Text {
-                    text: root.title;
-                    font-family: Theme.font;
-                    font-size: 10px * Theme.scale;
-                    letter-spacing: 0.4px;
-                    color: Theme.text-dim;
-                    horizontal-alignment: center;
-                    vertical-alignment: center;
+                // Wolne miejsce nad nagłówkiem – nagłówek zawsze przy dolnej krawędzi.
+                Rectangle {
+                    vertical-stretch: 1;
+                }
+                Rectangle {
                     height: 14px * Theme.scale;
+                    Text {
+                        text: root.title;
+                        font-family: Theme.font;
+                        font-size: 10px * Theme.scale;
+                        letter-spacing: 0.4px;
+                        color: Theme.text-dim;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                        width: parent.width;
+                        height: parent.height;
+                    }
+                    if root.launcher-tip != "": IconButton {
+                        x: parent.width - self.width + 4px;
+                        y: (parent.height - self.height) / 2;
+                        size: 16px * Theme.scale;
+                        icon-size: 11px * Theme.scale;
+                        icon: root.launcher-icon;
+                        tint: Theme.text-dim;
+                        tip: root.launcher-tip;
+                        clicked => {
+                            root.launch();
+                        }
+                    }
                 }
             }
         }

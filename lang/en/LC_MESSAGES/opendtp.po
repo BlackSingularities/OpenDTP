@@ -3929,3 +3929,573 @@ msgstr "Export to EPUB"
 
 msgid "Dokument"
 msgstr "Document"
+
+msgid "Pisanie"
+msgstr "Writing"
+
+msgid "Pliki"
+msgstr "Files"
+
+msgid "Pasek i wstążka"
+msgstr "Toolbar and ribbon"
+
+msgid "Sztuczna inteligencja"
+msgstr "Artificial intelligence"
+
+msgid "Aktualizacje"
+msgstr "Updates"
+
+msgid "1.1. Wielopoziomowa"
+msgstr "1.1. Multilevel"
+
+msgid "Aktualizuj bieżący styl według zaznaczenia"
+msgstr "Update current style to match selection"
+
+msgid "Bez efektu"
+msgstr "No effect"
+
+msgid "Bez obramowania"
+msgstr "No border"
+
+msgid "Cienka ramka"
+msgstr "Thin box"
+
+msgid "Efekty tekstu: cień, poświata"
+msgstr "Text effects: shadow, glow"
+
+msgid "Gruba ramka"
+msgstr "Thick box"
+
+msgid "Inicjał – duża pierwsza litera na 3 wiersze"
+msgstr "Drop cap – large first letter over 3 lines"
+
+msgid "Komentarz…"
+msgstr "Comment…"
+
+msgid "Kontur tekstu"
+msgstr "Text outline"
+
+msgid "Lista wielopoziomowa (1. / 1.1. / 1.1.1.) – poziom zmieniasz klawiszem Tab"
+msgstr "Multilevel list (1. / 1.1. / 1.1.1.) – change level with Tab"
+
+msgid "Obramowanie akapitu"
+msgstr "Paragraph border"
+
+msgid "Odstęp po akapicie +6 pt"
+msgstr "Space after paragraph +6 pt"
+
+msgid "Odstęp przed akapitem +6 pt"
+msgstr "Space before paragraph +6 pt"
+
+msgid "Opcje"
+msgstr "Options"
+
+msgid "Poświata"
+msgstr "Glow"
+
+msgid "Przejdź do"
+msgstr "Go to"
+
+msgid "Przejdź do strony, nagłówka albo komentarza"
+msgstr "Go to a page, heading or comment"
+
+msgid "Rozstrzel znaki (+0,5 pt)"
+msgstr "Expand spacing (+0.5 pt)"
+
+msgid "Sortuj A → Z"
+msgstr "Sort A → Z"
+
+msgid "Sortuj Z → A"
+msgstr "Sort Z → A"
+
+msgid "Sortuj zaznaczone akapity alfabetycznie"
+msgstr "Sort selected paragraphs alphabetically"
+
+msgid "Strona lub nagłówek…"
+msgstr "Page or heading…"
+
+msgid "Tylko tekst – dopasuj do otoczenia"
+msgstr "Text only – match surrounding formatting"
+
+msgid "Usuń odstępy przed i po akapicie"
+msgstr "Remove space before and after paragraph"
+
+msgid "Utwórz styl z zaznaczenia"
+msgstr "Create style from selection"
+
+msgid "Wklej specjalnie – z formatowaniem albo jako sam tekst"
+msgstr "Paste special – keep formatting or text only"
+
+msgid "Zachowaj formatowanie"
+msgstr "Keep source formatting"
+
+msgid "Zagęść znaki (−0,5 pt)"
+msgstr "Condense spacing (−0.5 pt)"
+
+msgid "Zaokrąglona ramka"
+msgstr "Rounded box"
+
+msgid "Rzeczywisty rozmiar przy 100%"
+msgstr "Actual size at 100%"
+
+msgid "Wykryto {} ppi – przyłóż linijkę: pasek ma mieć 10 cm"
+msgstr "Detected {} ppi – check with a ruler: the bar should be 10 cm"
+
+msgid "Nie wykryto ekranu – wpisz ppi, aż pasek będzie miał 10 cm"
+msgstr "Screen not detected – enter ppi until the bar measures 10 cm"
+
+msgid "auto"
+msgstr "auto"
+
+msgid "Piksele na cal Twojego ekranu; puste – automatycznie"
+msgstr "Your screen's pixels per inch; empty – automatic"
+
+msgid "Ustawienia strony"
+msgstr "Page setup"
+
+msgid "Ustawienia strony – papier, marginesy, kolumny"
+msgstr "Page setup – paper, margins, columns"
+
+msgid "PAPIER"
+msgstr "PAPER"
+
+msgid "MARGINESY"
+msgstr "MARGINS"
+
+msgid "KOLUMNY"
+msgstr "COLUMNS"
+
+msgid "KOLUMNY SEKCJI"
+msgstr "SECTION COLUMNS"
+
+msgid "Wysokość strony"
+msgstr "Page height"
+
+msgid "Gotowe zestawy marginesów"
+msgstr "Preset margin sets"
+
+msgid "Liczba kolumn"
+msgstr "Number of columns"
+
+msgid "Linia między kolumnami"
+msgstr "Line between columns"
+
+msgid "Podział sekcji"
+msgstr "Section break"
+
+msgid "Symbole i pola"
+msgstr "Symbols and fields"
+
+msgid "Stopka"
+msgstr "Footer"
+
+msgid "Tytuł rozdziału"
+msgstr "Chapter title"
+
+msgid "Tytuł podrozdziału"
+msgstr "Section title"
+
+msgid "Tytuł rozdziału w nagłówku"
+msgstr "Chapter title in header"
+
+msgid "Wstaw do nagłówka tytuł bieżącego rozdziału – zmienia się sam na każdej stronie"
+msgstr "Insert the current chapter title into the header – updates on every page"
+
+msgid "Punkt (Nagłówek 3)"
+msgstr "Subsection (Heading 3)"
+
+msgid "Przypnij wstążkę (Ctrl+F1)"
+msgstr "Pin the ribbon (Ctrl+F1)"
+
+msgid "Strona tytułowa"
+msgstr "Cover page"
+
+msgid "Wstaw stronę tytułową na początek dokumentu – tytuł, temat i autor z metadanych"
+msgstr "Insert a cover page at the start – title, subject and author from metadata"
+
+msgid "Klasyczna – wyśrodkowana"
+msgstr "Classic – centered"
+
+msgid "Pas koloru u góry"
+msgstr "Color band at the top"
+
+msgid "Minimalna – tytuł na dole"
+msgstr "Minimal – title at the bottom"
+
+msgid "Podtytuł lub temat"
+msgstr "Subtitle or subject"
+
+msgid "Znak wodny"
+msgstr "Watermark"
+
+msgid "PROJEKT"
+msgstr "DRAFT"
+
+msgid "KOPIA"
+msgstr "COPY"
+
+msgid "WZÓR"
+msgstr "SAMPLE"
+
+msgid "PILNE"
+msgstr "URGENT"
+
+msgid "Własny napis…"
+msgstr "Custom text…"
+
+msgid "Usuń znak wodny"
+msgstr "Remove watermark"
+
+msgid "Kod QR albo kod kreskowy"
+msgstr "QR code or barcode"
+
+msgid "Kod QR…"
+msgstr "QR code…"
+
+msgid "Kod kreskowy…"
+msgstr "Barcode…"
+
+msgid "Kod QR lub kreskowy"
+msgstr "QR code or barcode"
+
+msgid "Rodzaj kodu"
+msgstr "Code type"
+
+msgid "Kod QR"
+msgstr "QR code"
+
+msgid "Kod kreskowy (Code 128)"
+msgstr "Barcode (Code 128)"
+
+msgid "Adres strony, tekst, numer telefonu…"
+msgstr "Web address, text, phone number…"
+
+msgid "Litery bez polskich znaków, cyfry i interpunkcja"
+msgstr "Letters without diacritics, digits and punctuation"
+
+msgid "Wstaw kod jako obraz wektorowy"
+msgstr "Insert the code as a vector image"
+
+msgid "Wpisz treść kodu"
+msgstr "Enter the code content"
+
+msgid "Kod kreskowy przyjmuje tylko znaki ASCII (litery bez polskich znaków, cyfry, interpunkcję)"
+msgstr "Barcodes accept only ASCII characters (letters without diacritics, digits, punctuation)"
+
+msgid "Symbole i metatagi"
+msgstr "Symbols and metadata"
+
+msgid "Metatagi"
+msgstr "Metadata"
+
+msgid "Wstaw metadane dokumentu jako pole – zmieniają się razem z metadanymi"
+msgstr "Insert document metadata as a field – it updates with the metadata"
+
+msgid "Temat"
+msgstr "Subject"
+
+msgid "Słowa kluczowe"
+msgstr "Keywords"
+
+msgid "Data utworzenia"
+msgstr "Date created"
+
+msgid "Data ostatniej zmiany"
+msgstr "Date modified"
+
+msgid "Edytuj metadane…"
+msgstr "Edit metadata…"
+
+msgid "Edytuj metadane dokumentu"
+msgstr "Edit document metadata"
+
+msgid "Temat dokumentu – pole „Temat” we właściwościach pliku i metatag"
+msgstr "Document subject – the “Subject” file property and metadata tag"
+
+msgid "Słowa kluczowe oddzielone przecinkami – do wyszukiwania i metatagów"
+msgstr "Comma-separated keywords – for search and metadata"
+
+msgid "Marginesy, orientacja, kolumny, tło i obramowanie strony, typografia, układ obiektów"
+msgstr "Margins, orientation, columns, page background and border, typography, object layout"
+
+msgid "Ukośny napis w tle każdej strony – Enter zatwierdza"
+msgstr "Diagonal text behind every page – press Enter to apply"
+
+msgid "Gotowe napisy"
+msgstr "Presets"
+
+msgid "Gotowe znaki wodne"
+msgstr "Preset watermarks"
+
+msgid "Podwójna"
+msgstr "Double"
+
+msgid "Kreskowana"
+msgstr "Dashed"
+
+msgid "Kropkowana"
+msgstr "Dotted"
+
+msgid "Pojedyncza"
+msgstr "Single"
+
+msgid "Styl ramki dookoła każdej strony"
+msgstr "Style of the border around every page"
+
+msgid "Pojedyncza linia"
+msgstr "Single line"
+
+msgid "Podwójna linia"
+msgstr "Double line"
+
+msgid "Kolor obramowania strony"
+msgstr "Page border color"
+
+msgid "Grubość"
+msgstr "Width"
+
+msgid "Grubość linii obramowania (pt)"
+msgstr "Border line width (pt)"
+
+msgid "Odstęp ramki od krawędzi kartki (pt)"
+msgstr "Border distance from the paper edge (pt)"
+
+msgid "Typografia"
+msgstr "Typography"
+
+msgid "Najpierw wybierz styl obramowania"
+msgstr "Choose a border style first"
+
+msgid "Podgląd marginesów – obszar tekstu na stronie"
+msgstr "Margin preview – text area on the page"
+
+msgid "Jedna"
+msgstr "One"
+
+msgid "Wiele"
+msgstr "More"
+
+msgid "Tekst w kilku kolumnach"
+msgstr "Text in several columns"
+
+msgid "Cztery kolumny"
+msgstr "Four columns"
+
+msgid "Pięć kolumn"
+msgstr "Five columns"
+
+msgid "Sześć kolumn"
+msgstr "Six columns"
+
+msgid "Linijka pionowa"
+msgstr "Vertical ruler"
+
+msgid "Linijka po lewej stronie – wysokość strony i marginesy górny i dolny"
+msgstr "Ruler on the left – page height and top and bottom margins"
+
+msgid "Numery wierszy"
+msgstr "Line numbers"
+
+msgid "Numery wierszy: co {}"
+msgstr "Line numbers: every {}"
+
+msgid "Numeracja wierszy na lewym marginesie – od 1 na każdej stronie, także w PDF i DOCX"
+msgstr "Line numbers in the left margin – restart on every page, also in PDF and DOCX"
+
+msgid "Każdy wiersz"
+msgstr "Every line"
+
+msgid "Co 5 wierszy"
+msgstr "Every 5 lines"
+
+msgid "Co 10 wierszy"
+msgstr "Every 10 lines"
+
+msgid "Bez numeracji"
+msgstr "No numbering"
+
+msgid "Zamiana"
+msgstr "Convert"
+
+msgid "Tekst w kształt"
+msgstr "Text to shape"
+
+msgid "Zaznaczony tekst (albo bieżący akapit) staje się kształtem tekstu w tym samym miejscu strony – reszta treści go opływa"
+msgstr "The selected text (or current paragraph) becomes a text shape in the same place – the rest of the text wraps around it"
+
+msgid "Kształt w tekst"
+msgstr "Shape to text"
+
+msgid "Tekst z zaznaczonego kształtu wraca do treści dokumentu, a kształt znika"
+msgstr "The text of the selected shape goes back into the document body and the shape is removed"
+
+msgid "Nowy kształt tekstu"
+msgstr "New text shape"
+
+msgid "Na stronach"
+msgstr "On pages"
+
+msgid "Zaznacz tekst w treści dokumentu (poza ramkami)"
+msgstr "Select text in the document body (outside frames)"
+
+msgid "Zaznacz tekst albo ustaw kursor w akapicie, który ma się stać kształtem"
+msgstr "Select text or place the cursor in the paragraph that should become a shape"
+
+msgid "Tekst jest teraz kształtem – zmień kształt węzłami, dodaj wypełnienie albo obrys"
+msgstr "The text is now a shape – reshape it with nodes, add a fill or outline"
+
+msgid "Zaznacz kształt albo ramkę z tekstem"
+msgstr "Select a shape or text frame"
+
+msgid "Ten obiekt nie zawiera tekstu"
+msgstr "This object contains no text"
+
+msgid "Zamień tekst w kształt (koło)"
+msgstr "Convert text to shape (circle)"
+
+msgid "Zamień kształt z powrotem w tekst"
+msgstr "Convert shape back to text"
+
+msgid "Spis treści z nagłówków, z numerami stron"
+msgstr "Table of contents from headings, with page numbers"
+
+msgid "Wstaw spis treści w miejscu kursora"
+msgstr "Insert a table of contents at the cursor"
+
+msgid "Aktualizuj istniejący spis"
+msgstr "Update the existing table"
+
+msgid "Aktualizuj wszystko"
+msgstr "Update all"
+
+msgid "Odśwież spis treści, indeks, numery podpisów i odsyłacze naraz"
+msgstr "Refresh the table of contents, index, caption numbers and cross-references at once"
+
+msgid "Zaktualizowano spis treści, indeks, numery podpisów i odsyłacze"
+msgstr "Updated the table of contents, index, caption numbers and cross-references"
+
+msgid "Wstaw przypis zebrany na końcu dokumentu (numeracja rzymska)"
+msgstr "Insert a note collected at the end of the document (Roman numerals)"
+
+msgid "Podpisy"
+msgstr "Captions"
+
+msgid "Wstaw podpis"
+msgstr "Insert caption"
+
+msgid "„zob. s. 12”, „rys. 3” – numer i strona aktualizują się same. Cele: zakładki i podpisy."
+msgstr "“see p. 12”, “fig. 3” – the number and page update automatically. Targets: bookmarks and captions."
+
+msgid "Wstaw indeks"
+msgstr "Insert index"
+
+msgid "Aktualizuj spis treści, indeks i odsyłacze"
+msgstr "Update table of contents, index and cross-references"
+
+msgid "Język tekstu"
+msgstr "Text language"
+
+msgid "Język zaznaczonego tekstu – pisownia i dzielenie wyrazów"
+msgstr "Language of the selected text – spelling and hyphenation"
+
+msgid "Mój słownik"
+msgstr "My dictionary"
+
+msgid "Słownik użytkownika – wyrazy dodane do sprawdzania pisowni"
+msgstr "User dictionary – words added to the spell checker"
+
+msgid "Wszystkie komentarze"
+msgstr "All comments"
+
+msgid "Śledzenie zmian"
+msgstr "Track changes"
+
+msgid "Zaakceptuj zmianę w miejscu kursora albo wszystkie"
+msgstr "Accept the change at the cursor or all changes"
+
+msgid "Akceptuj tę zmianę"
+msgstr "Accept this change"
+
+msgid "Odrzuć zmianę w miejscu kursora albo wszystkie"
+msgstr "Reject the change at the cursor or all changes"
+
+msgid "Odrzuć tę zmianę"
+msgstr "Reject this change"
+
+msgid "Historia"
+msgstr "History"
+
+msgid "Historia wersji zapisana w pliku dokumentu – podgląd i przywracanie"
+msgstr "Version history saved in the document file – preview and restore"
+
+msgid "Powiększenie 100% – rzeczywisty rozmiar kartki na ekranie"
+msgstr "Zoom 100% – actual paper size on screen"
+
+msgid "Okładka, spis treści, wykres, tabela"
+msgstr "Cover, contents, chart, table"
+
+msgid "Papier firmowy z logo i stopką"
+msgstr "Letterhead with logo and footer"
+
+msgid "Winieta, trzy łamy, cytat, ilustracja"
+msgstr "Masthead, three columns, pull quote, illustration"
+
+msgid "Rozdział, kolumny, przykłady, tabela"
+msgstr "Chapter, columns, examples, table"
+
+msgid "Gradient, tekst w kole i na łuku"
+msgstr "Gradient, text in a circle and on an arc"
+
+msgid "CV"
+msgstr "CV"
+
+msgid "Kolumna boczna, umiejętności, doświadczenie"
+msgstr "Sidebar, skills, experience"
+
+msgid "Zaproszenie"
+msgstr "Invitation"
+
+msgid "Podwójna ramka, ornamenty, tekst na łuku"
+msgstr "Double border, ornaments, text on an arc"
+
+msgid "Dyplom"
+msgstr "Certificate"
+
+msgid "Strona pozioma, pieczęć, podpisy"
+msgstr "Landscape page, seal, signatures"
+
+msgid "Menu"
+msgstr "Menu"
+
+msgid "Elegancka karta dań z cenami"
+msgstr "Elegant menu with prices"
+
+msgid "Faktura"
+msgstr "Invoice"
+
+msgid "Dane stron, tabela pozycji, suma"
+msgstr "Parties, line items, total"
+
+msgid "Plakat"
+msgstr "Poster"
+
+msgid "Koncert: wielki napis, winyl, łuk"
+msgstr "Concert: huge type, vinyl, arc"
+
+msgid "Kartka z życzeniami"
+msgstr "Greeting card"
+
+msgid "Serca, gwiazdki, życzenia w kole"
+msgstr "Hearts, stars, wishes in a circle"
+
+msgid "Broszura"
+msgstr "Brochure"
+
+msgid "Składana na trzy, strona pozioma"
+msgstr "Tri-fold, landscape page"
+
+msgid "Rozdział książki"
+msgstr "Book chapter"
+
+msgid "Format A5, inicjał, pagina"
+msgstr "A5 format, drop cap, page numbers"

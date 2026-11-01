@@ -165,6 +165,24 @@ export global App {
     in-out property <bool> italic;
     in-out property <bool> underline;
     in-out property <bool> strike;
+    in-out property <bool> outline-text;
+    // Obramowanie strony: styl (none/single/double/dashed/dotted), grubość i odstęp w pt, kolor.
+    in-out property <string> page-border-style: "none";
+    in-out property <string> page-border-w: "1,5";
+    in-out property <string> page-border-inset: "24";
+    in-out property <color> page-border-color: #404040;
+    // Okno kodu QR / kreskowego: 0 – QR, 1 – kreskowy; treść.
+    in-out property <int> code-kind;
+    in-out property <string> code-text;
+    // Metadane dokumentu (strona Informacje).
+    in-out property <string> meta-subject;
+    in-out property <string> meta-keywords;
+    // Skala 100%: wykryta gęstość ekranu (pusta – brak), ręczna z ustawień, piksele logiczne na cm.
+    in-out property <string> screen-ppi-auto;
+    in-out property <string> s-screen-ppi;
+    in-out property <length> cm-px: 37.8px;
+    // Efekt tekstu przy kursorze: "", "shadow", "glow".
+    in-out property <string> effect;
     in-out property <bool> sup;
     in-out property <bool> sub;
     in-out property <int> caps;
@@ -192,6 +210,14 @@ export global App {
     in-out property <int> columns: 1;
     in-out property <string> col-gap: "12,5";
     in-out property <bool> col-rule;
+    // Miniatura marginesów: szerokość/wysokość strony i marginesy jako ułamki wymiarów.
+    in-out property <float> page-aspect: 0.707;
+    in-out property <float> m-frac-t: 0.084;
+    in-out property <float> m-frac-b: 0.084;
+    in-out property <float> m-frac-l: 0.119;
+    in-out property <float> m-frac-r: 0.119;
+    in-out property <string> page-w: "210";
+    in-out property <string> page-h: "297";
     in-out property <string> m-top: "25";
     in-out property <string> m-bottom: "25";
     in-out property <string> m-left: "25";
@@ -205,7 +231,6 @@ export global App {
     in-out property <[ItemV]> ref-targets;
     in-out property <bool> orphans: true;
     in-out property <bool> baseline-grid;
-    in-out property <string> doc-theme: "classic";
 
     // Obiekt.
     in-out property <int> wrap-mode;
@@ -277,7 +302,6 @@ export global App {
     in-out property <string> custom-name;
     in-out property <[ItemV]> all-commands;
     in-out property <[RecentV]> recent;
-    in-out property <[ItemV]> doc-themes;
     in-out property <[ItemV]> langs;
     in-out property <[string]> user-words;
 
@@ -378,6 +402,14 @@ export global App {
     in-out property <bool> in-note;
     // Linijka: położenie strony (px bez przewinięcia), piksele na punkt, kolumna i wcięcia akapitu (pt).
     in-out property <bool> ruler-on: true;
+    // Linijka pionowa: włączona, strona z kursorem (y na płótnie, wysokość) i marginesy górny/dolny (pt).
+    in-out property <bool> ruler-v-on;
+    in-out property <length> ruler-page-y;
+    in-out property <float> ruler-page-h: 842;
+    in-out property <float> ruler-v-c0: 72;
+    in-out property <float> ruler-v-c1: 770;
+    // Numeracja wierszy co tyle wierszy (0 – wyłączona).
+    in-out property <int> line-numbers;
     in-out property <length> ruler-page-x;
     in-out property <float> ruler-k: 1.333;
     in-out property <float> ruler-c0;
@@ -442,6 +474,8 @@ export global App {
     callback hover(length, length);
     callback key(string, bool, bool, bool) -> bool;
     callback wheel-zoom(float, length, length);
+    // Płynne przewijanie kółkiem: przesunięcie (px) w poziomie i pionie.
+    callback wheel-scroll(float, float);
     callback viewport(length, length, length, length);
     callback palette-query(string);
     callback font-query(string);

@@ -20,6 +20,8 @@ pub mod styles;
 pub mod text;
 pub mod update;
 pub mod util;
+pub mod wmf;
+pub mod wmf_svg;
 
 /// Wersja programu (CI podaje numer z tagu przy kompilacji).
 pub fn version() -> &'static str {

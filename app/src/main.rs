@@ -39,7 +39,6 @@ pub struct State {
     pub clicks: input::Clicks,
     pub update: Option<Release>,
     pub fonts: Vec<String>,
-    pub doc_theme: String,
     pub styles_key: String,
     pub nav_version: u64,
     pub session: String,
@@ -161,7 +160,19 @@ pub fn list_id(k: ListKind) -> &'static str {
         ListKind::UpperLetter => "upper-letter",
         ListKind::LowerRoman => "lower-roman",
         ListKind::UpperRoman => "upper-roman",
+        ListKind::Multi => "multi",
     }
+}
+
+/// Gęstość ekranu do skali 100%: ręczna z ustawień albo z EDID monitora, na którym jest okno.
+pub fn apply_screen_ppi(st: &mut State, ui: &AppWindow) {
+    let auto = win::monitor_size(ui).and_then(|(w, h)| win::screen_ppi(win::EDID.get().map(|v| v.as_slice()).unwrap_or(&[]), w, h));
+    st.view.screen_ppi = if st.prefs.screen_ppi > 0.0 { st.prefs.screen_ppi } else { auto.unwrap_or(0.0) };
+    let app = ui.global::<App>();
+    app.set_screen_ppi_auto(auto.map(|p| format!("{:.0}", p)).unwrap_or_default().into());
+    app.set_s_screen_ppi(if st.prefs.screen_ppi > 0.0 { num(st.prefs.screen_ppi) } else { String::new() }.into());
+    app.set_cm_px(st.view.lppi() / 2.54);
+    st.view.invalidate();
 }
 
 fn slint_color(c: Color) -> slint::Color {
@@ -190,6 +201,12 @@ fn sync(st: &mut State, ui: &AppWindow) {
     app.set_italic(cp.italic);
     app.set_underline(cp.underline != Underline::None);
     app.set_strike(cp.strike);
+    app.set_outline_text(cp.outline > 0.0);
+    app.set_effect(match cp.effect {
+        TextEffect::None => "",
+        TextEffect::Shadow => "shadow",
+        TextEffect::Glow => "glow",
+    }.into());
     app.set_sup(cp.script == Script::Super);
     app.set_sub(cp.script == Script::Sub);
     app.set_caps(match cp.caps {
@@ -230,6 +247,13 @@ fn sync(st: &mut State, ui: &AppWindow) {
     app.set_col_rule(sec.column_rule);
     app.set_in_section(ed.story == StoryRef::Body && ed.doc.section_start(ed.head.para).is_some());
     app.set_in_note(matches!(ed.story, StoryRef::Note(_)));
+    app.set_page_aspect(sec.width / sec.height.max(1.0));
+    app.set_m_frac_t(ps.margin_top / sec.height.max(1.0));
+    app.set_m_frac_b(ps.margin_bottom / sec.height.max(1.0));
+    app.set_m_frac_l(ps.margin_left / sec.width.max(1.0));
+    app.set_m_frac_r(ps.margin_right / sec.width.max(1.0));
+    app.set_page_w(len_str(ps.width, unit).into());
+    app.set_page_h(len_str(ps.height, unit).into());
     app.set_m_top(len_str(ps.margin_top, unit).into());
     app.set_m_bottom(len_str(ps.margin_bottom, unit).into());
     app.set_m_left(len_str(ps.margin_left, unit).into());
@@ -242,18 +266,36 @@ fn sync(st: &mut State, ui: &AppWindow) {
     app.set_odd_even(ps.odd_even);
     app.set_orphans(ed.doc.settings.orphans);
     app.set_baseline_grid(ed.doc.settings.baseline_grid > 0.0);
-    app.set_doc_theme(st.doc_theme.clone().into());
     app.set_page_border(ps.border.is_some());
+    app.set_page_border_style(match &ps.border {
+        None => "none",
+        Some(_) if ps.border_double => "double",
+        Some(b) if b.dash.first().is_some_and(|d| *d <= b.width * 1.5) => "dotted",
+        Some(b) if !b.dash.is_empty() => "dashed",
+        Some(_) => "single",
+    }.into());
+    if let Some(b) = &ps.border {
+        app.set_page_border_w(num(b.width).into());
+        app.set_page_border_color(slint_color(b.color));
+    }
+    app.set_page_border_inset(num(ps.border_inset).into());
     app.set_hyphenate(ed.doc.settings.hyphenate);
     app.set_ruler_on(st.prefs.ruler);
+    app.set_ruler_v_on(st.prefs.ruler_v);
+    app.set_line_numbers(ed.doc.settings.line_numbers as i32);
     // Linijka: strona i kolumna wiersza z kursorem, wcięcia akapitu.
     if let Some(c) = ed.layout.caret(ed.story, ed.head.para, ed.head.off) {
         let l = &ed.layout.lines[c.line];
         let list = pp.list.map(|lf| (lf.level as f32 + 1.0) * 18.0).unwrap_or(0.0);
         let c0 = l.area.0 - pp.indent_left;
         let c1 = l.area.1 + pp.indent_right;
-        let (px, _) = st.view.to_canvas(c.page, 0.0, 0.0);
+        let (px, py) = st.view.to_canvas(c.page, 0.0, 0.0);
         app.set_ruler_page_x(px);
+        app.set_ruler_page_y(py);
+        let sp = ed.layout.setup(&ed.doc, c.page);
+        app.set_ruler_page_h(sp.height);
+        app.set_ruler_v_c0(sp.margin_top);
+        app.set_ruler_v_c1(sp.height - sp.margin_bottom);
         app.set_ruler_k(st.view.k());
         app.set_ruler_c0(c0);
         app.set_ruler_c1(c1);
@@ -645,8 +687,6 @@ pub fn sync_lists(st: &State) {
     app.set_recent(ModelRc::new(VecModel::from(recent)));
     let rf: Vec<ItemV> = st.prefs.recent_fonts.iter().map(|f| ItemV { id: f.clone().into(), label: f.clone().into(), ..Default::default() }).collect();
     app.set_recent_fonts(ModelRc::new(VecModel::from(rf)));
-    let themes: Vec<ItemV> = opendtp_core::styles::THEMES.iter().map(|t| ItemV { id: t.id.into(), label: tr(t.name).into(), font: t.heading.into(), ..Default::default() }).collect();
-    app.set_doc_themes(ModelRc::new(VecModel::from(themes)));
 }
 
 pub fn apply_theme_prefs(st: &State, ui: &AppWindow) {
@@ -730,7 +770,6 @@ fn main() {
         clicks: input::Clicks::default(),
         update: None,
         fonts: Vec::new(),
-        doc_theme: "classic".into(),
         styles_key: String::new(),
         nav_version: 0,
         session,
@@ -750,13 +789,19 @@ fn main() {
     st.view.guides = st.prefs.guides;
     st.view.spell = st.prefs.spell_live;
     st.view.dpr = ui.window().scale_factor();
+    // EDID monitorów czytamy w tle – potrzebne do prawdziwej skali 100%.
+    let edid = std::thread::spawn(|| {
+        let _ = win::EDID.set(win::edid_modes());
+    });
     {
         let app = ui.global::<App>();
         app.set_version(opendtp_core::version().into());
         app.set_author_line(opendtp_core::AUTHOR_LINE.into());
         app.set_portable(opendtp_core::paths::portable());
         app.set_pages(st.view.model());
-        app.set_tab(st.prefs.tab.clamp(0, FIXED_TABS - 1 + st.prefs.tabs().len() as i32));
+        // Karta 2 (dawny „Projekt”) już nie istnieje – zapisana wraca na Narzędzia główne.
+        let t = st.prefs.tab.clamp(0, FIXED_TABS - 1 + st.prefs.tabs().len() as i32);
+        app.set_tab(if t == 2 { 0 } else { t });
         app.set_update_status(opendtp_core::trf!("Wersja {} · jeszcze nie sprawdzano", opendtp_core::version()).into());
     }
     apply_theme_prefs(&st, &ui);
@@ -874,16 +919,36 @@ fn main() {
         slint::Timer::single_shot(Duration::from_millis(50), move || {
             if let Some(ui) = w.upgrade() {
                 win::dark_title(&ui, sh.borrow().prefs.theme != 2);
+                let _ = edid.join();
                 let mut st = sh.borrow_mut();
                 st.view.dpr = ui.window().scale_factor();
+                apply_screen_ppi(&mut st, &ui);
                 st.view.invalidate();
                 refresh(&mut st);
                 ui.global::<App>().set_focus_serial(1);
             }
         });
     }
+    // Okno przeniesione na inny monitor albo zmieniona skala Windows – przeliczamy skalę 100%.
+    let monitor_watch = slint::Timer::default();
+    {
+        let sh = shared.clone();
+        let w = ui.as_weak();
+        let last = std::cell::Cell::new(None);
+        monitor_watch.start(slint::TimerMode::Repeated, Duration::from_secs(1), move || {
+            let Some(ui) = w.upgrade() else { return };
+            let now = (win::monitor_size(&ui), ui.window().scale_factor().to_bits());
+            if last.replace(Some(now)).is_some_and(|l| l != now) {
+                let mut st = sh.borrow_mut();
+                st.view.dpr = ui.window().scale_factor();
+                apply_screen_ppi(&mut st, &ui);
+                refresh(&mut st);
+            }
+        });
+    }
     snapshot_mode(&ui, &args);
     slint::run_event_loop().expect("pętla zdarzeń");
+    drop(monitor_watch);
 }
 
 fn wire(ui: &AppWindow, shared: &Shared) {
@@ -935,8 +1000,16 @@ fn wire(ui: &AppWindow, shared: &Shared) {
         let sh = shared.clone();
         app.on_wheel_zoom(move |delta, x, y| {
             let Ok(mut st) = sh.try_borrow_mut() else { return };
-            let z = st.view.zoom * if delta > 0.0 { 1.1 } else { 1.0 / 1.1 };
-            actions::set_zoom(&mut st, z, Some((x, y)));
+            let z = actions::zoom_target(&st) * if delta > 0.0 { 1.1 } else { 1.0 / 1.1 };
+            actions::zoom_smooth(&mut st, z, Some((x, y)));
+        });
+    }
+    {
+        let sh = shared.clone();
+        app.on_wheel_scroll(move |dx, dy| {
+            let Ok(mut st) = sh.try_borrow_mut() else { return };
+            // Kółko w górę (dodatnie) przesuwa widok do początku dokumentu.
+            actions::scroll_smooth(&mut st, -dx, -dy);
         });
     }
     {

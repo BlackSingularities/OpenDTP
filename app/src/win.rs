@@ -97,3 +97,59 @@ pub fn action(ui: &AppWindow, a: i32) {
 pub fn fullscreen(ui: &AppWindow, on: bool) {
     ui.window().set_fullscreen(on);
 }
+
+/// Tryby natywne monitorów z EDID zapisanych w rejestrze: (szerokość px, wysokość px, szerokość mm,
+/// wysokość mm). Uruchamia `reg.exe` – wołać w tle.
+pub static EDID: std::sync::OnceLock<Vec<(u32, u32, u32, u32)>> = std::sync::OnceLock::new();
+
+pub fn edid_modes() -> Vec<(u32, u32, u32, u32)> {
+    use std::os::windows::process::CommandExt;
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+    let Ok(out) = std::process::Command::new("reg")
+        .args(["query", r"HKLM\SYSTEM\CurrentControlSet\Enum\DISPLAY", "/s", "/v", "EDID"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .output()
+    else {
+        return Vec::new();
+    };
+    let text = String::from_utf8_lossy(&out.stdout);
+    let mut modes = Vec::new();
+    for line in text.lines() {
+        let Some(hex) = line.split("REG_BINARY").nth(1).map(str::trim) else { continue };
+        let b: Vec<u8> = (0..hex.len() / 2).filter_map(|i| u8::from_str_radix(hex.get(i * 2..i * 2 + 2)?, 16).ok()).collect();
+        if b.len() < 128 || b[..8] != [0, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0] {
+            continue;
+        }
+        // Pierwszy opis trybu (bajt 54) – tryb natywny i fizyczny rozmiar obrazu w mm.
+        let d = &b[54..72];
+        let ha = d[2] as u32 | ((d[4] as u32 & 0xf0) << 4);
+        let va = d[5] as u32 | ((d[7] as u32 & 0xf0) << 4);
+        let hmm = d[12] as u32 | ((d[14] as u32 & 0xf0) << 4);
+        let vmm = d[13] as u32 | ((d[14] as u32 & 0x0f) << 8);
+        if hmm >= 100 && vmm >= 60 {
+            modes.push((ha, va, hmm, vmm));
+        }
+    }
+    modes
+}
+
+/// Fizyczna gęstość ekranu (piksele na cal) dla monitora o rozdzielczości `w`×`h` px fizycznych.
+/// `None`, gdy żaden monitor jej nie ma albo kilka podaje różne wymiary.
+pub fn screen_ppi(modes: &[(u32, u32, u32, u32)], w: u32, h: u32) -> Option<f32> {
+    let found: Vec<f32> = modes
+        .iter()
+        .filter_map(|&(ha, va, hmm, vmm)| {
+            // Ekran obrócony – pion i poziom zamienione.
+            let (px, mm) = if (ha, va) == (w, h) { (ha, hmm) } else if (va, ha) == (w, h) { (va, vmm) } else { return None };
+            Some(px as f32 / (mm as f32 / 25.4))
+        })
+        .filter(|p| (40.0..=600.0).contains(p))
+        .collect();
+    let first = *found.first()?;
+    found.iter().all(|p| (p - first).abs() < 2.0).then_some(first)
+}
+
+/// Rozdzielczość monitora, na którym jest okno (piksele fizyczne).
+pub fn monitor_size(ui: &AppWindow) -> Option<(u32, u32)> {
+    ui.window().with_winit_window(|w| w.current_monitor().map(|m| (m.size().width, m.size().height))).flatten()
+}

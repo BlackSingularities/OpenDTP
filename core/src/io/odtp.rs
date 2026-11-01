@@ -250,6 +250,17 @@ pub fn asset_from(data: Vec<u8>) -> Option<Asset> {
         let s = tree.size();
         return Some(Asset { mime: "image/svg+xml".into(), data: Arc::new(data), width: s.width().round().max(1.0) as u32, height: s.height().round().max(1.0) as u32 });
     }
+    // Metaplik Windows (np. wzory ze starszych dokumentów Worda): WMF jako wektorowy SVG,
+    // EMF (i WMF, którego nie odczytamy) – przez GDI jako PNG.
+    if crate::wmf::is_metafile(&data) {
+        if let Some((svg, _, _)) = crate::wmf_svg::to_svg(&data) {
+            if let Some(a) = asset_from(svg.into_bytes()) {
+                return Some(a);
+            }
+        }
+        let (png, _, _) = crate::wmf::to_png(&data)?;
+        return asset_from(png);
+    }
     let fmt = image::guess_format(&data).ok()?;
     let mime = match fmt {
         image::ImageFormat::Png => "image/png",

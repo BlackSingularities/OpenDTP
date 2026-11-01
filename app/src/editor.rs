@@ -773,6 +773,59 @@ impl Editor {
         });
     }
 
+    /// Wstawia stronę tytułową na początek treści głównej; dalszy tekst zaczyna się od nowej strony.
+    pub fn insert_cover(&mut self, paras: Vec<Paragraph>) {
+        let n = paras.len();
+        if n == 0 {
+            return;
+        }
+        self.begin(Kind::Other);
+        let body = &mut self.doc.body;
+        if let Some(first) = body.paras.first_mut() {
+            first.fmt.break_before = Some(Break::Page);
+        }
+        body.paras.splice(0..0, paras);
+        if self.story == StoryRef::Body {
+            self.anchor = At::new(0, 0);
+            self.head = At::new(0, 0);
+        }
+        self.changed();
+    }
+
+    /// Sortuje zaznaczone akapity alfabetycznie (polska kolejność liter: a < ą < b).
+    pub fn sort_paras(&mut self, desc: bool) {
+        let (a, b) = self.range();
+        if a.para >= b.para {
+            return;
+        }
+        fn key(s: &str) -> Vec<(char, u8)> {
+            s.to_lowercase().chars().map(|c| match c {
+                'ą' => ('a', 1),
+                'ć' => ('c', 1),
+                'ę' => ('e', 1),
+                'ł' => ('l', 1),
+                'ń' => ('n', 1),
+                'ó' => ('o', 1),
+                'ś' => ('s', 1),
+                'ź' => ('z', 1),
+                'ż' => ('z', 2),
+                c => (c, 0),
+            }).collect()
+        }
+        self.begin(Kind::Other);
+        let s = self.story_mut();
+        let mut v: Vec<Paragraph> = s.paras[a.para..=b.para].to_vec();
+        v.sort_by_cached_key(|p| key(&p.text()));
+        if desc {
+            v.reverse();
+        }
+        let end = v.last().map(|p| p.len()).unwrap_or(0);
+        s.paras.splice(a.para..=b.para, v);
+        self.anchor = At::new(a.para, 0);
+        self.head = At::new(b.para, end);
+        self.changed();
+    }
+
     pub fn restart_numbering(&mut self) {
         let doc = &self.doc;
         let (a, _) = self.range();
@@ -834,6 +887,21 @@ impl Editor {
         self.anchor = end;
         self.head = end;
         self.changed();
+    }
+
+    /// Wklejanie z innego programu: w pustym akapicie pierwszy wklejony akapit zachowuje też
+    /// swój styl i formatowanie akapitu (nagłówek zostaje nagłówkiem), jak w Wordzie.
+    pub fn paste_rich(&mut self, frag: &[Paragraph]) {
+        let p = self.head.para;
+        let empty = !self.has_sel() && self.story_ref().paras.get(p).is_some_and(|x| x.is_empty());
+        self.paste(frag);
+        if let (true, Some(first)) = (empty, frag.first()) {
+            if let Some(dst) = self.story_mut().paras.get_mut(p) {
+                dst.style = first.style.clone();
+                dst.fmt = first.fmt.clone();
+            }
+            self.changed();
+        }
     }
 
     pub fn paste_text(&mut self, text: &str) {
