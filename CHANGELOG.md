@@ -1,5 +1,15 @@
 # Zmiany
 
+## 0.3.0
+
+- Opcjonalne karty skrótów (do trzech, z własną nazwą) w miejsce stałej „Mojej karty”.
+- Wyraźniejsze sekcje wstążki; podpisy grup nie są już ucinane.
+- Jedno ustawienie przezroczystości dla wszystkich pasków, paneli, menu i okien; akryl Windows 11.
+- Właściwości obiektu oraz Znajdź i zamień w zadokowanym pasku bocznym ze zmianą szerokości; ikony zamiast długich napisów.
+- Podpowiedzi przy wszystkich kontrolkach, wyświetlane tuż przy kursorze.
+- Rozbudowane menu kontekstowe dla tekstu, pisowni, łączy, obiektów i tabel.
+- Start od ekranu powitalnego zamiast ostatniego dokumentu.
+
 ## 0.2.0
 
 - Tabele płynące z tekstem: podział na strony z powtórzonym nagłówkiem, scalanie komórek, szerokość kolumn myszą, eksport jako tabela Worda.
