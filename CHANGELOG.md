@@ -1,5 +1,14 @@
 # Zmiany
 
+## 0.4.0
+
+- Strony wzorcowe: osobne nagłówki i stopki stron parzystych (układ lustrzany) oraz obrazy, kształty i wykresy powtarzane na wszystkich, nieparzystych albo parzystych stronach.
+- Żywa pagina: tytuł bieżącego rozdziału, podrozdziału albo hasła w nagłówku strony.
+- Zakładki i odsyłacze („zob. s. 12”, „rys. 3”), które same się aktualizują.
+- Podpisy rysunków, tabel i wzorów z automatyczną numeracją.
+- Indeks (skorowidz): oznaczanie haseł i podhaseł, oznaczanie wszystkich wystąpień, polski porządek alfabetyczny i zakresy stron.
+- Eksport tych elementów do DOCX jako pól Worda.
+
 ## 0.3.0
 
 - Opcjonalne karty skrótów (do trzech, z własną nazwą) w miejsce stałej „Mojej karty”.
