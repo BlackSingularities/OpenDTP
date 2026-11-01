@@ -63,6 +63,18 @@ export struct StyleV {
     shade: color,
 }
 
+export struct ImgV {
+    id: int,
+    key: string,
+    name: string,
+    info: string,
+    linked: bool,
+    missing: bool,
+    low: bool,
+    page: int,
+    current: bool,
+}
+
 export struct NavV {
     label: string,
     level: int,
@@ -195,6 +207,11 @@ export global App {
     in-out property <string> corner: "0";
     in-out property <bool> linked;
     in-out property <bool> image-fit-cover: true;
+    in-out property <bool> image-linked;
+    in-out property <bool> image-missing;
+    in-out property <bool> image-low;
+    in-out property <string> image-info;
+    in-out property <[ImgV]> images;
     in-out property <string> chart-data;
     in-out property <string> chart-title;
     in-out property <int> chart-kind;

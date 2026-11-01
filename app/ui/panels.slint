@@ -4,7 +4,7 @@
 import { ScrollView, ListView, TextEdit } from "std-widgets.slint";
 import { Theme } from "theme.slint";
 import { Icons } from "icons.slint";
-import { App, NavV, StyleV } from "state.slint";
+import { App, NavV, StyleV, ImgV } from "state.slint";
 import { TipArea, IconButton, Field, Spin, Switch, MenuItem, MenuSep, Segmented, IconSeg, Toggle, Label, Dim, Button, Slider } from "widgets.slint";
 
 component PanelHead inherits HorizontalLayout {
@@ -97,6 +97,120 @@ export component LeftPanel inherits Rectangle {
                         clicked => {
                             App.cmd("goto-para", n.para);
                         }
+                    }
+                }
+            }
+        }
+        if App.left-panel == "images": VerticalLayout {
+            PanelHead {
+                title: @tr("Obrazy");
+                icon: Icons.image;
+                close => {
+                    App.left-panel = "";
+                }
+            }
+            if App.images.length == 0: Dim {
+                text: @tr("W dokumencie nie ma obrazów. Wstaw obraz osadzony albo jako łącze do pliku (karta Wstaw).");
+                wrap: word-wrap;
+                x: 14px;
+                width: parent.width - 28px;
+                height: 60px;
+            }
+            ListView {
+                for im in App.images: Rectangle {
+                    height: 46px;
+                    border-radius: Theme.r-small;
+                    background: im.current ? Theme.accent-soft : ita.has-hover ? Theme.hover : transparent;
+                    ita := TipArea {
+                        tip: @tr("Pokaż obraz na stronie {}", im.page + 1);
+                        clicked => {
+                            App.cmd("image-goto", im.id);
+                        }
+                    }
+                    HorizontalLayout {
+                        padding-left: 10px;
+                        padding-right: 6px;
+                        spacing: 8px;
+                        // Znaczek rodzaju: niebieskie ogniwo – łącze, czerwone – brak pliku, szary obrazek – osadzony.
+                        Rectangle {
+                            width: 22px;
+                            height: 22px;
+                            y: (parent.height - self.height) / 2;
+                            border-radius: 11px;
+                            background: im.missing ? #d93f3f : im.linked ? #2f6fd6 : Theme.hover;
+                            Image {
+                                source: im.linked ? Icons.link : Icons.image;
+                                width: 12px;
+                                height: 12px;
+                                colorize: im.linked ? #ffffff : Theme.text-faint;
+                            }
+                        }
+                        VerticalLayout {
+                            horizontal-stretch: 1;
+                            alignment: center;
+                            Text {
+                                text: im.name;
+                                font-family: Theme.font;
+                                font-size: Theme.fs;
+                                color: im.missing ? #d93f3f : Theme.text;
+                                overflow: elide;
+                            }
+                            Text {
+                                text: im.info + (im.low ? "  ⚠" : "");
+                                font-family: Theme.font;
+                                font-size: Theme.fs-small;
+                                color: im.low ? #d9822b : Theme.text-faint;
+                                overflow: elide;
+                            }
+                        }
+                        if im.linked: IconButton {
+                            icon: Icons.folder-open;
+                            size: 26px;
+                            icon-size: 13px;
+                            y: (parent.height - self.height) / 2;
+                            tip: im.missing ? @tr("Wskaż brakujący plik") : @tr("Połącz z innym plikiem");
+                            clicked => {
+                                App.cmd("image-relink", im.key);
+                            }
+                        }
+                        IconButton {
+                            icon: im.linked ? Icons.save : Icons.link;
+                            size: 26px;
+                            icon-size: 13px;
+                            y: (parent.height - self.height) / 2;
+                            tip: im.linked ? @tr("Osadź w dokumencie (kopia pliku trafi do .odtp)") : @tr("Zamień na łącze: zapisz obraz jako plik i połącz z nim");
+                            clicked => {
+                                App.cmd(im.linked ? "image-embed" : "image-to-link", im.key);
+                            }
+                        }
+                    }
+                }
+            }
+            HorizontalLayout {
+                padding-left: 10px;
+                padding-right: 10px;
+                padding-top: 6px;
+                spacing: 6px;
+                Button {
+                    label: @tr("Spakuj");
+                    icon: Icons.folder-open;
+                    tip: @tr("Zapisz dokument z kopiami wszystkich obrazów linkowanych w jednym folderze (np. dla drukarni)");
+                    clicked => {
+                        App.cmd("package", "");
+                    }
+                }
+                IconButton {
+                    icon: Icons.refresh-cw;
+                    tip: @tr("Sprawdź pliki obrazów linkowanych teraz");
+                    clicked => {
+                        App.cmd("links-refresh", "");
+                    }
+                }
+                IconButton {
+                    icon: Icons.save-all;
+                    tip: @tr("Osadź wszystkie obrazy linkowane");
+                    clicked => {
+                        App.cmd("links-embed-all", "");
                     }
                 }
             }
@@ -453,6 +567,20 @@ export component RightPanel inherits Rectangle {
                                     App.cmd("replace-image", "");
                                 }
                             }
+                            Tool {
+                                icon: App.image-linked ? Icons.save : Icons.link;
+                                tip: App.image-linked ? @tr("Osadź w dokumencie (kopia pliku trafi do .odtp)") : @tr("Zamień na łącze: zapisz obraz jako plik i połącz z nim");
+                                clicked => {
+                                    App.cmd(App.image-linked ? "image-embed" : "image-to-link", "");
+                                }
+                            }
+                        }
+                        Text {
+                            text: App.image-info + (App.image-low ? "  ⚠ " + @tr("za niska rozdzielczość do druku") : "");
+                            font-family: Theme.font;
+                            font-size: Theme.fs-small;
+                            color: App.image-missing ? #d93f3f : App.image-low ? #d9822b : Theme.text-faint;
+                            wrap: word-wrap;
                         }
                     }
                     if App.obj-kind == "chart": VerticalLayout {

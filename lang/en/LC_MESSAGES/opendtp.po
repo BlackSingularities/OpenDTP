@@ -3413,3 +3413,126 @@ msgstr "Different headers on even pages"
 
 msgid "Żywa pagina w nagłówku"
 msgstr "Running head in header"
+
+msgid "Wstaw obraz jako łącze do pliku"
+msgstr "Insert image as a link to a file"
+
+msgid "Zaznacz obraz"
+msgstr "Select an image"
+
+msgid "Brak pliku obrazu – najpierw wskaż go ponownie"
+msgstr "Image file missing – locate it first"
+
+msgid "Obraz osadzony w dokumencie"
+msgstr "Image embedded in the document"
+
+msgid "Zapisz obraz jako plik i połącz"
+msgstr "Save image as a file and link it"
+
+msgid "Obraz jest teraz łączem do pliku – zmiany w pliku pojawią się w dokumencie"
+msgstr "The image is now linked – changes to the file will show up in the document"
+
+msgid "Wskaż plik obrazu"
+msgstr "Locate image file"
+
+msgid "Brak obrazów linkowanych do osadzenia"
+msgstr "No linked images to embed"
+
+msgid "Osadzono obrazy: {}"
+msgstr "Images embedded: {}"
+
+msgid "Dokument nie ma obrazów linkowanych – wystarczy zwykły zapis"
+msgstr "The document has no linked images – a normal save is enough"
+
+msgid "Spakuj: wybierz pusty folder na dokument i obrazy"
+msgstr "Package: choose an empty folder for the document and images"
+
+msgid "Spakowano do: {}"
+msgstr "Packaged to: {}"
+
+msgid "Dokument nie ma obrazów linkowanych"
+msgstr "The document has no linked images"
+
+msgid "Wszystkie obrazy linkowane są aktualne"
+msgstr "All linked images are up to date"
+
+msgid "Nie znaleziono plików obrazów: {} – wskaż je w panelu Obrazy"
+msgstr "Image files not found: {} – locate them in the Images panel"
+
+msgid "Odświeżono obrazy zmienione na dysku: {}"
+msgstr "Images updated from disk: {}"
+
+msgid "Obraz osadzony"
+msgstr "Embedded image"
+
+msgid "Brak pliku"
+msgstr "File missing"
+
+msgid "Linkowany"
+msgstr "Linked"
+
+msgid "Osadzony"
+msgstr "Embedded"
+
+msgid "wektor"
+msgstr "vector"
+
+msgid "W dokumencie nie ma obrazów. Wstaw obraz osadzony albo jako łącze do pliku (karta Wstaw)."
+msgstr "The document has no images. Insert an embedded or linked image (Insert tab)."
+
+msgid "Pokaż obraz na stronie {}"
+msgstr "Show image on page {}"
+
+msgid "Wskaż brakujący plik"
+msgstr "Locate the missing file"
+
+msgid "Połącz z innym plikiem"
+msgstr "Link to another file"
+
+msgid "Osadź w dokumencie (kopia pliku trafi do .odtp)"
+msgstr "Embed in the document (a copy goes into the .odtp)"
+
+msgid "Zamień na łącze: zapisz obraz jako plik i połącz z nim"
+msgstr "Convert to link: save the image as a file and link to it"
+
+msgid "Spakuj"
+msgstr "Package"
+
+msgid "Zapisz dokument z kopiami wszystkich obrazów linkowanych w jednym folderze (np. dla drukarni)"
+msgstr "Save the document with copies of all linked images in one folder (e.g. for the printer)"
+
+msgid "Sprawdź pliki obrazów linkowanych teraz"
+msgstr "Check linked image files now"
+
+msgid "Osadź wszystkie obrazy linkowane"
+msgstr "Embed all linked images"
+
+msgid "za niska rozdzielczość do druku"
+msgstr "resolution too low for print"
+
+msgid "Osadzony – kopia w dokumencie"
+msgstr "Embedded – copy inside the document"
+
+msgid "jeden plik .odtp"
+msgstr "single .odtp file"
+
+msgid "Linkowany – łącze do pliku"
+msgstr "Linked – link to a file"
+
+msgid "zmiany w pliku widać od razu"
+msgstr "file changes show up instantly"
+
+msgid "Panel Obrazy…"
+msgstr "Images panel…"
+
+msgid "Osadź obraz w dokumencie"
+msgstr "Embed image in the document"
+
+msgid "Zamień obraz na łącze do pliku"
+msgstr "Convert image to a file link"
+
+msgid "Sprawdź obrazy linkowane"
+msgstr "Check linked images"
+
+msgid "Spakuj dokument z obrazami"
+msgstr "Package document with images"

@@ -334,7 +334,14 @@ fn sync(st: &mut State, ui: &AppWindow) {
                     VAlign::Bottom => 2,
                 });
             }
-            ObjKind::Image { fit, .. } => app.set_image_fit_cover(*fit == ImageFit::Cover),
+            ObjKind::Image { fit, asset, .. } => {
+                app.set_image_fit_cover(*fit == ImageFit::Cover);
+                let info = image_info(&ed.doc, o, asset);
+                app.set_image_linked(info.linked);
+                app.set_image_missing(info.missing);
+                app.set_image_low(info.low);
+                app.set_image_info(info.text.into());
+            }
             ObjKind::Chart { chart } => {
                 app.set_chart_kind(match chart.kind {
                     ChartKind::Column => 0,
@@ -464,7 +471,50 @@ fn sync(st: &mut State, ui: &AppWindow) {
         }
         refs.pop();
         app.set_ref_targets(ModelRc::new(VecModel::from(refs)));
+        // Panel Obrazy: wszystkie obrazy z rodzajem (osadzony / linkowany) i rozdzielczością.
+        let imgs: Vec<ImgV> = ed
+            .doc
+            .objects
+            .iter()
+            .filter(|o| o.cont_of.is_none())
+            .filter_map(|o| {
+                let ObjKind::Image { asset, .. } = &o.kind else { return None };
+                let info = image_info(&ed.doc, o, asset);
+                Some(ImgV { id: o.id as i32, key: asset.clone().into(), name: info.name.into(), info: info.text.into(), linked: info.linked, missing: info.missing, low: info.low, page: o.page as i32, current: ed.obj == Some(o.id) })
+            })
+            .collect();
+        app.set_images(ModelRc::new(VecModel::from(imgs)));
     }
+}
+
+struct ImageInfo {
+    name: String,
+    text: String,
+    linked: bool,
+    missing: bool,
+    low: bool,
+}
+
+/// Opis obrazu: rodzaj (osadzony / linkowany), plik i rozdzielczość w druku (ppi przy obecnym rozmiarze).
+fn image_info(doc: &Document, o: &Object, asset: &str) -> ImageInfo {
+    let link = doc.links.get(asset);
+    let missing = doc.missing.contains(asset);
+    let (pw, ph) = doc.image_px(asset).unwrap_or((0, 0));
+    let svg = doc.assets.get(asset).is_some_and(|a| a.mime == "image/svg+xml");
+    let ppi = if o.w > 0.0 { (pw as f32 / (o.w / 72.0)).round() as u32 } else { 0 };
+    let low = !svg && pw > 0 && ppi < 150;
+    let name = match link {
+        Some(l) => std::path::Path::new(&l.path).file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_default(),
+        None if !o.name.is_empty() => o.name.clone(),
+        None => opendtp_core::lang::tr("Obraz osadzony").to_string(),
+    };
+    let kind = match (link.is_some(), missing) {
+        (true, true) => opendtp_core::lang::tr("Brak pliku"),
+        (true, false) => opendtp_core::lang::tr("Linkowany"),
+        _ => opendtp_core::lang::tr("Osadzony"),
+    };
+    let res = if svg { opendtp_core::lang::tr("wektor").to_string() } else { format!("{pw}×{ph} px · {ppi} ppi") };
+    ImageInfo { name, text: format!("{kind} · {res}"), linked: link.is_some(), missing, low }
 }
 
 /// Nazwy stylów wbudowanych w języku interfejsu.
@@ -702,6 +752,15 @@ fn main() {
             st.ed.relayout();
             st.view.invalidate();
             refresh(&mut st);
+        });
+    }
+    // Obrazy linkowane: zmiany plików na dysku pojawiają się w dokumencie.
+    let links_poll = slint::Timer::default();
+    {
+        let sh = shared.clone();
+        links_poll.start(slint::TimerMode::Repeated, Duration::from_secs(2), move || {
+            let Ok(mut st) = sh.try_borrow_mut() else { return };
+            actions::links_tick(&mut st, false);
         });
     }
     // Autozapis kopii do odzyskania.

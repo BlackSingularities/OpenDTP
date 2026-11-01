@@ -1342,6 +1342,26 @@ impl Default for DocSettings {
     }
 }
 
+/// Obraz linkowany: dokument trzyma ścieżkę do pliku (i podgląd), a nie pełną kopię.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImageLink {
+    /// Pełna ścieżka pliku.
+    pub path: String,
+    /// Ścieżka względem folderu dokumentu (gdy plik leży obok) – po przeniesieniu całego folderu.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub rel: String,
+    /// Czas modyfikacji (sekundy) i rozmiar pliku przy ostatnim wczytaniu – do wykrywania zmian.
+    #[serde(default)]
+    pub modified: u64,
+    #[serde(default)]
+    pub size: u64,
+    /// Wymiary oryginału w pikselach (podgląd w dokumencie bywa mniejszy).
+    #[serde(default)]
+    pub width: u32,
+    #[serde(default)]
+    pub height: u32,
+}
+
 /// Plik osadzony w dokumencie (obraz).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Asset {
@@ -1390,6 +1410,12 @@ pub struct Document {
     pub bookmarks: Vec<Bookmark>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub index: Vec<IndexEntry>,
+    /// Obrazy linkowane (klucz jak w `assets`); pozostałe obrazy są osadzone.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub links: BTreeMap<String, ImageLink>,
+    /// Obrazy linkowane, których pliku nie znaleziono (pokazujemy zapisany podgląd).
+    #[serde(skip)]
+    pub missing: std::collections::BTreeSet<String>,
 }
 
 fn format_version() -> u32 {
@@ -1442,6 +1468,8 @@ impl Document {
             notes: Vec::new(),
             bookmarks: Vec::new(),
             index: Vec::new(),
+            links: BTreeMap::new(),
+            missing: Default::default(),
         }
     }
 
@@ -1632,6 +1660,14 @@ impl Document {
         match self.section_start(para).and_then(|i| self.body.paras[i].fmt.section.as_ref()) {
             Some(s) => self.page.with_section(s),
             None => self.page.clone(),
+        }
+    }
+
+    /// Wymiary obrazu w pikselach (dla linkowanego – oryginału, nie podglądu).
+    pub fn image_px(&self, asset: &str) -> Option<(u32, u32)> {
+        match self.links.get(asset) {
+            Some(l) if l.width > 0 => Some((l.width, l.height)),
+            _ => self.assets.get(asset).map(|a| (a.width, a.height)),
         }
     }
 

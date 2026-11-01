@@ -1,4 +1,5 @@
 //! Format `.odtp`: archiwum ZIP z `mimetype`, `document.json` (cały model) i obrazami w `assets/`.
+//! Obraz linkowany ma w `assets/` tylko podgląd, a pełny plik wczytujemy z dysku (`links`).
 //! Zapis idzie do pliku tymczasowego i dopiero potem podmienia oryginał – przerwany zapis nie
 //! niszczy dokumentu.
 
@@ -6,11 +7,27 @@ use std::io::{Read, Write};
 use std::path::Path;
 use std::sync::Arc;
 
-use crate::model::{Asset, Document};
+use crate::model::{Asset, Document, ImageLink};
 
 pub const MIME: &str = "application/x-opendtp";
 
 pub fn to_bytes(doc: &Document) -> Result<Vec<u8>, String> {
+    to_bytes_at(doc, None)
+}
+
+/// Zapis z folderem docelowym – ścieżki względne łączy liczymy od niego.
+pub fn to_bytes_at(doc: &Document, dir: Option<&Path>) -> Result<Vec<u8>, String> {
+    let mut owned;
+    let doc = match dir {
+        Some(d) if !doc.links.is_empty() => {
+            owned = doc.clone();
+            for l in owned.links.values_mut() {
+                l.rel = Path::new(&l.path).strip_prefix(d).map(|r| r.to_string_lossy().replace('\\', "/")).unwrap_or_default();
+            }
+            &owned
+        }
+        _ => doc,
+    };
     let mut buf = std::io::Cursor::new(Vec::new());
     {
         let mut z = zip::ZipWriter::new(&mut buf);
@@ -22,9 +39,13 @@ pub fn to_bytes(doc: &Document) -> Result<Vec<u8>, String> {
         let json = serde_json::to_vec_pretty(doc).map_err(|e| e.to_string())?;
         z.write_all(&json).map_err(|e| e.to_string())?;
         for (id, a) in &doc.assets {
-            // Obrazy są już skompresowane.
+            // Obrazy są już skompresowane. Linkowany – tylko podgląd.
             z.start_file(format!("assets/{id}"), stored).map_err(|e| e.to_string())?;
-            z.write_all(&a.data).map_err(|e| e.to_string())?;
+            if doc.links.contains_key(id) && !doc.missing.contains(id) {
+                z.write_all(&preview(a)).map_err(|e| e.to_string())?;
+            } else {
+                z.write_all(&a.data).map_err(|e| e.to_string())?;
+            }
         }
         z.finish().map_err(|e| e.to_string())?;
     }
@@ -32,7 +53,7 @@ pub fn to_bytes(doc: &Document) -> Result<Vec<u8>, String> {
 }
 
 pub fn save(doc: &Document, path: &Path) -> Result<(), String> {
-    let bytes = to_bytes(doc)?;
+    let bytes = to_bytes_at(doc, path.parent())?;
     let tmp = path.with_extension("odtp.tmp");
     std::fs::write(&tmp, bytes).map_err(|e| e.to_string())?;
     std::fs::rename(&tmp, path).map_err(|e| {
@@ -64,7 +85,129 @@ pub fn from_bytes(bytes: &[u8]) -> Result<Document, String> {
 
 pub fn load(path: &Path) -> Result<Document, String> {
     let bytes = std::fs::read(path).map_err(|e| e.to_string())?;
-    from_bytes(&bytes)
+    let mut doc = from_bytes(&bytes)?;
+    refresh_links(&mut doc, path.parent(), true);
+    Ok(doc)
+}
+
+/// Podgląd obrazu linkowanego zapisywany w dokumencie (najdłuższy bok do 1200 px).
+fn preview(a: &Asset) -> Vec<u8> {
+    const MAX: u32 = 1200;
+    if a.mime == "image/svg+xml" || a.data.len() < 400_000 || (a.width <= MAX && a.height <= MAX) {
+        return a.data.to_vec();
+    }
+    let Ok(img) = image::load_from_memory(&a.data) else { return a.data.to_vec() };
+    let small = img.thumbnail(MAX, MAX);
+    let mut out = std::io::Cursor::new(Vec::new());
+    let fmt = if a.mime == "image/jpeg" { image::ImageFormat::Jpeg } else { image::ImageFormat::Png };
+    let ok = if fmt == image::ImageFormat::Jpeg { small.to_rgb8().write_to(&mut out, fmt).is_ok() } else { small.write_to(&mut out, fmt).is_ok() };
+    if ok {
+        out.into_inner()
+    } else {
+        a.data.to_vec()
+    }
+}
+
+/// Czas modyfikacji (sekundy od 1970) i rozmiar pliku.
+fn stamp(p: &Path) -> Option<(u64, u64)> {
+    let m = std::fs::metadata(p).ok()?;
+    let t = m.modified().ok()?.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs();
+    Some((t, m.len()))
+}
+
+/// Obraz z pliku na dysku jako łącze (obraz i opis łącza).
+pub fn link_file(path: &Path) -> Result<(Asset, ImageLink), String> {
+    let data = std::fs::read(path).map_err(|e| e.to_string())?;
+    let a = asset_from(data).ok_or_else(|| crate::lang::tr("Nieobsługiwany format obrazu").to_string())?;
+    let (modified, size) = stamp(path).unwrap_or((0, 0));
+    let full = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
+    let full = full.to_string_lossy().trim_start_matches(r"\\?\").to_string();
+    let link = ImageLink { path: full, rel: String::new(), modified, size, width: a.width, height: a.height };
+    Ok((a, link))
+}
+
+/// Plik łącza: pełna ścieżka, a gdy jej nie ma – ścieżka względna od folderu dokumentu.
+pub fn link_path(l: &ImageLink, dir: Option<&Path>) -> Option<std::path::PathBuf> {
+    let full = Path::new(&l.path);
+    if full.is_file() {
+        return Some(full.to_path_buf());
+    }
+    let rel = dir?.join(&l.rel);
+    (!l.rel.is_empty() && rel.is_file()).then_some(rel)
+}
+
+/// Sprawdza pliki łączy: wczytuje zmienione (albo wszystkie przy `force`) i oznacza brakujące.
+/// Zwraca klucze obrazów, których wygląd mógł się zmienić.
+pub fn refresh_links(doc: &mut Document, dir: Option<&Path>, force: bool) -> Vec<String> {
+    let mut changed = Vec::new();
+    let keys: Vec<String> = doc.links.keys().cloned().collect();
+    for k in keys {
+        let l = doc.links[&k].clone();
+        match link_path(&l, dir) {
+            Some(p) => {
+                let st = stamp(&p).unwrap_or((0, 0));
+                let was_missing = doc.missing.remove(&k);
+                if !force && !was_missing && st == (l.modified, l.size) {
+                    continue;
+                }
+                match link_file(&p) {
+                    Ok((a, nl)) => {
+                        // Bez zmian w treści (np. tylko otwarcie dokumentu) – nie zgłaszamy.
+                        let same = doc.assets.get(&k).is_some_and(|old| old.data == a.data);
+                        doc.assets.insert(k.clone(), a);
+                        doc.links.insert(k.clone(), ImageLink { rel: l.rel.clone(), ..nl });
+                        if !same {
+                            changed.push(k);
+                        }
+                    }
+                    // Plik w trakcie zapisu albo uszkodzony – spróbujemy przy następnym sprawdzeniu.
+                    Err(_) => {}
+                }
+            }
+            None => {
+                if doc.missing.insert(k.clone()) {
+                    changed.push(k);
+                }
+            }
+        }
+    }
+    changed
+}
+
+/// Pakowanie: dokument i kopie wszystkich obrazów linkowanych w jednym folderze
+/// (`<folder>/<nazwa>.odtp` i `<folder>/obrazy/`). Zwraca ścieżkę zapisanego dokumentu.
+pub fn package(doc: &Document, dir: &Path, name: &str) -> Result<std::path::PathBuf, String> {
+    let img_dir = dir.join("obrazy");
+    std::fs::create_dir_all(&img_dir).map_err(|e| e.to_string())?;
+    let mut d = doc.clone();
+    let mut used = std::collections::HashSet::new();
+    for (k, l) in d.links.iter_mut() {
+        let file = Path::new(&l.path).file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_else(|| k.clone());
+        let mut target = file.clone();
+        let mut n = 2;
+        while !used.insert(target.to_lowercase()) {
+            let p = Path::new(&file);
+            let stem = p.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+            let ext = p.extension().map(|s| format!(".{}", s.to_string_lossy())).unwrap_or_default();
+            target = format!("{stem}-{n}{ext}");
+            n += 1;
+        }
+        let dest = img_dir.join(&target);
+        // Brakujący plik – zapisujemy to, co mamy (podgląd).
+        match std::fs::copy(&l.path, &dest) {
+            Ok(_) => {}
+            Err(_) => {
+                let a = doc.assets.get(k).ok_or_else(|| format!("{k}"))?;
+                std::fs::write(&dest, a.data.as_slice()).map_err(|e| e.to_string())?;
+            }
+        }
+        l.path = dest.to_string_lossy().to_string();
+        l.rel = format!("obrazy/{target}");
+    }
+    d.missing.clear();
+    let out = dir.join(format!("{name}.odtp"));
+    save(&d, &out)?;
+    Ok(out)
 }
 
 /// Obraz z bajtów pliku (rozpoznaje format i wymiary).

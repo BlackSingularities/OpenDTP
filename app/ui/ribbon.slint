@@ -1050,12 +1050,23 @@ component InsertTab inherits HorizontalLayout {
     }
     Group {
         title: @tr("Ilustracje");
-        BigButton {
+        BigMenuButton {
             icon: Icons.image;
             label: @tr("Obraz");
             tip: @tr("Wstaw obraz z pliku (PNG, JPEG, WebP, GIF, BMP) albo grafikę wektorową SVG");
-            clicked => {
-                App.cmd("image", "");
+            menu-w: 300px;
+            items: [
+                { id: "image", label: @tr("Osadzony – kopia w dokumencie"), hint: @tr("jeden plik .odtp"), icon: Icons.image },
+                { id: "image-link", label: @tr("Linkowany – łącze do pliku"), hint: @tr("zmiany w pliku widać od razu"), icon: Icons.link },
+                { id: "-" },
+                { id: "panel-images", label: @tr("Panel Obrazy…"), icon: Icons.layers },
+            ];
+            picked(id) => {
+                if id == "panel-images" {
+                    App.cmd("panel", "images");
+                } else {
+                    App.cmd(id, "");
+                }
             }
         }
         BigMenuButton {

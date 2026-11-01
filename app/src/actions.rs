@@ -605,7 +605,116 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             }
             return;
         }
+        "image-link" => {
+            let Some(p) = rfd::FileDialog::new().set_title(tr("Wstaw obraz jako łącze do pliku")).add_filter(tr("Obrazy"), &["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"]).pick_file() else { return };
+            match io::odtp::link_file(&p) {
+                Ok((asset, link)) => insert_image(st, asset, Some(link)),
+                Err(e) => toast(st, &e),
+            }
+            return;
+        }
+        "image-embed" | "image-to-link" | "image-relink" => {
+            // arg: klucz obrazu (z panelu Obrazy) albo pusty – obraz zaznaczonego obiektu.
+            let key = if arg.is_empty() { selected_asset(st) } else { Some(arg.to_string()) };
+            let Some(key) = key else {
+                toast(st, tr("Zaznacz obraz"));
+                return;
+            };
+            match base {
+                "image-embed" => {
+                    if st.ed.doc.missing.contains(&key) {
+                        toast(st, tr("Brak pliku obrazu – najpierw wskaż go ponownie"));
+                        return;
+                    }
+                    st.ed.begin(Kind::Other);
+                    st.ed.doc.links.remove(&key);
+                    st.ed.changed();
+                    toast(st, tr("Obraz osadzony w dokumencie"));
+                }
+                "image-to-link" => {
+                    let Some(a) = st.ed.doc.assets.get(&key).cloned() else { return };
+                    let name = format!("{}.{}", files::doc_name(&st.ed), io::odtp::ext_of(&a.mime));
+                    let mut dlg = rfd::FileDialog::new().set_title(tr("Zapisz obraz jako plik i połącz")).set_file_name(&name);
+                    if let Some(dir) = st.ed.path.as_ref().and_then(|p| p.parent()) {
+                        dlg = dlg.set_directory(dir);
+                    }
+                    let Some(p) = dlg.save_file() else { return };
+                    if let Err(e) = std::fs::write(&p, a.data.as_slice()) {
+                        toast(st, &e.to_string());
+                        return;
+                    }
+                    match io::odtp::link_file(&p) {
+                        Ok((asset, link)) => {
+                            st.ed.begin(Kind::Other);
+                            st.ed.doc.assets.insert(key.clone(), asset);
+                            st.ed.doc.links.insert(key.clone(), link);
+                            st.ed.changed();
+                            toast(st, tr("Obraz jest teraz łączem do pliku – zmiany w pliku pojawią się w dokumencie"));
+                        }
+                        Err(e) => toast(st, &e),
+                    }
+                }
+                _ => {
+                    let Some(p) = rfd::FileDialog::new().set_title(tr("Wskaż plik obrazu")).add_filter(tr("Obrazy"), &["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"]).pick_file() else { return };
+                    match io::odtp::link_file(&p) {
+                        Ok((asset, link)) => {
+                            st.ed.begin(Kind::Other);
+                            st.ed.doc.assets.insert(key.clone(), asset);
+                            st.ed.doc.links.insert(key.clone(), link);
+                            st.ed.doc.missing.remove(&key);
+                            st.view.forget_image(&key);
+                            st.ed.changed();
+                            st.view.invalidate();
+                        }
+                        Err(e) => toast(st, &e),
+                    }
+                }
+            }
+        }
+        "links-embed-all" => {
+            let keys: Vec<String> = st.ed.doc.links.keys().filter(|k| !st.ed.doc.missing.contains(*k)).cloned().collect();
+            if keys.is_empty() {
+                toast(st, tr("Brak obrazów linkowanych do osadzenia"));
+                return;
+            }
+            st.ed.begin(Kind::Other);
+            for k in &keys {
+                st.ed.doc.links.remove(k);
+            }
+            st.ed.changed();
+            toast(st, &opendtp_core::trf!("Osadzono obrazy: {}", keys.len()));
+        }
+        "links-refresh" => {
+            links_tick(st, true);
+            return;
+        }
+        "package" => {
+            if st.ed.doc.links.is_empty() {
+                toast(st, tr("Dokument nie ma obrazów linkowanych – wystarczy zwykły zapis"));
+            }
+            let Some(dir) = rfd::FileDialog::new().set_title(tr("Spakuj: wybierz pusty folder na dokument i obrazy")).pick_folder() else { return };
+            match io::odtp::package(&st.ed.doc, &dir, &files::doc_name(&st.ed)) {
+                Ok(p) => toast(st, &opendtp_core::trf!("Spakowano do: {}", p.display())),
+                Err(e) => toast(st, &e),
+            }
+            return;
+        }
+        "image-goto" => {
+            let Ok(id) = arg.parse::<u64>() else { return };
+            let Some((page, y)) = st.ed.doc.object(id).map(|o| (o.page, o.y)) else { return };
+            st.ed.obj = Some(id);
+            st.ed.multi.clear();
+            let (_, cy) = st.view.to_canvas(page, 0.0, y);
+            let vy = (cy - 60.0).max(0.0);
+            app.set_view_y(-vy);
+            st.view.vy = vy;
+            object_selected(st);
+        }
         "replace-image" => {
+            // Obraz linkowany – wskazujemy nowy plik łącza (zostaje łączem).
+            if let Some(key) = selected_asset(st).filter(|k| st.ed.doc.links.contains_key(k)) {
+                return run(st, "image-relink", &key);
+            }
             let Some(p) = rfd::FileDialog::new().set_title(tr("Zmień obraz")).add_filter(tr("Obrazy"), &["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"]).pick_file() else { return };
             let Some(asset) = std::fs::read(&p).ok().and_then(io::odtp::asset_from) else {
                 toast(st, tr("Nieobsługiwany format obrazu"));
@@ -2721,6 +2830,48 @@ pub fn insert_image_bytes(st: &mut State, bytes: Vec<u8>) {
         toast(st, tr("Nieobsługiwany format obrazu"));
         return;
     };
+    insert_image(st, asset, None);
+}
+
+/// Klucz obrazu zaznaczonego obiektu.
+fn selected_asset(st: &State) -> Option<String> {
+    match &st.ed.object()?.kind {
+        ObjKind::Image { asset, .. } => Some(asset.clone()),
+        _ => None,
+    }
+}
+
+/// Sprawdzenie plików obrazów linkowanych: zmienione wczytujemy, brakujące oznaczamy.
+pub fn links_tick(st: &mut State, verbose: bool) {
+    if st.ed.doc.links.is_empty() {
+        if verbose {
+            toast(st, tr("Dokument nie ma obrazów linkowanych"));
+        }
+        return;
+    }
+    let dir = st.ed.path.as_ref().and_then(|p| p.parent()).map(|p| p.to_path_buf());
+    let changed = io::odtp::refresh_links(&mut st.ed.doc, dir.as_deref(), verbose);
+    if changed.is_empty() {
+        if verbose {
+            toast(st, tr("Wszystkie obrazy linkowane są aktualne"));
+        }
+        return;
+    }
+    for k in &changed {
+        st.view.forget_image(k);
+    }
+    st.ed.relayout();
+    st.view.invalidate();
+    let missing = changed.iter().filter(|k| st.ed.doc.missing.contains(*k)).count();
+    if missing > 0 {
+        toast(st, &opendtp_core::trf!("Nie znaleziono plików obrazów: {} – wskaż je w panelu Obrazy", missing));
+    } else {
+        toast(st, &opendtp_core::trf!("Odświeżono obrazy zmienione na dysku: {}", changed.len()));
+    }
+    refresh(st);
+}
+
+fn insert_image(st: &mut State, asset: Asset, link: Option<ImageLink>) {
     let ps = st.ed.doc.page.clone();
     let key = format!("img{}", st.ed.doc.new_id());
     let (iw, ih) = (asset.width.max(1) as f32 * 0.75, asset.height.max(1) as f32 * 0.75);
@@ -2728,6 +2879,9 @@ pub fn insert_image_bytes(st: &mut State, bytes: Vec<u8>) {
     let k = (maxw / iw).min(1.0).min(ps.height * 0.5 / ih);
     let (w, h) = (iw * k, ih * k);
     st.ed.doc.assets.insert(key.clone(), asset);
+    if let Some(l) = link {
+        st.ed.doc.links.insert(key.clone(), l);
+    }
     let (page, y) = st.ed.caret_page().map(|c| (c.0, c.2)).unwrap_or((0, ps.margin_top));
     let x = ps.width - ps.margin_right - w;
     let o = new_obj(page, x, y, w, h, Shape::rect(), ObjKind::Image { asset: key, fit: ImageFit::Cover, contour: None }, WrapMode::Both);

@@ -207,6 +207,21 @@ pub fn page_ops(doc: &Document, layout: &Layout, page: usize, o: &PaintOpts) -> 
     for ob in objs.iter().filter(|ob| ob.wrap.mode != WrapMode::Behind) {
         object_ops(doc, layout, ob, page, o, &mut ops);
     }
+    // Znaczek obrazu linkowanego (tylko na ekranie): ogniwo łącza, czerwone – brak pliku.
+    if o.screen {
+        for ob in &objs {
+            let ObjKind::Image { asset, .. } = &ob.kind else { continue };
+            if !doc.links.contains_key(asset) {
+                continue;
+            }
+            let missing = doc.missing.contains(asset);
+            let (cx, cy) = (ob.x + ob.w - 9.0, ob.y + 9.0);
+            let bg = if missing { Color::rgb(0xd9, 0x3f, 0x3f) } else { Color::rgb(0x2f, 0x6f, 0xd6) };
+            ops.push(Op::Fill { path: Path::ellipse(cx, cy, 6.5, 6.5), paint: Paint::Solid(bg), opacity: 0.92 });
+            ops.push(Op::Stroke { path: Path::round_rect(Rect::new(cx - 4.2, cy - 1.6, 4.6, 3.2), 1.6), color: Color::WHITE, width: 0.9, dash: vec![], opacity: 1.0 });
+            ops.push(Op::Stroke { path: Path::round_rect(Rect::new(cx - 0.4, cy - 1.6, 4.6, 3.2), 1.6), color: Color::WHITE, width: 0.9, dash: vec![], opacity: 1.0 });
+        }
+    }
     ops
 }
 
