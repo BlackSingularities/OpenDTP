@@ -644,7 +644,7 @@ export component AppWindow inherits Window {
                 App.code-kind = i;
             }
         }
-        cf := Field {
+        code-field := Field {
             tip: App.code-kind == 0 ? @tr("Adres strony, tekst, numer telefonu…") : @tr("Litery bez polskich znaków, cyfry i interpunkcja");
             w: 384px;
             text <=> App.code-text;
@@ -666,7 +666,7 @@ export component AppWindow inherits Window {
             }
         }
         init => {
-            cf.focus-input();
+            code-field.focus-input();
         }
     }
     if App.dialog == "comment": Dialog {
