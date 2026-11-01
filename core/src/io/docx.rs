@@ -370,6 +370,9 @@ fn runs_xml(ctx: &mut Ctx, runs: &[Run], out: &mut String) {
         let mut rp = String::new();
         rpr(&r.fmt, &mut rp);
         if let Some(f) = r.field {
+            if matches!(f, Field::Anchor(_)) {
+                continue;
+            }
             let instr = match f {
                 Field::PageNumber => "PAGE",
                 Field::PageCount => "NUMPAGES",
@@ -377,6 +380,7 @@ fn runs_xml(ctx: &mut Ctx, runs: &[Run], out: &mut String) {
                 Field::Time => r#"TIME \@ "HH:mm""#,
                 Field::Title => "TITLE",
                 Field::Author => "AUTHOR",
+                Field::Anchor(_) => "",
             };
             let _ = write!(out, r#"<w:fldSimple w:instr="{}"><w:r>{rp}<w:t>1</w:t></w:r></w:fldSimple>"#, esc(instr));
             continue;
@@ -672,6 +676,7 @@ fn objects_xml(ctx: &mut Ctx, page: usize) -> String {
                 let g = pic_graphic(&rel, o.w, o.h, src, &geom_xml(o), &ln_xml(o.stroke.as_ref()));
                 out.push_str(&anchor(ctx, o, z, o.x, o.y, o.w, o.h, wrap, &g));
             }
+            ObjKind::Table { .. } if o.cont_of.is_some() || doc.body.paras.iter().any(|p| p.runs.iter().any(|r| r.field == Some(Field::Anchor(o.id)))) => continue,
             ObjKind::Chart { .. } | ObjKind::PathText { .. } | ObjKind::Table { .. } => {
                 let png = render_png(doc, layout, o);
                 if png.is_empty() {
@@ -759,6 +764,76 @@ fn objects_xml(ctx: &mut Ctx, page: usize) -> String {
         }
     }
     out
+}
+
+/// Tabela zakotwiczona w tekście jako `w:tbl` (cała – Word sam dzieli ją na strony i powtarza nagłówek).
+fn table_xml(ctx: &mut Ctx, t: &Table, width: f32) -> String {
+    let cols = t.cols();
+    let mut full = t.clone();
+    full.take = None;
+    let edges = crate::paint::table_cells(&full, geom::Rect::new(0.0, 0.0, width, 1000.0));
+    let mut widths = vec![width / cols as f32; cols];
+    for (ri, c, r) in &edges {
+        if *ri == 0 && *c < cols {
+            widths[*c] = r.w;
+        }
+    }
+    let line = t.line.hex6();
+    let mut s = format!(r#"<w:tbl><w:tblPr><w:tblW w:w="{}" w:type="dxa"/><w:tblBorders>"#, tw(width));
+    for side in ["top", "left", "bottom", "right", "insideH", "insideV"] {
+        let _ = write!(s, r#"<w:{side} w:val="single" w:sz="4" w:space="0" w:color="{line}"/>"#);
+    }
+    s.push_str(r#"</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>"#);
+    for w in &widths {
+        let _ = write!(s, r#"<w:gridCol w:w="{}"/>"#, tw(*w));
+    }
+    s.push_str("</w:tblGrid>");
+    for (ri, row) in t.rows.iter().enumerate() {
+        let head = t.header && ri == 0;
+        s.push_str("<w:tr>");
+        if head {
+            s.push_str("<w:trPr><w:tblHeader/></w:trPr>");
+        }
+        let mut c = 0;
+        while c < cols {
+            let mut span = 1;
+            while c + span < cols && row.get(c + span).is_some_and(|v| v == MERGED) {
+                span += 1;
+            }
+            let w: f32 = widths[c..c + span].iter().sum();
+            let fill = if head {
+                Some(t.accent.hex6())
+            } else if t.stripes && ri % 2 == 0 {
+                let m = |v: u8| (v as f32 * 0.07 + 255.0 * 0.93) as u8;
+                Some(Color::rgb(m(t.accent.r), m(t.accent.g), m(t.accent.b)).hex6())
+            } else {
+                None
+            };
+            let _ = write!(s, r#"<w:tc><w:tcPr><w:tcW w:w="{}" w:type="dxa"/>"#, tw(w));
+            if span > 1 {
+                let _ = write!(s, r#"<w:gridSpan w:val="{span}"/>"#);
+            }
+            if let Some(f) = fill {
+                let _ = write!(s, r#"<w:shd w:val="clear" w:color="auto" w:fill="{f}"/>"#);
+            }
+            s.push_str(r#"<w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:before="40" w:after="40"/></w:pPr>"#);
+            let mut runs = crate::io::plain::md_inline(row.get(c).map(|v| v.as_str()).unwrap_or(""));
+            for r in runs.iter_mut() {
+                r.fmt.font = Some(t.font.clone());
+                r.fmt.size = Some(t.size);
+                if head {
+                    r.fmt.bold = Some(true);
+                    r.fmt.color = Some(Color::WHITE);
+                }
+            }
+            runs_xml(ctx, &runs, &mut s);
+            s.push_str("</w:p></w:tc>");
+            c += span;
+        }
+        s.push_str("</w:tr>");
+    }
+    s.push_str("</w:tbl>");
+    s
 }
 
 fn styles_xml(doc: &Document) -> String {
@@ -870,6 +945,14 @@ pub fn export(doc: &Document, layout: &Layout, opts: &DocxOpts) -> Result<Vec<u8
             extra = objects_xml(&mut ctx, pg);
         }
         para_xml(&mut ctx, p, &extra, &mut body);
+        for r in &p.runs {
+            if let Some(Field::Anchor(id)) = r.field {
+                if let Some(ObjKind::Table { table }) = doc.object(id).map(|o| &o.kind) {
+                    let w = doc.object(id).map(|o| o.w).unwrap_or(400.0);
+                    body.push_str(&table_xml(&mut ctx, table, w));
+                }
+            }
+        }
     }
     // Strony bez treści głównej (same obiekty) – puste akapity z podziałem strony.
     for pg in 0..pages {

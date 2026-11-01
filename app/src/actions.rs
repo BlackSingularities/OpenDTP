@@ -667,7 +667,8 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             let w = (ps.content_width() * 0.6).min(320.0);
             let y = st.ed.caret_page().map(|c| c.2).unwrap_or(ps.margin_top);
             let o = new_obj(page, ps.margin_left, y, w, w * 0.65, Shape::rect(), ObjKind::Chart { chart: ch }, WrapMode::Both);
-            st.ed.add_object(o);
+            let id = st.ed.add_object(o);
+            anchor_new(st, id);
             object_selected(st);
             app.set_right_panel("props".into());
         }
@@ -688,7 +689,8 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             let w = ps.content_width();
             let h = t.rows.len() as f32 * 22.0;
             let o = new_obj(page, ps.margin_left, y, w, h, Shape::rect(), ObjKind::Table { table: t }, WrapMode::TopBottom);
-            st.ed.add_object(o);
+            let id = st.ed.add_object(o);
+            anchor_new(st, id);
             object_selected(st);
             app.set_right_panel("props".into());
         }
@@ -723,6 +725,113 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             st.ed.edit_obj(&move |o| {
                 if let ObjKind::Table { table } = &mut o.kind {
                     table.accent = c;
+                }
+            });
+        }
+        "anchor-toggle" => {
+            let Some(id) = st.ed.obj else { return };
+            st.ed.begin(Kind::Other);
+            if st.ed.anchored(id) {
+                st.ed.unanchor(id);
+                toast(st, tr("Obiekt przypięty do strony"));
+            } else if let Some(o) = st.ed.doc.object(id).cloned() {
+                // Akapit, który zaczyna się najbliżej górnej krawędzi obiektu na jego stronie.
+                let lay = &st.ed.layout;
+                let para = lay.story_lines(StoryRef::Body).iter().map(|&i| &lay.lines[i]).filter(|l| l.page == o.page && l.first).min_by(|a, b| (a.top - o.y).abs().partial_cmp(&(b.top - o.y).abs()).unwrap()).map(|l| l.para).unwrap_or(0);
+                st.ed.anchor_at(id, para);
+                st.ed.relayout();
+                st.ed.update_anchor_offset(id);
+                toast(st, tr("Obiekt płynie teraz razem z tekstem"));
+            }
+            st.ed.changed();
+        }
+        "cell-commit" | "cell-next" | "cell-prev" => {
+            if let Some((id, row, col)) = st.ed.cell {
+                let text = arg.to_string();
+                st.ed.obj = Some(id);
+                st.ed.edit_table(&move |t| {
+                    if let Some(c) = t.rows.get_mut(row).and_then(|r| r.get_mut(col)) {
+                        *c = text.clone();
+                    }
+                });
+                let next = match st.ed.doc.object(id).map(|o| &o.kind) {
+                    Some(ObjKind::Table { table }) => {
+                        let cols = table.cols();
+                        let rows = table.rows.len();
+                        let idx = row * cols + col;
+                        if base == "cell-next" {
+                            if idx + 1 >= rows * cols {
+                                // Tab w ostatniej komórce – nowy wiersz.
+                                st.ed.edit_table(&move |t| t.rows.push(vec![String::new(); cols]));
+                            }
+                            Some(((idx + 1) / cols, (idx + 1) % cols))
+                        } else if base == "cell-prev" {
+                            idx.checked_sub(1).map(|i| (i / cols, i % cols))
+                        } else {
+                            None
+                        }
+                    }
+                    _ => None,
+                };
+                st.ed.cell = next.map(|(r, c)| (id, r, c));
+                show_cell(st);
+            }
+        }
+        "cell-cancel" => {
+            st.ed.cell = None;
+            show_cell(st);
+        }
+        "tbl-row-above" | "tbl-row-below" | "tbl-col-left" | "tbl-col-right" | "tbl-row-del" | "tbl-col-del" | "tbl-merge-right" | "tbl-split" => {
+            let Some((_, row, col)) = st.ctx_cell else { return };
+            let op = base.to_string();
+            st.ed.edit_table(&move |t| {
+                let cols = t.cols();
+                match op.as_str() {
+                    "tbl-row-above" => t.rows.insert(row, vec![String::new(); cols]),
+                    "tbl-row-below" => t.rows.insert((row + 1).min(t.rows.len()), vec![String::new(); cols]),
+                    "tbl-col-left" | "tbl-col-right" => {
+                        let at = if op == "tbl-col-left" { col } else { col + 1 };
+                        for r in t.rows.iter_mut() {
+                            r.insert(at.min(r.len()), String::new());
+                        }
+                        t.widths.clear();
+                    }
+                    "tbl-row-del" if t.rows.len() > 1 => {
+                        t.rows.remove(row);
+                    }
+                    "tbl-col-del" if cols > 1 => {
+                        for r in t.rows.iter_mut() {
+                            if col < r.len() {
+                                r.remove(col);
+                            }
+                        }
+                        t.widths.clear();
+                    }
+                    "tbl-merge-right" => {
+                        if let Some(r) = t.rows.get_mut(row) {
+                            let mut c = col + 1;
+                            while c < r.len() && r[c] == MERGED {
+                                c += 1;
+                            }
+                            if c < r.len() {
+                                let extra = std::mem::replace(&mut r[c], MERGED.to_string());
+                                if !extra.trim().is_empty() {
+                                    let v = format!("{} {}", r[col], extra);
+                                    r[col] = v.trim().to_string();
+                                }
+                            }
+                        }
+                    }
+                    "tbl-split" => {
+                        if let Some(r) = t.rows.get_mut(row) {
+                            let mut c = col + 1;
+                            while c < r.len() && r[c] == MERGED {
+                                r[c] = String::new();
+                                c += 1;
+                            }
+                        }
+                    }
+                    _ => {}
                 }
             });
         }
@@ -1706,6 +1815,48 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
     }
 }
 
+/// Nowy obiekt wstawiony podczas pisania w treści głównej płynie z tekstem (kotwica w akapicie kursora).
+fn anchor_new(st: &mut State, id: u64) {
+    if st.ed.story != StoryRef::Body {
+        return;
+    }
+    let p = st.ed.head.para;
+    st.ed.anchor_at(id, p);
+    st.ed.changed();
+}
+
+/// Komórka pod punktem (pt) w tabeli obiektu.
+pub fn cell_at(o: &Object, x: f32, y: f32) -> Option<(usize, usize, opendtp_core::geom::Rect)> {
+    let ObjKind::Table { table } = &o.kind else { return None };
+    opendtp_core::paint::table_cells(table, opendtp_core::geom::Rect::new(o.x, o.y, o.w, o.h)).into_iter().find(|(_, _, r)| r.contains(x, y))
+}
+
+/// Pokazuje pole edycji komórki nad tabelą.
+pub fn show_cell(st: &mut State) {
+    let Some(ui) = st.ui.upgrade() else { return };
+    let app = ui.global::<App>();
+    let Some((id, row, col)) = st.ed.cell else {
+        app.set_cell_on(false);
+        return;
+    };
+    let Some(o) = st.ed.doc.object(id).cloned() else {
+        app.set_cell_on(false);
+        return;
+    };
+    let ObjKind::Table { table } = &o.kind else { return };
+    let cells = opendtp_core::paint::table_cells(table, opendtp_core::geom::Rect::new(o.x, o.y, o.w, o.h));
+    let Some((_, _, r)) = cells.into_iter().find(|(ri, c, _)| *ri == row && *c == col) else {
+        app.set_cell_on(false);
+        return;
+    };
+    let (x, y) = st.view.to_canvas(o.page, r.x, r.y);
+    let k = st.view.k();
+    app.set_cell_box(crate::BoxV { x, y, w: r.w * k, h: r.h.max(14.0) * k });
+    app.set_cell_text(table.rows.get(row).and_then(|r| r.get(col)).cloned().unwrap_or_default().into());
+    app.set_cell_on(true);
+    app.set_cell_serial(app.get_cell_serial() + 1);
+}
+
 fn ai_config(st: &State) -> opendtp_core::ai::Config {
     opendtp_core::ai::Config {
         provider: st.prefs.ai_provider.clone(),
@@ -1921,6 +2072,8 @@ fn new_obj(page: usize, x: f32, y: f32, w: f32, h: f32, shape: Shape, kind: ObjK
         corner: 0.0,
         shadow: false,
         locked: false,
+        anchor_dy: 4.0,
+        cont_of: None,
     }
 }
 
@@ -1939,7 +2092,8 @@ pub fn insert_image_bytes(st: &mut State, bytes: Vec<u8>) {
     let (page, y) = st.ed.caret_page().map(|c| (c.0, c.2)).unwrap_or((0, ps.margin_top));
     let x = ps.width - ps.margin_right - w;
     let o = new_obj(page, x, y, w, h, Shape::rect(), ObjKind::Image { asset: key, fit: ImageFit::Cover, contour: None }, WrapMode::Both);
-    st.ed.add_object(o);
+    let id = st.ed.add_object(o);
+    anchor_new(st, id);
     // Obraz z przezroczystością – od razu opływanie konturem.
     let id = st.ed.obj;
     if let Some(id) = id {

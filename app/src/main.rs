@@ -51,6 +51,8 @@ pub struct State {
     pub shape_preset: String,
     pub text_shape: bool,
     pub caret_shown: std::time::Instant,
+    /// Komórka tabeli pod ostatnim prawym kliknięciem.
+    pub ctx_cell: Option<(u64, usize, usize)>,
     /// Pobrany instalator nowej wersji – uruchamiany przy zamknięciu programu.
     pub pending_setup: Option<std::path::PathBuf>,
 }
@@ -279,6 +281,7 @@ fn sync(st: &mut State, ui: &AppWindow) {
             }
         }
         app.set_shadow(o.shadow);
+        app.set_obj_anchored(ed.anchored(o.id));
         app.set_opacity(o.opacity);
         app.set_corner(num(o.corner).into());
         app.set_obj_x(len_str(o.x, unit).into());
@@ -557,6 +560,7 @@ fn main() {
         text_shape: false,
         caret_shown: std::time::Instant::now(),
         pending_setup: None,
+        ctx_cell: None,
     };
     st.view.zoom = (st.prefs.zoom as f32 / 100.0).clamp(0.25, 4.0);
     st.view.marks = st.prefs.marks;

@@ -67,6 +67,7 @@ impl FieldValues<'_> {
             Field::Time => crate::util::now_time(),
             Field::Title => self.title.to_string(),
             Field::Author => self.author.to_string(),
+            Field::Anchor(_) => String::new(),
         }
     }
 }

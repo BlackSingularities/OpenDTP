@@ -800,12 +800,19 @@ fn cell_text(text: &str, base: &CharProps, w: f32) -> CellText {
 }
 
 fn table_geometry(t: &Table, width: f32) -> (Vec<f32>, f32, CharProps) {
-    let cols = t.rows.iter().map(|r| r.len()).max().unwrap_or(1).max(1);
+    let cols = t.cols();
     let props = CharProps { font: t.font.clone(), size: t.size, ..CharProps::default() };
+    if t.widths.len() == cols && t.widths.iter().all(|w| *w > 0.0) {
+        let total: f32 = t.widths.iter().sum();
+        return (t.widths.iter().map(|w| w / total * width).collect(), t.size * 0.45, props);
+    }
     // Szerokości kolumn proporcjonalne do treści, z minimum i bez przesady dla długich komórek.
     let mut want = vec![30.0f32; cols];
     for row in &t.rows {
         for (c, cell) in row.iter().enumerate() {
+            if cell == MERGED {
+                continue;
+            }
             let w = text::measure(&cell.replace("**", "").replace("==", ""), &props).1.min(width * 0.6) + t.size * 1.4;
             want[c] = want[c].max(w);
         }
@@ -814,47 +821,105 @@ fn table_geometry(t: &Table, width: f32) -> (Vec<f32>, f32, CharProps) {
     (want.iter().map(|w| w / total * width).collect(), t.size * 0.45, props)
 }
 
-/// Wysokość tabeli dla szerokości `width` (wiersze dopasowane do treści).
-pub fn table_height(t: &Table, width: f32) -> f32 {
-    let (widths, pad, props) = table_geometry(t, width);
-    let mut h = 0.0;
-    for (ri, row) in t.rows.iter().enumerate() {
-        let mut base = props.clone();
-        base.bold = t.header && ri == 0;
-        let mut rh = t.size * 1.4;
-        for (c, cell) in row.iter().enumerate() {
-            let ct = cell_text(cell, &base, widths[c] - 2.0 * pad * 1.4);
-            rh = rh.max(ct.lines.len() as f32 * ct.lh);
+/// Komórki wiersza z uwzględnieniem scalania: (kolumna początkowa, liczba kolumn).
+fn row_spans(row: &[String], cols: usize) -> Vec<(usize, usize)> {
+    let mut out: Vec<(usize, usize)> = Vec::new();
+    for c in 0..cols {
+        let merged = row.get(c).is_some_and(|v| v == MERGED) && !out.is_empty();
+        if merged {
+            out.last_mut().unwrap().1 += 1;
+        } else {
+            out.push((c, 1));
         }
-        h += rh + 2.0 * pad;
     }
-    h.max(10.0)
+    out
 }
 
-/// Tabela w prostokącie ramki: kolumny wg treści, formatowany tekst zawijany w komórkach.
+/// Wysokości pokazanych wierszy.
+pub fn table_row_heights(t: &Table, width: f32) -> Vec<f32> {
+    let (widths, pad, props) = table_geometry(t, width);
+    let cols = t.cols();
+    t.rows
+        .iter()
+        .take(t.take.unwrap_or(usize::MAX))
+        .enumerate()
+        .map(|(ri, row)| {
+            let mut base = props.clone();
+            base.bold = t.header && ri == 0;
+            let mut rh = t.size * 1.4;
+            for (c0, span) in row_spans(row, cols) {
+                let w: f32 = widths[c0..c0 + span].iter().sum();
+                let ct = cell_text(row.get(c0).map(|s| s.as_str()).unwrap_or(""), &base, w - 2.0 * pad * 1.4);
+                rh = rh.max(ct.lines.len() as f32 * ct.lh);
+            }
+            rh + 2.0 * pad
+        })
+        .collect()
+}
+
+/// Wysokość tabeli dla szerokości `width` (wiersze dopasowane do treści).
+pub fn table_height(t: &Table, width: f32) -> f32 {
+    table_row_heights(t, width).iter().sum::<f32>().max(10.0)
+}
+
+/// Prostokąty komórek: (wiersz, kolumna, prostokąt) – do edycji komórek myszą.
+pub fn table_cells(t: &Table, r: Rect) -> Vec<(usize, usize, Rect)> {
+    let (widths, _, _) = table_geometry(t, r.w);
+    let heights = table_row_heights(t, r.w);
+    let cols = t.cols();
+    let mut out = Vec::new();
+    let mut y = r.y;
+    for (ri, row) in t.shown().iter().enumerate() {
+        let h = heights.get(ri).copied().unwrap_or(10.0);
+        for (c0, span) in row_spans(row, cols) {
+            let x: f32 = r.x + widths[..c0].iter().sum::<f32>();
+            let w: f32 = widths[c0..c0 + span].iter().sum();
+            out.push((ri, c0, Rect::new(x, y, w, h)));
+        }
+        y += h;
+    }
+    out
+}
+
+/// Granice kolumn (x) – do zmiany szerokości myszą.
+pub fn table_col_edges(t: &Table, r: Rect) -> Vec<f32> {
+    let (widths, _, _) = table_geometry(t, r.w);
+    let mut x = r.x;
+    widths.iter().take(widths.len().saturating_sub(1)).map(|w| {
+        x += w;
+        x
+    }).collect()
+}
+
+/// Tabela w prostokącie ramki: kolumny wg treści albo ustawione, scalone komórki, tekst zawijany.
 pub fn table_ops(t: &Table, r: Rect, ops: &mut Vec<Op>) {
-    let cols = t.rows.iter().map(|r| r.len()).max().unwrap_or(1).max(1);
+    let cols = t.cols();
     let (widths, pad, props) = table_geometry(t, r.w);
-    let numeric = |c: usize| t.numbers_right && t.rows.iter().skip(if t.header { 1 } else { 0 }).all(|row| row.get(c).is_none_or(|v| v.trim().is_empty() || v.trim().replace([',', '.', ' ', '%', '-', '+'], "").chars().all(|ch| ch.is_ascii_digit() || "złeur$€".contains(ch))));
+    let heights = table_row_heights(t, r.w);
+    let numeric = |c: usize| t.numbers_right && t.rows.iter().skip(if t.header { 1 } else { 0 }).all(|row| row.get(c).is_none_or(|v| v.trim().is_empty() || v == MERGED || v.trim().replace([',', '.', ' ', '%', '-', '+'], "").chars().all(|ch| ch.is_ascii_digit() || "złeur$€".contains(ch))));
     let mix = |c: Color, k: f32| Color::rgb((c.r as f32 * k + 255.0 * (1.0 - k)) as u8, (c.g as f32 * k + 255.0 * (1.0 - k)) as u8, (c.b as f32 * k + 255.0 * (1.0 - k)) as u8);
     let mut y = r.y;
-    let mut hlines = Vec::new();
-    for (ri, row) in t.rows.iter().enumerate() {
+    let mut grid = Vec::new();
+    for (ri, row) in t.shown().iter().enumerate() {
         let head = t.header && ri == 0;
+        let rh = heights.get(ri).copied().unwrap_or(10.0);
         let mut base = props.clone();
         base.bold = head;
         base.color = if head { Color::WHITE } else { Color::rgb(0x22, 0x22, 0x22) };
-        let cells: Vec<CellText> = (0..cols).map(|c| cell_text(row.get(c).map(|s| s.as_str()).unwrap_or(""), &base, widths[c] - 2.0 * pad * 1.4)).collect();
-        let rh = cells.iter().map(|ct| ct.lines.len() as f32 * ct.lh).fold(t.size * 1.4, f32::max) + 2.0 * pad;
         let bg = if head { Some(t.accent) } else if t.stripes && ri % 2 == 0 { Some(mix(t.accent, 0.07)) } else { None };
         if let Some(bg) = bg {
             ops.push(Op::Fill { path: Path::rect(Rect::new(r.x, y, r.w, rh)), paint: Paint::Solid(bg), opacity: 1.0 });
         }
-        let mut x = r.x;
-        for (c, ct) in cells.iter().enumerate() {
-            let w = widths[c];
+        for (c0, span) in row_spans(row, cols) {
+            let x = r.x + widths[..c0].iter().sum::<f32>();
+            let w: f32 = widths[c0..c0 + span].iter().sum();
+            if c0 > 0 {
+                grid.push(PathCmd::M(x, y));
+                grid.push(PathCmd::L(x, y + rh));
+            }
             let inner = pad * 1.4;
-            let right = numeric(c) && !head;
+            let ct = cell_text(row.get(c0).map(|s| s.as_str()).unwrap_or(""), &base, w - 2.0 * inner);
+            let right = numeric(c0) && !head && span == 1;
             let total_h = ct.lines.len() as f32 * ct.lh;
             let mut ly = y + (rh - total_h) / 2.0 + ct.asc;
             for &(a, b, lw) in &ct.lines {
@@ -868,23 +933,15 @@ pub fn table_ops(t: &Table, r: Rect, ops: &mut Vec<Op>) {
                 push_runs(&run, &base, "", ops, |si| styles[si].clone());
                 ly += ct.lh;
             }
-            x += w;
         }
         y += rh;
-        if ri + 1 < t.rows.len() {
-            hlines.push(PathCmd::M(r.x, y));
-            hlines.push(PathCmd::L(r.right(), y));
+        if ri + 1 < t.shown().len() {
+            grid.push(PathCmd::M(r.x, y));
+            grid.push(PathCmd::L(r.right(), y));
         }
     }
-    let bottom = y;
-    let mut x = r.x;
-    for w in widths.iter().take(cols - 1) {
-        x += w;
-        hlines.push(PathCmd::M(x, r.y));
-        hlines.push(PathCmd::L(x, bottom));
-    }
-    ops.push(Op::Stroke { path: Path(hlines), color: t.line, width: 0.5, dash: vec![], opacity: 1.0 });
-    ops.push(Op::Stroke { path: Path::rect(Rect::new(r.x, r.y, r.w, bottom - r.y)), color: t.line, width: 0.75, dash: vec![], opacity: 1.0 });
+    ops.push(Op::Stroke { path: Path(grid), color: t.line, width: 0.5, dash: vec![], opacity: 1.0 });
+    ops.push(Op::Stroke { path: Path::rect(Rect::new(r.x, r.y, r.w, y - r.y)), color: t.line, width: 0.75, dash: vec![], opacity: 1.0 });
 }
 
 fn nice(span: f32) -> f32 {

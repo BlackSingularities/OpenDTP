@@ -506,6 +506,8 @@ pub enum Field {
     Time,
     Title,
     Author,
+    /// Kotwica obiektu: obiekt przesuwa się razem z akapitem, w którym stoi ten znak.
+    Anchor(u64),
 }
 
 /// Znak zastępujący pole w tekście akapitu (jedno miejsce kursora).
@@ -855,6 +857,27 @@ pub struct Table {
     /// Wyrównanie kolumn liczbowych do prawej.
     #[serde(default = "yes")]
     pub numbers_right: bool,
+    /// Względne szerokości kolumn (puste – dopasowanie do treści).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub widths: Vec<f32>,
+    /// Ile wierszy mieści się na tej stronie (reszta przechodzi do kontynuacji na następnej).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub take: Option<usize>,
+}
+
+/// Komórka scalona z poprzednią (z lewej).
+pub const MERGED: &str = "<";
+
+impl Table {
+    /// Wiersze pokazane na tej stronie.
+    pub fn shown(&self) -> &[Vec<String>] {
+        let n = self.take.unwrap_or(self.rows.len()).min(self.rows.len());
+        &self.rows[..n]
+    }
+
+    pub fn cols(&self) -> usize {
+        self.rows.iter().map(|r| r.len()).max().unwrap_or(1).max(1)
+    }
 }
 
 fn table_size() -> f32 {
@@ -885,6 +908,8 @@ impl Default for Table {
             accent: table_accent(),
             line: table_line(),
             numbers_right: true,
+            widths: Vec::new(),
+            take: None,
         }
     }
 }
@@ -963,6 +988,16 @@ pub struct Object {
     pub shadow: bool,
     #[serde(default)]
     pub locked: bool,
+    /// Odstęp od punktu zakotwiczenia (koniec poprzedniego akapitu) w pionie.
+    #[serde(default = "anchor_dy")]
+    pub anchor_dy: f32,
+    /// Kontynuacja tabeli dzielonej na strony (tworzona przez skład, nie edytowana).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cont_of: Option<u64>,
+}
+
+fn anchor_dy() -> f32 {
+    4.0
 }
 
 fn full() -> f32 {

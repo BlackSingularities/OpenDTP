@@ -370,6 +370,14 @@ export component RightPanel inherits Card {
                             }
                         }
                     }
+                    Switch {
+                        label: @tr("Przesuwaj z tekstem");
+                        tip: @tr("Obiekt jest zakotwiczony w akapicie i przesuwa się razem z tekstem (wyłączone – stałe miejsce na stronie)");
+                        on: App.obj-anchored;
+                        toggled => {
+                            App.cmd("anchor-toggle", "");
+                        }
+                    }
                     HorizontalLayout {
                         spacing: 6px;
                         Button {
@@ -487,9 +495,10 @@ export component RightPanel inherits Card {
                             text: @tr("TABELA");
                         }
                         Dim {
-                            text: @tr("Każdy wiersz w osobnej linii, komórki oddzielone średnikiem (albo tabulatorem – można wkleić z Excela).");
+                            height: 58px;
+                            text: @tr("Każdy wiersz w osobnej linii, komórki oddzielone średnikiem (albo tabulatorem – można wkleić z Excela). Znak < scala komórkę z lewą. Dwuklik w komórkę na stronie – pisanie w niej (Tab – następna).");
                             wrap: word-wrap;
-                            height: 32px;
+                            
                         }
                         TextEdit {
                             height: 170px;

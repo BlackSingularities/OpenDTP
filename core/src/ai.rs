@@ -252,7 +252,7 @@ fn para(style: &str, text: &str) -> Paragraph {
 }
 
 fn obj(id: u64, page: usize, x: f32, y: f32, w: f32, h: f32, shape: Shape, kind: ObjKind, wrap: WrapMode) -> Object {
-    Object { id, name: String::new(), kind, page, x, y, w, h, shape, wrap: Wrap { mode: wrap, dist: 10.0, contour: true }, fill: None, stroke: None, opacity: 1.0, corner: 0.0, shadow: false, locked: false }
+    Object { id, name: String::new(), kind, page, x, y, w, h, shape, wrap: Wrap { mode: wrap, dist: 10.0, contour: true }, fill: None, stroke: None, opacity: 1.0, corner: 0.0, shadow: false, locked: false, anchor_dy: 4.0, cont_of: None }
 }
 
 struct Extra {

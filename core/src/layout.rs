@@ -1104,6 +1104,101 @@ impl Engine {
     }
 }
 
+/// Obiekty zakotwiczone w treści głównej: stają pod poprzednim akapitem (z odstępem `anchor_dy`),
+/// a tabela, która nie mieści się na stronie, dzieli się – reszta wierszy (z powtórzonym nagłówkiem)
+/// trafia do kontynuacji na następnej stronie. Zwraca, czy coś się zmieniło (wtedy trzeba złożyć ponownie).
+pub fn apply_anchors(doc: &mut Document, lay: &Layout) -> bool {
+    let before = doc.objects.clone();
+    let min_before = doc.min_pages;
+    doc.objects.retain(|o| o.cont_of.is_none());
+    let mut anchors: Vec<(u64, usize)> = Vec::new();
+    for (pi, p) in doc.body.paras.iter().enumerate() {
+        for r in &p.runs {
+            if let Some(Field::Anchor(id)) = r.field {
+                if !anchors.iter().any(|a| a.0 == id) {
+                    anchors.push((id, pi));
+                }
+            }
+        }
+    }
+    let ps = doc.page.clone();
+    let bottom = ps.height - ps.margin_bottom;
+    let body = lay.story_lines(StoryRef::Body);
+    let mut conts = Vec::new();
+    for (id, pi) in anchors {
+        // Punkt zakotwiczenia: koniec ostatniego wiersza przed akapitem kotwicy.
+        let prev = body.iter().map(|&i| &lay.lines[i]).filter(|l| l.para < pi).last();
+        let (page, refy) = match prev {
+            Some(l) => (l.page, l.bottom()),
+            None => (0, ps.margin_top),
+        };
+        let Some(o) = doc.objects.iter_mut().find(|o| o.id == id) else { continue };
+        let mut page = page;
+        let mut y = refy + o.anchor_dy;
+        if let ObjKind::Table { table } = &mut o.kind {
+            table.take = None;
+            let full = crate::paint::table_height(table, o.w);
+            if y + full > bottom + 0.5 {
+                let heights = crate::paint::table_row_heights(table, o.w);
+                let mut acc = 0.0;
+                let mut k = 0;
+                for h in &heights {
+                    if y + acc + h > bottom {
+                        break;
+                    }
+                    acc += h;
+                    k += 1;
+                }
+                let head = if table.header { 1 } else { 0 };
+                if k <= head {
+                    // Nawet pierwszy wiersz nie wchodzi – cała tabela od nowej strony.
+                    page += 1;
+                    y = ps.margin_top;
+                } else if k < table.rows.len() {
+                    table.take = Some(k);
+                    let mut rest: Vec<Vec<String>> = if table.header { vec![table.rows[0].clone()] } else { Vec::new() };
+                    rest.extend(table.rows[k..].iter().cloned());
+                    let mut ct = table.clone();
+                    ct.rows = rest;
+                    ct.take = None;
+                    let h = crate::paint::table_height(&ct, o.w);
+                    let mut c = o.clone();
+                    c.id = id + 1_000_000_000;
+                    c.kind = ObjKind::Table { table: ct };
+                    c.page = page + 1;
+                    c.y = ps.margin_top;
+                    c.h = h;
+                    c.cont_of = Some(id);
+                    c.locked = true;
+                    conts.push(c);
+                }
+            }
+            o.h = crate::paint::table_height(table, o.w);
+        } else if y + o.h > bottom + 0.5 && o.h < bottom - ps.margin_top {
+            page += 1;
+            y = ps.margin_top;
+        }
+        o.page = page;
+        o.y = y;
+        doc.min_pages = doc.min_pages.max(page + 1);
+    }
+    for c in &conts {
+        doc.min_pages = doc.min_pages.max(c.page + 1);
+    }
+    doc.objects.extend(conts);
+    doc.objects != before || doc.min_pages != min_before
+}
+
+/// Punkt zakotwiczenia obiektu (strona, y) – do przeliczenia `anchor_dy` po przeciągnięciu.
+pub fn anchor_ref(doc: &Document, lay: &Layout, id: u64) -> Option<(usize, f32)> {
+    let pi = doc.body.paras.iter().position(|p| p.runs.iter().any(|r| r.field == Some(Field::Anchor(id))))?;
+    let prev = lay.story_lines(StoryRef::Body).iter().map(|&i| &lay.lines[i]).filter(|l| l.para < pi).last();
+    Some(match prev {
+        Some(l) => (l.page, l.bottom()),
+        None => (0, doc.page.margin_top),
+    })
+}
+
 /// Spis treści z nagłówków (z numerami stron bieżącego składu).
 pub fn toc(doc: &Document, layout: &Layout) -> Vec<Paragraph> {
     let mut out = Vec::new();

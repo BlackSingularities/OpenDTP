@@ -196,6 +196,49 @@ export component Canvas inherits Rectangle {
                     border-color: Theme.accent;
                     background: Theme.accent.with-alpha(0.08);
                 }
+                if App.cell-on: Rectangle {
+                    x: App.cell-box.x;
+                    y: App.cell-box.y;
+                    width: App.cell-box.w;
+                    height: App.cell-box.h;
+                    background: #ffffff;
+                    border-width: 2px;
+                    border-color: Theme.accent;
+                    property <int> serial: App.cell-serial;
+                    changed serial => {
+                        cin.text = App.cell-text;
+                        cin.focus();
+                        cin.select-all();
+                    }
+                    cin := TextInput {
+                        x: 4px;
+                        width: parent.width - 8px;
+                        height: parent.height;
+                        text: App.cell-text;
+                        color: #1a1a1a;
+                        font-size: max(11px, min(parent.height * 0.5, 16px));
+                        vertical-alignment: center;
+                        single-line: true;
+                        init => {
+                            self.focus();
+                            self.select-all();
+                        }
+                        accepted => {
+                            App.cmd("cell-commit", self.text);
+                        }
+                        key-pressed(e) => {
+                            if (e.text == "\t") {
+                                App.cmd(e.modifiers.shift ? "cell-prev" : "cell-next", self.text);
+                                return accept;
+                            }
+                            if (e.text == "\u{1b}") {
+                                App.cmd("cell-cancel", "");
+                                return accept;
+                            }
+                            return reject;
+                        }
+                    }
+                }
                 if App.caret-on && App.caret-blink: Rectangle {
                     x: App.caret.x;
                     y: App.caret.y;

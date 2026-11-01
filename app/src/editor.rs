@@ -52,6 +52,8 @@ pub struct Editor {
     pub anchor: At,
     pub head: At,
     pub obj: Option<u64>,
+    /// Edytowana komórka tabeli: (obiekt, wiersz, kolumna).
+    pub cell: Option<(u64, usize, usize)>,
     pub multi: Vec<u64>,
     pub node_mode: bool,
     pub sel_node: Option<(usize, usize)>,
@@ -82,6 +84,7 @@ impl Editor {
             anchor: At::default(),
             head: At::default(),
             obj: None,
+            cell: None,
             multi: Vec::new(),
             node_mode: false,
             sel_node: None,
@@ -102,8 +105,46 @@ impl Editor {
     // ------------------------------------------------------------ podstawy
 
     pub fn relayout(&mut self) {
-        self.layout = self.engine.layout(&self.doc);
+        // Obiekty zakotwiczone w tekście zależą od składu – kilka przebiegów, aż położenia się ustalą.
+        for _ in 0..4 {
+            self.layout = self.engine.layout(&self.doc);
+            if !opendtp_core::layout::apply_anchors(&mut self.doc, &self.layout) {
+                break;
+            }
+        }
         self.version += 1;
+    }
+
+    /// Czy obiekt jest zakotwiczony w tekście.
+    pub fn anchored(&self, id: u64) -> bool {
+        self.doc.body.paras.iter().any(|p| p.runs.iter().any(|r| r.field == Some(Field::Anchor(id))))
+    }
+
+    /// Kotwica obiektu na początku akapitu (treść główna) – obiekt odtąd płynie z tekstem.
+    pub fn anchor_at(&mut self, id: u64, para: usize) {
+        let para = para.min(self.doc.body.paras.len().saturating_sub(1));
+        edit::insert_field(&mut self.doc.body, At::new(para, 0), Field::Anchor(id), &CharFmt::default());
+        if self.story == StoryRef::Body && self.head.para == para {
+            let n = FIELD_CHAR.len_utf8();
+            self.head.off += n;
+            self.anchor.off += n;
+        }
+    }
+
+    pub fn unanchor(&mut self, id: u64) {
+        for p in self.doc.body.paras.iter_mut() {
+            p.runs.retain(|r| r.field != Some(Field::Anchor(id)));
+            p.normalize();
+        }
+        self.fix_selection();
+    }
+
+    /// Po przeciągnięciu obiektu zakotwiczonego: nowy odstęp od punktu zakotwiczenia.
+    pub fn update_anchor_offset(&mut self, id: u64) {
+        let Some((page, refy)) = opendtp_core::layout::anchor_ref(&self.doc, &self.layout, id) else { return };
+        if let Some(o) = self.doc.object_mut(id) {
+            o.anchor_dy = if o.page == page { o.y - refy } else { 4.0 };
+        }
     }
 
     /// Zapamiętuje stan przed zmianą (pisanie i usuwanie łączą się w jedną operację cofania).
@@ -712,7 +753,15 @@ impl Editor {
 
     pub fn fragment(&self) -> Vec<Paragraph> {
         let (a, b) = self.range();
+        // Kotwice obiektów nie kopiują się razem z tekstem.
         edit::fragment(self.story_ref(), a, b)
+            .into_iter()
+            .map(|mut p| {
+                p.runs.retain(|r| !matches!(r.field, Some(Field::Anchor(_))));
+                p.normalize();
+                p
+            })
+            .collect()
     }
 
     pub fn paste(&mut self, frag: &[Paragraph]) {
@@ -807,13 +856,34 @@ impl Editor {
                     *story = s;
                 }
             }
-            self.doc.objects.retain(|o| o.id != *id);
+            self.doc.objects.retain(|o| o.id != *id && o.cont_of != Some(*id));
+            for p in self.doc.body.paras.iter_mut() {
+                p.runs.retain(|r| r.field != Some(Field::Anchor(*id)));
+                p.normalize();
+            }
         }
         self.obj = None;
         self.multi.clear();
         self.node_mode = false;
         if let StoryRef::Obj(_) = self.story {
             self.story = StoryRef::Body;
+        }
+        self.changed();
+    }
+
+    /// Zmiana tabeli zaznaczonego obiektu.
+    pub fn edit_table(&mut self, f: &dyn Fn(&mut Table)) {
+        let Some(id) = self.obj else { return };
+        self.begin(Kind::Other);
+        if let Some(ObjKind::Table { table }) = self.doc.object_mut(id).map(|o| &mut o.kind) {
+            f(table);
+            let cols = table.cols();
+            for r in table.rows.iter_mut() {
+                r.resize(cols, String::new());
+            }
+            if !table.widths.is_empty() && table.widths.len() != cols {
+                table.widths.clear();
+            }
         }
         self.changed();
     }

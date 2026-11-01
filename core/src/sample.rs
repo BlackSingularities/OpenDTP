@@ -60,6 +60,8 @@ pub fn welcome() -> Document {
         corner: 0.0,
         shadow: true,
         locked: false,
+        anchor_dy: 4.0,
+        cont_of: None,
     };
     d.objects.push(star);
     let chart = Object {
@@ -79,6 +81,8 @@ pub fn welcome() -> Document {
         corner: 6.0,
         shadow: false,
         locked: false,
+        anchor_dy: 4.0,
+        cont_of: None,
     };
     d.objects.push(chart);
     let arc = Object {
@@ -105,6 +109,8 @@ pub fn welcome() -> Document {
         corner: 0.0,
         shadow: false,
         locked: false,
+        anchor_dy: 4.0,
+        cont_of: None,
     };
     d.objects.push(arc);
     d.footer = Some(Story { paras: vec![Paragraph {
@@ -150,6 +156,8 @@ fn shape_obj(id: u64, page: usize, r: (f32, f32, f32, f32), shape: Shape, kind: 
         corner: 0.0,
         shadow: false,
         locked: false,
+        anchor_dy: 4.0,
+        cont_of: None,
     }
 }
 

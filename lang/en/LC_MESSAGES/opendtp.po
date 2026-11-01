@@ -2417,3 +2417,45 @@ msgstr "Chapter, columns, examples, table, boxes"
 msgid "Wstaw obraz z pliku (PNG, JPEG, WebP, GIF, BMP) albo grafikę wektorową SVG"
 msgstr "Insert an image file (PNG, JPEG, WebP, GIF, BMP) or SVG vector graphics"
 
+msgid "Obiekt przypięty do strony"
+msgstr "Object pinned to the page"
+
+msgid "Obiekt płynie teraz razem z tekstem"
+msgstr "The object now moves with the text"
+
+msgid "Wstaw wiersz powyżej"
+msgstr "Insert row above"
+
+msgid "Wstaw wiersz poniżej"
+msgstr "Insert row below"
+
+msgid "Wstaw kolumnę z lewej"
+msgstr "Insert column left"
+
+msgid "Wstaw kolumnę z prawej"
+msgstr "Insert column right"
+
+msgid "Scal z komórką z prawej"
+msgstr "Merge with the cell on the right"
+
+msgid "Rozdziel komórkę"
+msgstr "Split cell"
+
+msgid "Usuń wiersz"
+msgstr "Delete row"
+
+msgid "Usuń kolumnę"
+msgstr "Delete column"
+
+msgid "Przypnij do strony"
+msgstr "Pin to page"
+
+msgid "Przesuwaj z tekstem"
+msgstr "Move with text"
+
+msgid "Obiekt jest zakotwiczony w akapicie i przesuwa się razem z tekstem (wyłączone – stałe miejsce na stronie)"
+msgstr "The object is anchored in a paragraph and moves with the text (off – fixed place on the page)"
+
+msgid "Każdy wiersz w osobnej linii, komórki oddzielone średnikiem (albo tabulatorem – można wkleić z Excela). Znak < scala komórkę z lewą. Dwuklik w komórkę na stronie – pisanie w niej (Tab – następna)."
+msgstr "One row per line, cells separated by semicolons (or tabs – paste from Excel). The < sign merges a cell with the one on its left. Double-click a cell on the page to type in it (Tab – next)."
+

@@ -537,6 +537,8 @@ pub fn import(bytes: &[u8]) -> Result<Document, String> {
             corner: 0.0,
             shadow: false,
             locked: false,
+            anchor_dy: 4.0,
+            cont_of: None,
         });
     }
     Ok(doc)

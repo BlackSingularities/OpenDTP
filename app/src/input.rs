@@ -20,6 +20,7 @@ pub enum Drag {
     Resize { id: u64, handle: u8, orig: (f32, f32, f32, f32), sx: f32, sy: f32 },
     Node { id: u64, ci: usize, ni: usize, part: u8, moved: bool },
     Create { page: usize, sx: f32, sy: f32 },
+    Col { id: u64, col: usize, sx: f32, orig: Vec<f32> },
     Pen { moved: bool },
 }
 
@@ -108,6 +109,26 @@ fn node_at(st: &State, x: f32, y: f32) -> Option<(usize, usize, u8)> {
 /// Najwyższy obiekt pod punktem (pomijamy „za tekstem”, chyba że `behind`).
 fn object_at(st: &State, page: usize, x: f32, y: f32, behind: bool) -> Option<u64> {
     st.ed.doc.objects.iter().rev().find(|o| o.page == page && (o.wrap.mode == WrapMode::Behind) == behind && hit_object(o, x, y)).map(|o| o.id)
+}
+
+/// Granica kolumn zaznaczonej tabeli pod wskaźnikiem: (obiekt, kolumna, szerokości kolumn w pt).
+fn col_edge_at(st: &State, page: usize, x: f32, y: f32) -> Option<(u64, usize, Vec<f32>)> {
+    let o = st.ed.object()?;
+    let ObjKind::Table { table } = &o.kind else { return None };
+    if o.page != page || y < o.y || y > o.y + o.h {
+        return None;
+    }
+    let r = Rect::new(o.x, o.y, o.w, o.h);
+    let edges = opendtp_core::paint::table_col_edges(table, r);
+    let tol = 4.0 / st.view.k();
+    let col = edges.iter().position(|e| (e - x).abs() <= tol)?;
+    let mut widths = Vec::new();
+    let mut prev = o.x;
+    for e in edges.iter().chain(std::iter::once(&(o.x + o.w))) {
+        widths.push(e - prev);
+        prev = *e;
+    }
+    Some((o.id, col, widths))
 }
 
 fn near_border(o: &Object, x: f32, y: f32, k: f32) -> bool {
@@ -200,8 +221,28 @@ fn down(st: &mut State, page: usize, px: f32, py: f32, x: f32, y: f32, button: i
         return;
     }
     let k = st.view.k();
-    if let Some(id) = object_at(st, page, px, py, false) {
+    // Granica kolumn zaznaczonej tabeli – zmiana szerokości.
+    if let Some((id, col, orig)) = col_edge_at(st, page, px, py) {
+        st.ed.begin(Kind::Other);
+        st.drag = Drag::Col { id, col, sx: px, orig };
+        return;
+    }
+    if let Some(mut id) = object_at(st, page, px, py, false) {
+        // Kontynuacja tabeli na następnej stronie – działamy na oryginale.
+        if let Some(orig) = st.ed.doc.object(id).and_then(|o| o.cont_of) {
+            id = orig;
+        }
         let o = st.ed.doc.object(id).unwrap().clone();
+        if n == 2 && matches!(o.kind, ObjKind::Table { .. }) && o.cont_of.is_none() {
+            if let Some((row, col, _)) = st.ed.doc.object(id).and_then(|oo| actions::cell_at(oo, px, py)) {
+                st.ed.obj = Some(id);
+                st.ed.cell = Some((id, row, col));
+                st.drag = Drag::None;
+                refresh(st);
+                actions::show_cell(st);
+                return;
+            }
+        }
         let is_text = matches!(o.kind, ObjKind::Text { .. });
         let head = st.ed.doc.chain_head(id);
         // Tekst ramki: kliknięcie w środek ustawia kursor, w krawędź (albo z Ctrl) – wybiera ramkę.
@@ -508,6 +549,24 @@ fn drag_move(st: &mut State, page: usize, px: f32, py: f32, x: f32, y: f32) {
             }
             st.drag = Drag::Node { id, ci, ni, part, moved: true };
         }
+        Drag::Col { id, col, sx, orig } => {
+            let d = px - sx;
+            let min = 16.0;
+            if col + 1 < orig.len() {
+                let a = (orig[col] + d).clamp(min, orig[col] + orig[col + 1] - min);
+                let b = orig[col] + orig[col + 1] - a;
+                let mut w = orig.clone();
+                w[col] = a;
+                w[col + 1] = b;
+                st.ed.drag_obj(id, &move |o| {
+                    if let ObjKind::Table { table } = &mut o.kind {
+                        table.widths = w.clone();
+                    }
+                });
+                refresh(st);
+            }
+            st.drag = Drag::Col { id, col, sx, orig };
+        }
         Drag::Create { page: p0, sx, sy } => {
             let (a, b) = st.view.to_canvas(p0, sx.min(px), sy.min(py));
             let (w, h) = ((px - sx).abs() * k, (py - sy).abs() * k);
@@ -547,11 +606,17 @@ fn up(st: &mut State, page: usize, px: f32, py: f32) {
             }
             actions::object_selected(st);
         }
-        Drag::Move { moved, .. } => {
+        Drag::Move { moved, id, .. } => {
             if !moved {
                 // Kliknięcie bez ruchu – nic do cofania.
                 st.ed.break_group();
+            } else if st.ed.anchored(id) {
+                st.ed.update_anchor_offset(id);
             }
+            st.ed.changed();
+            refresh(st);
+        }
+        Drag::Col { .. } => {
             st.ed.changed();
             refresh(st);
         }
@@ -599,6 +664,13 @@ pub fn hover(st: &mut State, x: f32, y: f32) {
     if st.ed.node_mode {
         set_cursor(st, if node_at(st, x, y).is_some() { "pointer" } else { "arrow" });
         return;
+    }
+    {
+        let (page, px, py) = st.view.to_page(x, y);
+        if col_edge_at(st, page, px, py).is_some() {
+            set_cursor(st, "ew");
+            return;
+        }
     }
     if let Some(h) = handle_at(st, x, y) {
         set_cursor(st, match h {
@@ -689,6 +761,22 @@ fn context(st: &mut State, page: usize, px: f32, py: f32) {
         st.ed.obj = on_obj;
         refresh(st);
         let o = st.ed.object().unwrap();
+        st.ctx_cell = None;
+        if matches!(o.kind, ObjKind::Table { .. }) {
+            if let Some((row, col, _)) = actions::cell_at(o, px, py) {
+                st.ctx_cell = Some((o.id, row, col));
+                items.push(("tbl-row-above".into(), tr("Wstaw wiersz powyżej").into(), String::new()));
+                items.push(("tbl-row-below".into(), tr("Wstaw wiersz poniżej").into(), String::new()));
+                items.push(("tbl-col-left".into(), tr("Wstaw kolumnę z lewej").into(), String::new()));
+                items.push(("tbl-col-right".into(), tr("Wstaw kolumnę z prawej").into(), String::new()));
+                items.push(("tbl-merge-right".into(), tr("Scal z komórką z prawej").into(), String::new()));
+                items.push(("tbl-split".into(), tr("Rozdziel komórkę").into(), String::new()));
+                items.push(("tbl-row-del".into(), tr("Usuń wiersz").into(), String::new()));
+                items.push(("tbl-col-del".into(), tr("Usuń kolumnę").into(), String::new()));
+                items.push(("-".into(), String::new(), String::new()));
+            }
+        }
+        items.push(("anchor-toggle".into(), if st.ed.anchored(o.id) { tr("Przypnij do strony") } else { tr("Przesuwaj z tekstem") }.into(), String::new()));
         items.push(("panel:props".into(), tr("Właściwości obiektu…").into(), String::new()));
         if !matches!(o.kind, ObjKind::Chart { .. }) {
             items.push(("node-mode".into(), tr("Edytuj węzły kształtu").into(), String::new()));
@@ -777,7 +865,10 @@ pub fn key(st: &mut State, text: &str, ctrl: bool, shift: bool, alt: bool) -> bo
     let a = ui.global::<App>();
     // Okna i nakładki.
     if is(text, Key::Escape) {
-        if a.get_ctx_open() {
+        if st.ed.cell.is_some() {
+            st.ed.cell = None;
+            actions::show_cell(st);
+        } else if a.get_ctx_open() {
             a.set_ctx_open(false);
         } else if a.get_palette_open() {
             a.set_palette_open(false);
