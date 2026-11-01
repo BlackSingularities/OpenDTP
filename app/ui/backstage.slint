@@ -48,13 +48,37 @@ component H1 inherits Text {
     color: Theme.text;
 }
 
-component H2 inherits Text {
-    font-family: Theme.font;
-    font-size: Theme.fs-small;
-    font-weight: 600;
-    color: Theme.text-faint;
-    height: 26px;
-    vertical-alignment: bottom;
+component H2 inherits HorizontalLayout {
+    in property <string> text;
+    height: 40px;
+    spacing: 8px;
+    padding-top: 14px;
+    Rectangle {
+        width: 6px;
+        height: 6px;
+        y: (parent.height - self.height) / 2 + 7px;
+        border-radius: 3px;
+        background: Theme.accent;
+        drop-shadow-blur: 6px;
+        drop-shadow-color: Theme.accent;
+    }
+    Text {
+        text: root.text;
+        font-family: Theme.font;
+        font-size: Theme.fs-small;
+        font-weight: 650;
+        letter-spacing: 1.2px;
+        color: Theme.text-dim;
+        vertical-alignment: center;
+    }
+    Rectangle {
+        horizontal-stretch: 1;
+        Rectangle {
+            y: parent.height / 2;
+            height: 1px;
+            background: Theme.line;
+        }
+    }
 }
 
 component Template inherits Rectangle {
@@ -109,10 +133,24 @@ component Template inherits Rectangle {
 component SettingRow inherits HorizontalLayout {
     in property <string> label;
     in property <string> hint;
-    spacing: 16px;
-    min-height: 34px;
+    in property <image> icon;
+    spacing: 14px;
+    min-height: 40px;
+    Rectangle {
+        width: 30px;
+        height: 30px;
+        y: (parent.height - self.height) / 2;
+        border-radius: Theme.r-small;
+        background: root.icon.width > 0 ? Theme.accent-soft : transparent;
+        Image {
+            source: root.icon;
+            width: 16px;
+            height: 16px;
+            colorize: Theme.accent;
+        }
+    }
     VerticalLayout {
-        width: 250px;
+        width: 236px;
         alignment: center;
         Label {
             text: root.label;
@@ -498,6 +536,7 @@ export component Backstage inherits Rectangle {
                         text: @tr("Informacje o dokumencie");
                     }
                     SettingRow {
+                        icon: Icons.heading;
                         label: @tr("Tytuł");
                         tf := Field {
                             w: 360px;
@@ -511,6 +550,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.pen-line;
                         label: @tr("Autor");
                         Field {
                             w: 360px;
@@ -543,6 +583,7 @@ export component Backstage inherits Rectangle {
                         text: @tr("WYGLĄD");
                     }
                     SettingRow {
+                        icon: Icons.languages;
                         label: @tr("Język interfejsu");
                         hint: @tr("Zmiana po ponownym uruchomieniu");
                         Segmented {
@@ -554,6 +595,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.contrast;
                         label: @tr("Motyw");
                         Segmented {
                             items: ["AMOLED", @tr("Grafit"), @tr("Jasny")];
@@ -564,6 +606,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.palette;
                         label: @tr("Kolor akcentu");
                         AccentSwatches {}
                         Field {
@@ -577,6 +620,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.radius;
                         label: @tr("Zaokrąglenia");
                         Segmented {
                             items: [@tr("Ostre"), @tr("Zwykłe"), @tr("Mocne")];
@@ -587,6 +631,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.scaling;
                         label: @tr("Wielkość interfejsu");
                         Slider {
                             width: 200px;
@@ -601,6 +646,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.rows-3;
                         label: @tr("Gęsty układ");
                         Switch {
                             on: Theme.dense;
@@ -610,6 +656,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.ruler;
                         label: @tr("Jednostki");
                         Segmented {
                             items: ["mm", "cm", @tr("cale"), "pt"];
@@ -623,6 +670,7 @@ export component Backstage inherits Rectangle {
                         text: @tr("PISANIE");
                     }
                     SettingRow {
+                        icon: Icons.spell-check;
                         label: @tr("Sprawdzanie pisowni na bieżąco");
                         Switch {
                             on: App.spell-live;
@@ -632,6 +680,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.quote;
                         label: @tr("Inteligentne cudzysłowy");
                         hint: @tr("„polskie” i ’apostrofy’");
                         Switch {
@@ -642,6 +691,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.wand-sparkles;
                         label: @tr("Autokorekta");
                         hint: @tr("-- → –, ... → …, (c) → ©, -> → →");
                         Switch {
@@ -652,6 +702,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.case-upper;
                         label: @tr("Wielka litera na początku zdania");
                         Switch {
                             on: App.s-capitalize;
@@ -661,6 +712,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.list-ordered;
                         label: @tr("Automatyczne listy");
                         hint: @tr("„- ” i „1. ” na początku akapitu");
                         Switch {
@@ -671,6 +723,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.grid-3x3;
                         label: @tr("Przyciąganie obiektów");
                         hint: @tr("Do marginesów, środka strony i innych obiektów");
                         Switch {
@@ -681,6 +734,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.type;
                         label: @tr("Czcionka nowych dokumentów");
                         Field {
                             w: 180px;
@@ -698,6 +752,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.pen-line;
                         label: @tr("Autor dokumentów");
                         Field {
                             w: 240px;
@@ -714,6 +769,7 @@ export component Backstage inherits Rectangle {
                         text: @tr("PLIKI");
                     }
                     SettingRow {
+                        icon: Icons.save-all;
                         label: @tr("Autozapis kopii");
                         hint: @tr("Kopia do odzyskania po awarii");
                         Segmented {
@@ -725,6 +781,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.history;
                         label: @tr("Przywracaj ostatni dokument");
                         Switch {
                             on: App.s-restore;
@@ -737,6 +794,7 @@ export component Backstage inherits Rectangle {
                         text: @tr("PASEK I WSTĄŻKA");
                     }
                     SettingRow {
+                        icon: Icons.star;
                         label: @tr("Pasek szybkiego dostępu");
                         Button {
                             label: @tr("Dostosuj…");
@@ -746,6 +804,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.layout-template;
                         label: @tr("Karta „Moja karta”");
                         Button {
                             label: @tr("Dostosuj…");
@@ -755,6 +814,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.book-a;
                         label: @tr("Słownik użytkownika");
                         Button {
                             label: @tr("Pokaż…");
@@ -767,6 +827,7 @@ export component Backstage inherits Rectangle {
                         text: @tr("SZTUCZNA INTELIGENCJA");
                     }
                     SettingRow {
+                        icon: Icons.globe;
                         label: @tr("Dostawca");
                         hint: @tr("OpenRouter daje dostęp do setek modeli jednym kluczem");
                         MenuButton {
@@ -781,6 +842,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.lock;
                         label: @tr("Klucz API");
                         hint: @tr("Zapisywany zaszyfrowany (Windows DPAPI), tylko na tym komputerze");
                         Rectangle {
@@ -820,6 +882,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     if App.ai-needs-base: SettingRow {
+                        icon: Icons.link;
                         label: @tr("Adres API");
                         hint: @tr("Serwer zgodny z OpenAI, np. http://localhost:11434/v1");
                         Field {
@@ -835,6 +898,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.sparkles;
                         label: @tr("Model");
                         MenuButton {
                             icon: Icons.layers;
@@ -858,6 +922,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.text-cursor-input;
                         label: @tr("Własny identyfikator modelu");
                         hint: @tr("Gdy modelu nie ma na liście");
                         Field {
@@ -870,6 +935,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.sun;
                         label: @tr("Temperatura");
                         hint: @tr("Niżej – rzeczowo i przewidywalnie, wyżej – swobodniej i kreatywniej");
                         Slider {
@@ -899,6 +965,7 @@ export component Backstage inherits Rectangle {
                         text: @tr("AKTUALIZACJE");
                     }
                     SettingRow {
+                        icon: Icons.refresh-cw;
                         label: @tr("Sprawdzaj w tle");
                         hint: @tr("Nowe wersje z redzikowski.com");
                         Switch {
@@ -909,6 +976,7 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     SettingRow {
+                        icon: Icons.cloud-download;
                         label: @tr("Instaluj bez pytania");
                         Switch {
                             on: App.s-update-auto;
