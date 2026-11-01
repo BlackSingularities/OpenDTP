@@ -418,6 +418,11 @@ pub fn textbook() -> Document {
             vec!["**SEE:**".into(), "==I **can see** John and Tina in the park.== (= are visible)".into(), "==I**’m seeing** Patrick outside the cinema tonight.== (= am meeting)".into()],
             vec!["**TASTE:**".into(), "==The meat **tastes** very salty.== (= it is, has the flavour of)".into(), "==Harry **is tasting** the new Chinese dish.== (= is testing)".into()],
             vec!["**LOOK:**".into(), "==Julia **looks** very pleased.== (= appears)".into(), "==Stephen **is looking** at an advert in the newspaper.== (= is taking a look at)".into()],
+            vec!["**SMELL:**".into(), "==These flowers **smell** great.== (= have the aroma of)".into(), "==Why **are** you **smelling** the milk?== (= are sniffing)".into()],
+            vec!["**APPEAR:**".into(), "==Anna **appears** to be ill.== (= seems to)".into(), "==He **is appearing** at the theatre this week.== (= is performing)".into()],
+            vec!["**FIT:**".into(), "==These jeans are comfortable and **fit** me perfectly.== (= are the right size)".into(), "==My dad **is fitting** security locks on the windows.== (= is attaching)".into()],
+            vec!["**WEIGH:**".into(), "==The parcel **weighs** two kilos.== (= has the weight of)".into(), "==The shop assistant **is weighing** the apples.== (= is measuring the weight)".into()],
+            vec!["**FEEL:**".into(), "==This fabric **feels** soft.== (= has the texture of)".into(), "==I**’m feeling** much better today.== (= am experiencing)".into()],
         ],
         header: true,
         stripes: false,
@@ -432,6 +437,7 @@ pub fn textbook() -> Document {
     let tw = w - d.page.margin_left - d.page.margin_right;
     let th = crate::paint::table_height(&table, tw);
     let id = d.new_id();
+    let table_id = id;
     d.objects.push(shape_obj(id, 0, (d.page.margin_left, 560.0, tw, th), Shape::rect(), ObjKind::Table { table }, WrapMode::TopBottom, Some(Fill::Solid { color: Color::WHITE })));
 
     // Ramka „Remember!” z etykietą.
@@ -451,6 +457,10 @@ pub fn textbook() -> Document {
     tag.corner = 10.0;
     tag.stroke = Some(StrokeStyle { color: navy, width: 1.2, dash: vec![] });
     d.objects.push(tag);
+    // Tabela płynie z tekstem: kotwica w pustym akapicie na końcu treści.
+    d.body.paras.push(Paragraph::default());
+    let last = d.body.paras.len() - 1;
+    d.body.paras[last].runs = vec![Run { text: FIELD_CHAR.to_string(), field: Some(Field::Anchor(table_id)), ..Default::default() }];
     d.page.border = Some(StrokeStyle { color: navy, width: 1.0, dash: vec![] });
     d.page.border_inset = 30.0;
     d
