@@ -707,7 +707,7 @@ impl<'a> Flow<'a> {
                 if let Some(l) = ivs.last_mut() {
                     l.1 -= pp.indent_right;
                 }
-                let min_w = (sp.glyphs.get(gi).map(|g| g.size).unwrap_or(11.0) * 1.5).max(14.0);
+                let min_w = (sp.glyphs.get(gi).map(|g| g.size).unwrap_or(11.0) * 0.9).max(8.0);
                 ivs.retain(|(a, b)| b - a >= min_w);
                 if ivs.is_empty() {
                     steps += 1;

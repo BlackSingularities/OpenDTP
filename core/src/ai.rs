@@ -137,7 +137,7 @@ MOŻLIWOŚCI OPENDTP, z których korzystasz:
 
 SCHEMAT ODPOWIEDZI:
 {{
-  "title": "tytuł", "subtitle": "podtytuł albo pusty",
+  "title": "tytuł", "subtitle": "podtytuł albo pusty", "lang": "pl|en (język treści – sprawdzanie pisowni)",
   "theme": "jeden z identyfikatorów motywów",
   "page": "A4|A5|Letter", "landscape": false, "page_color": "#ffffff", "columns": 1,
   "toc": false, "header": "tekst nagłówka strony albo pusty", "footer_page_numbers": true,
@@ -298,6 +298,9 @@ pub fn build(answer: &str, template: &Document) -> Document {
     d.page.columns = cols;
     d.page.column_rule = cols > 1;
     d.meta.title = s("title");
+    if s("lang").starts_with("en") {
+        d.settings.lang = "en".into();
+    }
     let mut paras = Vec::new();
     if !s("title").is_empty() {
         paras.push(para("title", &s("title")));

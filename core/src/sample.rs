@@ -295,6 +295,7 @@ pub fn template(id: &str) -> Document {
 pub fn textbook() -> Document {
     let mut d = Document::new();
     d.meta.title = "Present Tenses".into();
+    d.settings.lang = "en".into();
     crate::styles::apply_theme(&mut d, &crate::styles::THEMES[0]);
     let navy = Color::rgb(0x1f, 0x3a, 0x6e);
     for s in d.styles.iter_mut() {
@@ -377,9 +378,7 @@ pub fn textbook() -> Document {
         example("You**’re** always **forgetting** to tidy your room."),
         gray("**The time expressions we use with the present continuous are:** *now, at the moment, at present, these days, nowadays, still, today, tonight, etc.*"),
     ]);
-    let mut sv = rich("heading2", "Stative Verbs");
-    sv.fmt.break_before = Some(Break::Column);
-    paras.push(sv);
+    paras.push(rich("heading2", "Stative Verbs"));
     paras.push(rich("normal", "Stative verbs are verbs which describe a state rather than an action, and so do not usually have a continuous tense. These verbs are:"));
     paras.push(bullet("verbs of the senses (**see, hear, smell, taste, feel, look, sound, seem, appear**, etc.). ==David **looks** tired.=="));
     paras.push(bullet("verbs of perception (**know, believe, understand, realise, remember, forget**, etc.). ==I **think** History is interesting.=="));

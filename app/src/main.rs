@@ -819,6 +819,12 @@ fn snapshot_mode(ui: &AppWindow, args: &[String]) {
             files::set_doc(&mut st, opendtp_core::sample::template(&t), None);
         }
     }
+    if let Some(z) = get("--zoom").and_then(|v| v.parse::<f32>().ok()) {
+        if let Some(sh) = shared() {
+            let mut st = sh.borrow_mut();
+            actions::set_zoom(&mut st, z / 100.0, None);
+        }
+    }
     if let Some(t) = get("--theme").and_then(|v| v.parse().ok()) {
         ui.global::<Theme>().set_mode(t);
     }
