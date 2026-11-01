@@ -1,6 +1,6 @@
 [package]
 name = "opendtp-core"
-version = "0.6.0"
+version = "0.7.0"
 description = "OpenDTP – model dokumentu, silnik składu, renderer, eksport i aktualizacje"
 authors = ["Adam Rędzikowski"]
 edition = "2021"
@@ -34,9 +34,10 @@ i_overlay = "9"
 unicode-normalization = "0.1"
 hyphenation = { version = "0.8", features = ["embed_all"] }
 regex = "1"
+base64 = "0.22"
 
 [dev-dependencies]
 
 [dependencies.windows]
 version = "0.61"
-features = ["Win32_Globalization", "Win32_System_SystemInformation", "Win32_Foundation", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"]
+features = ["Win32_Globalization", "Win32_System_SystemInformation", "Win32_Foundation", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging", "Win32_Graphics_Gdi", "Win32_System_DataExchange"]

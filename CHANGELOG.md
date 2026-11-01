@@ -1,5 +1,16 @@
 # Zmiany
 
+## 0.7.0
+
+- Przebudowana wstążka: przyciski ustawień w nagłówkach grup, równe nagłówki u dołu, zwężanie do szerokości okna jak w Wordzie, przycisk zwijania w prawym dolnym rogu.
+- Nowe narzędzia: wklejanie z zachowaniem formatowania z Worda, przeglądarek i Outlooka, efekty tekstu (cień, poświata, kontur), lista wielopoziomowa, sortowanie akapitów, obramowanie akapitu, metatagi, strona tytułowa, kody QR i kreskowe, zamiana tekstu w kształt i z powrotem.
+- Karta Układ: miniatura marginesów, okno Ustawienia strony z własnym rozmiarem papieru, tło i rozbudowane obramowanie strony (podwójne, kreskowane, kropkowane), typografia; karta Projekt połączona z Układem.
+- Widok: płynne przewijanie i powiększanie, rzeczywisty rozmiar przy 100% (fizyczny rozmiar ekranu), linijka pionowa, numeracja wierszy (także w PDF i DOCX).
+- Uporządkowane karty Wstawianie, Kształty tekstu, Odwołania i Recenzja; „Aktualizuj wszystko” dla spisu treści, indeksu i odsyłaczy.
+- Ustawienia w kartach z bocznym spisem sekcji; paleta poleceń przy polu wyszukiwania.
+- Import DOCX: style z Worda z dziedziczeniem, pola tekstowe, kształty i grupy w swoich miejscach, kolory motywu, przypisy, tabele z kolumnami, wzory WMF jako grafika wektorowa.
+- Nowy przewodnik po możliwościach programu i nowe szablony: CV, zaproszenie, dyplom, menu, faktura, plakat, kartka z życzeniami, broszura, rozdział książki; odświeżone raport, list, gazetka i ulotka.
+
 ## 0.6.0
 
 - Śledzenie zmian: oznaczanie wstawień i usunięć, akceptowanie i odrzucanie pojedynczo albo wszystkich naraz, eksport do DOCX jako zmiany Worda.
