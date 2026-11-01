@@ -2687,3 +2687,51 @@ msgstr ""
 
 msgid "Nowa sekcja ciągła"
 msgstr ""
+
+msgid "Wł."
+msgstr ""
+
+msgid "KRÓJ I POŁOŻENIE"
+msgstr ""
+
+msgid "ODSTĘPY I SKALA"
+msgstr ""
+
+msgid "KOLORY"
+msgstr ""
+
+msgid "Światło (odstęp między literami)"
+msgstr ""
+
+msgid "Szerokość znaków"
+msgstr ""
+
+msgid "Przesunięcie linii bazowej"
+msgstr ""
+
+msgid "brak"
+msgstr ""
+
+msgid "WYRÓWNANIE I WCIĘCIA"
+msgstr ""
+
+msgid "ODSTĘPY"
+msgstr ""
+
+msgid "Odstęp przed akapitem"
+msgstr ""
+
+msgid "Odstęp po akapicie"
+msgstr ""
+
+msgid "Interlinia wielokrotna"
+msgstr ""
+
+msgid "Interlinia dokładnie (pt)"
+msgstr ""
+
+msgid "Interlinia co najmniej (pt)"
+msgstr ""
+
+msgid "TABULATORY"
+msgstr ""

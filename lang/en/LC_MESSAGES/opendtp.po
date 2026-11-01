@@ -2696,3 +2696,51 @@ msgstr "New section on a new page"
 
 msgid "Nowa sekcja ciągła"
 msgstr "New continuous section"
+
+msgid "Wł."
+msgstr "On"
+
+msgid "KRÓJ I POŁOŻENIE"
+msgstr "STYLE AND POSITION"
+
+msgid "ODSTĘPY I SKALA"
+msgstr "SPACING AND SCALE"
+
+msgid "KOLORY"
+msgstr "COLOURS"
+
+msgid "Światło (odstęp między literami)"
+msgstr "Tracking (letter spacing)"
+
+msgid "Szerokość znaków"
+msgstr "Character width"
+
+msgid "Przesunięcie linii bazowej"
+msgstr "Baseline shift"
+
+msgid "brak"
+msgstr "none"
+
+msgid "WYRÓWNANIE I WCIĘCIA"
+msgstr "ALIGNMENT AND INDENTS"
+
+msgid "ODSTĘPY"
+msgstr "SPACING"
+
+msgid "Odstęp przed akapitem"
+msgstr "Space before paragraph"
+
+msgid "Odstęp po akapicie"
+msgstr "Space after paragraph"
+
+msgid "Interlinia wielokrotna"
+msgstr "Line spacing: multiple"
+
+msgid "Interlinia dokładnie (pt)"
+msgstr "Line spacing: exactly (pt)"
+
+msgid "Interlinia co najmniej (pt)"
+msgstr "Line spacing: at least (pt)"
+
+msgid "TABULATORY"
+msgstr "TAB STOPS"

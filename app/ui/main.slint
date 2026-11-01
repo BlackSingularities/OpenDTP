@@ -5,7 +5,7 @@ import { ListView, ScrollView, TextEdit } from "std-widgets.slint";
 import { Theme } from "theme.slint";
 import { Icons } from "icons.slint";
 import { App, PageV, BoxV, NodeV, ItemV, StyleV, NavV, RecentV } from "state.slint";
-import { Tip, TipArea, IconButton, Field, Spin, Switch, MenuItem, MenuSep, Card, Segmented, Label, Dim, Button, Slider } from "widgets.slint";
+import { Tip, TipArea, IconButton, Field, Spin, Switch, MenuItem, MenuSep, Card, Segmented, Label, Dim, Button, Slider, Toggle, IconSeg, Pane, IconField, IconSpin, ColorRow } from "widgets.slint";
 import { RibbonTabs, RibbonBody, Menus, MenuButton } from "ribbon.slint";
 import { Canvas } from "canvas.slint";
 import { LeftPanel, RightPanel } from "panels.slint";
@@ -647,216 +647,292 @@ export component AppWindow inherits Window {
     if App.dialog == "font": Dialog {
         width: parent.width;
         height: parent.height;
-        w: 640px;
+        w: 720px;
         title: @tr("Czcionka");
+        // Podgląd na górze – od razu widać efekt.
+        Rectangle {
+            height: 74px;
+            border-radius: Theme.r;
+            background: #ffffff;
+            clip: true;
+            Text {
+                text: App.f-caps == 1 ? "ZAŻÓŁĆ GĘŚLĄ JAŹŃ 0123456789 ½" : "Zażółć gęślą jaźń 0123456789 ½";
+                font-family: App.f-font;
+                font-size: 26px;
+                font-weight: App.f-bold ? 700 : 400;
+                font-italic: App.f-italic;
+                letter-spacing: (App.f-tracking.to-float() * 1.33) * 1px;
+                color: #1a1a1a;
+            }
+            Rectangle {
+                x: 10px;
+                y: parent.height - 22px;
+                height: 16px;
+                width: pl.preferred-width + 12px;
+                border-radius: 8px;
+                background: #00000010;
+                pl := Text {
+                    text: App.f-font + " · " + App.f-size + " pt";
+                    font-size: 10px;
+                    color: #00000080;
+                }
+            }
+        }
         HorizontalLayout {
-            spacing: 10px;
-            Field {
-                w: 260px;
+            spacing: 8px;
+            IconField {
+                icon: Icons.type;
+                w: 250px;
                 text <=> App.f-font;
                 placeholder: @tr("Czcionka");
                 tip: @tr("Nazwa kroju");
             }
-            Field {
-                w: 70px;
+            IconField {
+                icon: Icons.a-large-small;
+                w: 84px;
                 text <=> App.f-size;
                 placeholder: "pt";
                 tip: @tr("Rozmiar (pt)");
             }
-            Switch {
-                label: @tr("Pogrubienie");
+            Rectangle {
+                width: 6px;
+            }
+            Toggle {
+                icon: Icons.bold;
                 on: App.f-bold;
+                tip: @tr("Pogrubienie");
                 toggled => {
                     App.f-bold = !App.f-bold;
                 }
             }
-            Switch {
-                label: @tr("Kursywa");
+            Toggle {
+                icon: Icons.italic;
                 on: App.f-italic;
+                tip: @tr("Kursywa");
                 toggled => {
                     App.f-italic = !App.f-italic;
                 }
             }
-        }
-        HorizontalLayout {
-            spacing: 10px;
-            Dim {
-                text: @tr("Podkreślenie");
-                width: 90px;
-            }
-            Segmented {
-                items: [@tr("Brak"), @tr("Pojedyncze"), @tr("Podwójne"), @tr("Kropki"), @tr("Fala")];
-                current: App.f-underline;
-                picked(i) => {
-                    App.f-underline = i;
-                }
-            }
-            Switch {
-                label: @tr("Przekreślenie");
+            Toggle {
+                icon: Icons.strikethrough;
                 on: App.f-strike;
+                tip: @tr("Przekreślenie");
                 toggled => {
                     App.f-strike = !App.f-strike;
                 }
             }
-        }
-        HorizontalLayout {
-            spacing: 10px;
-            Dim {
-                text: @tr("Wielkość liter");
-                width: 90px;
+            Rectangle {
+                horizontal-stretch: 1;
             }
-            Segmented {
-                items: [@tr("Jak w tekście"), @tr("WERSALIKI"), @tr("Kapitaliki")];
-                current: App.f-caps;
-                picked(i) => {
-                    App.f-caps = i;
-                }
-            }
-            Segmented {
-                items: [@tr("Zwykły"), @tr("Indeks górny"), @tr("Indeks dolny")];
-                current: App.f-script;
-                picked(i) => {
-                    App.f-script = i;
-                }
-            }
-        }
-        HorizontalLayout {
-            spacing: 10px;
-            Field {
-                w: 110px;
-                text <=> App.f-color;
-                placeholder: "#000000";
-                tip: @tr("Kolor tekstu (szesnastkowo)");
-            }
-            Field {
-                w: 110px;
-                text <=> App.f-highlight;
-                placeholder: @tr("wyróżnienie");
-                tip: @tr("Kolor wyróżnienia (pusto – brak)");
-            }
-            Spin {
-                label: @tr("Światło");
-                value: App.f-tracking;
-                unit: "pt";
-                w: 80px;
-                changed-value(v) => {
-                    App.f-tracking = v;
-                }
-                step(d) => {
-                    App.cmd("f-step", "tracking;" + d);
-                }
-            }
-        }
-        HorizontalLayout {
-            spacing: 10px;
-            Spin {
-                label: @tr("Szerokość");
-                value: App.f-scale;
-                unit: "%";
-                w: 80px;
-                changed-value(v) => {
-                    App.f-scale = v;
-                }
-                step(d) => {
-                    App.cmd("f-step", "scale;" + d);
-                }
-            }
-            Spin {
-                label: @tr("Linia bazowa");
-                value: App.f-baseline;
-                unit: "pt";
-                w: 80px;
-                changed-value(v) => {
-                    App.f-baseline = v;
-                }
-                step(d) => {
-                    App.cmd("f-step", "baseline;" + d);
-                }
-            }
-            Segmented {
-                items: ["Polski", "English"];
+            IconSeg {
+                icons: [];
+                glyphs: ["PL", "EN"];
+                tips: ["Polski", "English"];
                 current: App.f-lang;
-                tip: @tr("Język tekstu (pisownia, dzielenie wyrazów)");
                 picked(i) => {
                     App.f-lang = i;
                 }
             }
         }
-        Dim {
-            text: @tr("FUNKCJE OPENTYPE (o ile czcionka je ma)");
-        }
         HorizontalLayout {
-            spacing: 12px;
-            Switch {
-                label: @tr("Kerning");
-                on: App.f-kerning;
-                toggled => {
-                    App.f-kerning = !App.f-kerning;
+            spacing: 10px;
+            Pane {
+                title: @tr("KRÓJ I POŁOŻENIE");
+                icon: Icons.underline;
+                horizontal-stretch: 1;
+                HorizontalLayout {
+                    spacing: 8px;
+                    alignment: start;
+                    IconSeg {
+                        icons: [Icons.x, Icons.underline];
+                        glyphs: ["", "", "═", "┈", "∿"];
+                        tips: [@tr("Bez podkreślenia"), @tr("Pojedyncze"), @tr("Podwójne"), @tr("Kropki"), @tr("Fala")];
+                        current: App.f-underline;
+                        picked(i) => {
+                            App.f-underline = i;
+                        }
+                    }
+                }
+                HorizontalLayout {
+                    spacing: 8px;
+                    alignment: start;
+                    IconSeg {
+                        icons: [Icons.case-sensitive, Icons.case-upper, Icons.a-large-small];
+                        tips: [@tr("Jak w tekście"), @tr("WERSALIKI"), @tr("Kapitaliki")];
+                        current: App.f-caps;
+                        picked(i) => {
+                            App.f-caps = i;
+                        }
+                    }
+                    IconSeg {
+                        icons: [Icons.type, Icons.superscript, Icons.subscript];
+                        tips: [@tr("Zwykły"), @tr("Indeks górny"), @tr("Indeks dolny")];
+                        current: App.f-script;
+                        picked(i) => {
+                            App.f-script = i;
+                        }
+                    }
                 }
             }
-            Switch {
-                label: @tr("Ligatury");
-                on: App.f-ligatures;
-                toggled => {
-                    App.f-ligatures = !App.f-ligatures;
+            Pane {
+                title: @tr("ODSTĘPY I SKALA");
+                icon: Icons.move-horizontal;
+                horizontal-stretch: 1;
+                HorizontalLayout {
+                    spacing: 8px;
+                    IconSpin {
+                        icon: Icons.unfold-horizontal;
+                        tip: @tr("Światło (odstęp między literami)");
+                        value: App.f-tracking;
+                        unit: "pt";
+                        changed-value(v) => {
+                            App.f-tracking = v;
+                        }
+                        step(d) => {
+                            App.cmd("f-step", "tracking;" + d);
+                        }
+                    }
+                    IconSpin {
+                        icon: Icons.scaling;
+                        tip: @tr("Szerokość znaków");
+                        value: App.f-scale;
+                        unit: "%";
+                        changed-value(v) => {
+                            App.f-scale = v;
+                        }
+                        step(d) => {
+                            App.cmd("f-step", "scale;" + d);
+                        }
+                    }
                 }
-            }
-            Switch {
-                label: @tr("Kapitaliki OT");
-                on: App.f-smcp;
-                toggled => {
-                    App.f-smcp = !App.f-smcp;
-                }
-            }
-            Switch {
-                label: @tr("Ułamki");
-                on: App.f-frac;
-                toggled => {
-                    App.f-frac = !App.f-frac;
+                HorizontalLayout {
+                    spacing: 8px;
+                    IconSpin {
+                        icon: Icons.baseline;
+                        tip: @tr("Przesunięcie linii bazowej");
+                        value: App.f-baseline;
+                        unit: "pt";
+                        changed-value(v) => {
+                            App.f-baseline = v;
+                        }
+                        step(d) => {
+                            App.cmd("f-step", "baseline;" + d);
+                        }
+                    }
                 }
             }
         }
-        HorizontalLayout {
-            spacing: 12px;
-            Switch {
-                label: @tr("Cyfry nautyczne");
-                on: App.f-onum;
-                toggled => {
-                    App.f-onum = !App.f-onum;
+        Pane {
+            title: @tr("KOLORY");
+            icon: Icons.palette;
+            HorizontalLayout {
+                spacing: 10px;
+                Rectangle {
+                    width: 18px;
+                    Image {
+                        source: Icons.type;
+                        width: 15px;
+                        height: 15px;
+                        colorize: Theme.text-dim;
+                    }
+                }
+                ColorRow {
+                    value <=> App.f-color;
+                    tip: @tr("Kolor tekstu (szesnastkowo)");
                 }
             }
-            Switch {
-                label: @tr("Cyfry równej wysokości");
-                on: App.f-lnum;
-                toggled => {
-                    App.f-lnum = !App.f-lnum;
+            HorizontalLayout {
+                spacing: 10px;
+                Rectangle {
+                    width: 18px;
+                    Image {
+                        source: Icons.highlighter;
+                        width: 15px;
+                        height: 15px;
+                        colorize: Theme.text-dim;
+                    }
                 }
-            }
-            Switch {
-                label: @tr("Cyfry tabelaryczne");
-                on: App.f-tnum;
-                toggled => {
-                    App.f-tnum = !App.f-tnum;
+                ColorRow {
+                    value <=> App.f-highlight;
+                    allow-none: true;
+                    placeholder: @tr("brak");
+                    tip: @tr("Kolor wyróżnienia (pusto – brak)");
                 }
-            }
-            Field {
-                w: 100px;
-                text <=> App.f-ss;
-                placeholder: "ss01, swsh";
-                tip: @tr("Dodatkowe funkcje: zestawy stylistyczne ss01–ss20, swsh, salt…");
             }
         }
-        Rectangle {
-            height: 56px;
-            border-radius: Theme.r-small;
-            background: #ffffff;
-            Text {
-                text: "Zażółć gęślą jaźń 0123456789 ½ – AaBbŁł";
-                font-family: App.f-font;
-                font-size: 20px;
-                font-weight: App.f-bold ? 700 : 400;
-                font-italic: App.f-italic;
-                color: #1a1a1a;
+        Pane {
+            title: @tr("FUNKCJE OPENTYPE (o ile czcionka je ma)");
+            icon: Icons.sparkles;
+            HorizontalLayout {
+                spacing: 6px;
+                alignment: start;
+                Switch {
+                    icon: Icons.unfold-horizontal;
+                    label: @tr("Kerning");
+                    on: App.f-kerning;
+                    toggled => {
+                        App.f-kerning = !App.f-kerning;
+                    }
+                }
+                Switch {
+                    icon: Icons.link;
+                    label: @tr("Ligatury");
+                    on: App.f-ligatures;
+                    toggled => {
+                        App.f-ligatures = !App.f-ligatures;
+                    }
+                }
+                Switch {
+                    icon: Icons.a-large-small;
+                    label: @tr("Kapitaliki OT");
+                    on: App.f-smcp;
+                    toggled => {
+                        App.f-smcp = !App.f-smcp;
+                    }
+                }
+                Switch {
+                    icon: Icons.divide;
+                    label: @tr("Ułamki");
+                    on: App.f-frac;
+                    toggled => {
+                        App.f-frac = !App.f-frac;
+                    }
+                }
+            }
+            HorizontalLayout {
+                spacing: 6px;
+                alignment: start;
+                Switch {
+                    icon: Icons.chart-line;
+                    label: @tr("Cyfry nautyczne");
+                    on: App.f-onum;
+                    toggled => {
+                        App.f-onum = !App.f-onum;
+                    }
+                }
+                Switch {
+                    icon: Icons.baseline;
+                    label: @tr("Cyfry równej wysokości");
+                    on: App.f-lnum;
+                    toggled => {
+                        App.f-lnum = !App.f-lnum;
+                    }
+                }
+                Switch {
+                    icon: Icons.grid-3x3;
+                    label: @tr("Cyfry tabelaryczne");
+                    on: App.f-tnum;
+                    toggled => {
+                        App.f-tnum = !App.f-tnum;
+                    }
+                }
+                IconField {
+                    icon: Icons.wand-sparkles;
+                    w: 120px;
+                    text <=> App.f-ss;
+                    placeholder: "ss01, swsh";
+                    tip: @tr("Dodatkowe funkcje: zestawy stylistyczne ss01–ss20, swsh, salt…");
+                }
             }
         }
         HorizontalLayout {
@@ -870,6 +946,7 @@ export component AppWindow inherits Window {
             }
             Button {
                 label: @tr("Zastosuj");
+                icon: Icons.check;
                 primary: true;
                 clicked => {
                     App.cmd("font-apply", "");
@@ -880,201 +957,245 @@ export component AppWindow inherits Window {
     if App.dialog == "para": Dialog {
         width: parent.width;
         height: parent.height;
-        w: 640px;
+        w: 720px;
         title: @tr("Akapit");
         HorizontalLayout {
             spacing: 10px;
-            Dim {
-                text: @tr("Wyrównanie");
-                width: 90px;
+            Pane {
+                title: @tr("WYRÓWNANIE I WCIĘCIA");
+                icon: Icons.align-left;
+                horizontal-stretch: 1;
+                IconSeg {
+                    icons: [Icons.align-left, Icons.align-center, Icons.align-right, Icons.align-justify];
+                    tips: [@tr("Do lewej"), @tr("Wyśrodkuj"), @tr("Do prawej"), @tr("Wyjustuj")];
+                    current: App.p-align;
+                    picked(i) => {
+                        App.p-align = i;
+                    }
+                }
+                HorizontalLayout {
+                    spacing: 8px;
+                    IconSpin {
+                        icon: Icons.arrow-right-from-line;
+                        tip: @tr("Wcięcie z lewej");
+                        value: App.p-left;
+                        unit: App.unit;
+                        changed-value(v) => {
+                            App.p-left = v;
+                        }
+                        step(d) => {
+                            App.cmd("p-step", "left;" + d);
+                        }
+                    }
+                    IconSpin {
+                        icon: Icons.arrow-left-to-line;
+                        tip: @tr("Wcięcie z prawej");
+                        value: App.p-right;
+                        unit: App.unit;
+                        changed-value(v) => {
+                            App.p-right = v;
+                        }
+                        step(d) => {
+                            App.cmd("p-step", "right;" + d);
+                        }
+                    }
+                }
+                IconSpin {
+                    icon: Icons.pilcrow;
+                    tip: @tr("Wcięcie pierwszego wiersza (ujemne – wysunięcie)");
+                    value: App.p-first;
+                    unit: App.unit;
+                    changed-value(v) => {
+                        App.p-first = v;
+                    }
+                    step(d) => {
+                        App.cmd("p-step", "first;" + d);
+                    }
+                }
             }
-            Segmented {
-                items: [@tr("Do lewej"), @tr("Wyśrodkuj"), @tr("Do prawej"), @tr("Wyjustuj")];
-                current: App.p-align;
-                picked(i) => {
-                    App.p-align = i;
+            Pane {
+                title: @tr("ODSTĘPY");
+                icon: Icons.move-vertical;
+                horizontal-stretch: 1;
+                HorizontalLayout {
+                    spacing: 8px;
+                    IconSpin {
+                        icon: Icons.arrow-up-from-line;
+                        tip: @tr("Odstęp przed akapitem");
+                        value: App.p-before;
+                        unit: "pt";
+                        changed-value(v) => {
+                            App.p-before = v;
+                        }
+                        step(d) => {
+                            App.cmd("p-step", "before;" + d);
+                        }
+                    }
+                    IconSpin {
+                        icon: Icons.arrow-down-to-line;
+                        tip: @tr("Odstęp po akapicie");
+                        value: App.p-after;
+                        unit: "pt";
+                        changed-value(v) => {
+                            App.p-after = v;
+                        }
+                        step(d) => {
+                            App.cmd("p-step", "after;" + d);
+                        }
+                    }
+                }
+                HorizontalLayout {
+                    spacing: 8px;
+                    IconSeg {
+                        icons: [Icons.rows-3, Icons.ruler, Icons.arrow-up-from-line];
+                        tips: [@tr("Interlinia wielokrotna"), @tr("Interlinia dokładnie (pt)"), @tr("Interlinia co najmniej (pt)")];
+                        current: App.p-line-kind;
+                        picked(i) => {
+                            App.p-line-kind = i;
+                        }
+                    }
+                    IconField {
+                        icon: Icons.move-vertical;
+                        w: 92px;
+                        text <=> App.p-line;
+                        tip: @tr("Wartość interlinii (wielokrotność albo pt)");
+                    }
                 }
             }
         }
-        HorizontalLayout {
-            spacing: 10px;
-            Spin {
-                label: @tr("Wcięcie ←");
-                value: App.p-left;
-                unit: App.unit;
-                w: 84px;
-                changed-value(v) => {
-                    App.p-left = v;
+        Pane {
+            title: @tr("PRZEPŁYW TEKSTU");
+            icon: Icons.wrap-text;
+            HorizontalLayout {
+                spacing: 6px;
+                alignment: start;
+                Switch {
+                    icon: Icons.link-2;
+                    label: @tr("Razem z następnym");
+                    on: App.p-keep-next;
+                    toggled => {
+                        App.p-keep-next = !App.p-keep-next;
+                    }
                 }
-                step(d) => {
-                    App.cmd("p-step", "left;" + d);
+                Switch {
+                    icon: Icons.fold-vertical;
+                    label: @tr("Wiersze razem");
+                    on: App.p-keep-lines;
+                    toggled => {
+                        App.p-keep-lines = !App.p-keep-lines;
+                    }
                 }
-            }
-            Spin {
-                label: @tr("Wcięcie →");
-                value: App.p-right;
-                unit: App.unit;
-                w: 84px;
-                changed-value(v) => {
-                    App.p-right = v;
-                }
-                step(d) => {
-                    App.cmd("p-step", "right;" + d);
-                }
-            }
-            Spin {
-                label: @tr("1. wiersz");
-                value: App.p-first;
-                unit: App.unit;
-                w: 84px;
-                tip: @tr("Ujemne – wysunięcie");
-                changed-value(v) => {
-                    App.p-first = v;
-                }
-                step(d) => {
-                    App.cmd("p-step", "first;" + d);
+                Switch {
+                    icon: Icons.between-horizontal-start;
+                    label: @tr("Wdowy i sieroty");
+                    on: App.p-widows;
+                    toggled => {
+                        App.p-widows = !App.p-widows;
+                    }
                 }
             }
-        }
-        HorizontalLayout {
-            spacing: 10px;
-            Spin {
-                label: @tr("Przed");
-                value: App.p-before;
-                unit: "pt";
-                w: 80px;
-                changed-value(v) => {
-                    App.p-before = v;
+            HorizontalLayout {
+                spacing: 6px;
+                alignment: start;
+                Switch {
+                    icon: Icons.file-plus;
+                    label: @tr("Od nowej strony");
+                    on: App.p-page-before;
+                    toggled => {
+                        App.p-page-before = !App.p-page-before;
+                    }
                 }
-                step(d) => {
-                    App.cmd("p-step", "before;" + d);
+                Switch {
+                    icon: Icons.scissors;
+                    label: @tr("Dzielenie wyrazów");
+                    on: App.p-hyphen;
+                    toggled => {
+                        App.p-hyphen = !App.p-hyphen;
+                    }
                 }
-            }
-            Spin {
-                label: @tr("Po");
-                value: App.p-after;
-                unit: "pt";
-                w: 80px;
-                changed-value(v) => {
-                    App.p-after = v;
-                }
-                step(d) => {
-                    App.cmd("p-step", "after;" + d);
-                }
-            }
-            Segmented {
-                items: [@tr("Wielokrotna"), @tr("Dokładnie"), @tr("Co najmniej")];
-                current: App.p-line-kind;
-                tip: @tr("Interlinia");
-                picked(i) => {
-                    App.p-line-kind = i;
-                }
-            }
-            Field {
-                w: 60px;
-                text <=> App.p-line;
-                tip: @tr("Wartość interlinii (wielokrotność albo pt)");
-            }
-        }
-        Dim {
-            text: @tr("PRZEPŁYW TEKSTU");
-        }
-        HorizontalLayout {
-            spacing: 12px;
-            Switch {
-                label: @tr("Razem z następnym");
-                on: App.p-keep-next;
-                toggled => {
-                    App.p-keep-next = !App.p-keep-next;
-                }
-            }
-            Switch {
-                label: @tr("Wiersze razem");
-                on: App.p-keep-lines;
-                toggled => {
-                    App.p-keep-lines = !App.p-keep-lines;
-                }
-            }
-            Switch {
-                label: @tr("Wdowy i sieroty");
-                on: App.p-widows;
-                toggled => {
-                    App.p-widows = !App.p-widows;
+                IconSpin {
+                    icon: Icons.letter-text;
+                    tip: @tr("Inicjał (wiersze)");
+                    value: App.p-dropcap;
+                    w: 84px;
+                    changed-value(v) => {
+                        App.cmd("p-step", "dropcap-set;" + v);
+                    }
+                    step(d) => {
+                        App.cmd("p-step", "dropcap;" + d);
+                    }
                 }
             }
         }
-        HorizontalLayout {
-            spacing: 12px;
-            Switch {
-                label: @tr("Od nowej strony");
-                on: App.p-page-before;
-                toggled => {
-                    App.p-page-before = !App.p-page-before;
+        Pane {
+            title: @tr("TŁO I RAMKA");
+            icon: Icons.paint-roller;
+            HorizontalLayout {
+                spacing: 10px;
+                Rectangle {
+                    width: 18px;
+                    Image {
+                        source: Icons.paint-bucket;
+                        width: 15px;
+                        height: 15px;
+                        colorize: Theme.text-dim;
+                    }
+                }
+                ColorRow {
+                    value <=> App.p-shading;
+                    allow-none: true;
+                    placeholder: @tr("brak");
+                    tip: @tr("Cieniowanie akapitu (pusto – brak)");
                 }
             }
-            Switch {
-                label: @tr("Dzielenie wyrazów");
-                on: App.p-hyphen;
-                toggled => {
-                    App.p-hyphen = !App.p-hyphen;
+            HorizontalLayout {
+                spacing: 10px;
+                Rectangle {
+                    width: 18px;
+                    Image {
+                        source: Icons.square;
+                        width: 15px;
+                        height: 15px;
+                        colorize: Theme.text-dim;
+                    }
+                }
+                ColorRow {
+                    value <=> App.p-border-color;
+                    tip: @tr("Kolor ramki");
                 }
             }
-            Spin {
-                label: @tr("Inicjał (wiersze)");
-                value: App.p-dropcap;
-                w: 70px;
-                changed-value(v) => {
-                    App.cmd("p-step", "dropcap-set;" + v);
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: start;
+                IconField {
+                    icon: Icons.square-dashed;
+                    w: 96px;
+                    text <=> App.p-border-w;
+                    placeholder: "0";
+                    tip: @tr("Grubość ramki (pt, 0 – bez ramki)");
                 }
-                step(d) => {
-                    App.cmd("p-step", "dropcap;" + d);
+                IconField {
+                    icon: Icons.radius;
+                    w: 96px;
+                    text <=> App.p-radius;
+                    placeholder: "0";
+                    tip: @tr("Zaokrąglenie (pt)");
+                }
+                IconField {
+                    icon: Icons.scan;
+                    w: 96px;
+                    text <=> App.p-padding;
+                    placeholder: "4";
+                    tip: @tr("Odstęp tekstu od ramki (pt)");
                 }
             }
         }
-        Dim {
-            text: @tr("TŁO I RAMKA");
-        }
-        HorizontalLayout {
-            spacing: 10px;
-            Field {
-                w: 100px;
-                text <=> App.p-shading;
-                placeholder: @tr("tło #rrggbb");
-                tip: @tr("Cieniowanie akapitu (pusto – brak)");
-            }
-            Field {
-                w: 60px;
-                text <=> App.p-border-w;
-                placeholder: "0";
-                tip: @tr("Grubość ramki (pt, 0 – bez ramki)");
-            }
-            Field {
-                w: 100px;
-                text <=> App.p-border-color;
-                placeholder: @tr("ramka #rrggbb");
-                tip: @tr("Kolor ramki");
-            }
-            Field {
-                w: 60px;
-                text <=> App.p-radius;
-                placeholder: "0";
-                tip: @tr("Zaokrąglenie (pt)");
-            }
-            Field {
-                w: 60px;
-                text <=> App.p-padding;
-                placeholder: "4";
-                tip: @tr("Odstęp tekstu od ramki (pt)");
-            }
-        }
-        HorizontalLayout {
-            spacing: 10px;
-            Dim {
-                text: @tr("Tabulatory");
-                width: 90px;
-            }
-            Field {
-                w: 420px;
+        Pane {
+            title: @tr("TABULATORY");
+            icon: Icons.ruler;
+            IconField {
+                icon: Icons.space;
+                w: 660px;
                 text <=> App.p-tabs;
                 placeholder: @tr("np. 36; 72; -1 (−1 – do prawej z kropkami)");
                 tip: @tr("Położenia tabulatorów w pt od lewej krawędzi tekstu");
@@ -1091,6 +1212,7 @@ export component AppWindow inherits Window {
             }
             Button {
                 label: @tr("Zastosuj");
+                icon: Icons.check;
                 primary: true;
                 clicked => {
                     App.cmd("para-apply", "");

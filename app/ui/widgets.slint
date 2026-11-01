@@ -368,48 +368,300 @@ export component Spin inherits Rectangle {
 }
 
 /// Przełącznik (włącz/wyłącz).
+/// Przełącznik w formie „chipa”: kropka-dioda albo ikona i podpis; włączony świeci akcentem.
 export component Switch inherits Rectangle {
     in property <bool> on;
     in property <string> label;
     in property <string> tip;
+    in property <image> icon;
     callback toggled();
-    height: 24px * Theme.scale;
+    height: 26px * Theme.scale;
     min-width: hl.preferred-width;
+    border-radius: Theme.r-small;
+    background: ta.pressed ? Theme.press : root.on ? Theme.accent-soft : ta.has-hover ? Theme.hover : transparent;
+    border-width: 1px;
+    border-color: root.on ? Theme.accent.with-alpha(0.55) : Theme.line;
+    animate background, border-color { duration: 120ms; }
     hl := HorizontalLayout {
-        spacing: 8px;
+        padding-left: 8px;
+        padding-right: 10px;
+        spacing: 7px;
         alignment: start;
-        Rectangle {
-            width: 30px;
-            height: 16px;
+        if root.icon.width > 0: Image {
+            source: root.icon;
+            width: 15px * Theme.scale;
+            height: 15px * Theme.scale;
             y: (parent.height - self.height) / 2;
-            border-radius: 8px;
-            background: root.on ? Theme.accent : Theme.line-strong;
-            animate background { duration: 120ms; }
-            Rectangle {
-                width: 12px;
-                height: 12px;
-                y: 2px;
-                x: root.on ? 16px : 2px;
-                border-radius: 6px;
-                background: root.on ? Theme.accent-text : Theme.text;
-                animate x { duration: 120ms; easing: ease-out; }
-            }
+            colorize: root.on ? Theme.accent : Theme.text-dim;
         }
-        if root.label != "": Text {
-            text: root.label;
+        if root.icon.width == 0: Rectangle {
+            width: 8px;
+            height: 8px;
+            y: (parent.height - self.height) / 2;
+            border-radius: 4px;
+            background: root.on ? Theme.accent : transparent;
+            border-width: root.on ? 0 : 1.5px;
+            border-color: Theme.text-faint;
+            drop-shadow-blur: root.on ? 6px : 0;
+            drop-shadow-color: Theme.accent;
+        }
+        Text {
+            text: root.label != "" ? root.label : root.on ? @tr("Wł.") : @tr("Wył.");
             font-family: Theme.font;
             font-size: Theme.fs;
-            color: Theme.text;
+            color: root.on ? Theme.text : Theme.text-dim;
             vertical-alignment: center;
         }
     }
-    TipArea {
+    ta := TipArea {
         tip: root.tip != "" ? root.tip : root.label;
         clicked => {
             root.toggled();
         }
     }
 }
+
+/// Kwadratowy przełącznik z samą ikoną (B, I, S…).
+export component Toggle inherits Rectangle {
+    in property <bool> on;
+    in property <image> icon;
+    in property <string> tip;
+    callback toggled();
+    width: 30px * Theme.scale;
+    height: 30px * Theme.scale;
+    border-radius: Theme.r-small;
+    background: ta.pressed ? Theme.press : root.on ? Theme.accent-soft : ta.has-hover ? Theme.hover : Theme.raised;
+    border-width: 1px;
+    border-color: root.on ? Theme.accent.with-alpha(0.6) : Theme.line;
+    Image {
+        source: root.icon;
+        width: 16px * Theme.scale;
+        height: 16px * Theme.scale;
+        colorize: root.on ? Theme.accent : Theme.text;
+    }
+    ta := TipArea {
+        tip: root.tip;
+        clicked => {
+            root.toggled();
+        }
+    }
+}
+
+/// Wybór jednej z opcji pokazanych ikonami (albo krótkimi znakami, gdy ikony brak).
+export component IconSeg inherits Rectangle {
+    in property <[image]> icons;
+    in property <[string]> glyphs;
+    in property <[string]> tips;
+    in property <int> current;
+    callback picked(int);
+    height: 30px * Theme.scale;
+    border-radius: Theme.r-small;
+    background: Theme.raised;
+    border-width: 1px;
+    border-color: Theme.line;
+    min-width: hl.preferred-width;
+    hl := HorizontalLayout {
+        padding: 2px;
+        spacing: 2px;
+        for t[i] in root.tips: Rectangle {
+            width: 30px * Theme.scale;
+            border-radius: Theme.r-small - 1px;
+            background: i == root.current ? Theme.accent : ia.has-hover ? Theme.hover : transparent;
+            animate background { duration: 100ms; }
+            if root.icons[i].width > 0: Image {
+                source: root.icons[i];
+                width: 15px * Theme.scale;
+                height: 15px * Theme.scale;
+                colorize: i == root.current ? Theme.accent-text : Theme.text;
+            }
+            if root.icons[i].width == 0: Text {
+                text: root.glyphs[i];
+                font-size: Theme.fs-big;
+                color: i == root.current ? Theme.accent-text : Theme.text;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+            ia := TipArea {
+                tip: t;
+                clicked => {
+                    root.picked(i);
+                }
+            }
+        }
+    }
+}
+
+/// Karta grupy ustawień w oknie: ikona, tytuł kapitalikami, treść.
+export component Pane inherits Rectangle {
+    in property <string> title;
+    in property <image> icon;
+    border-radius: Theme.r;
+    background: Theme.dark ? #ffffff08 : #00000006;
+    border-width: 1px;
+    border-color: Theme.line;
+    VerticalLayout {
+        padding: 12px;
+        padding-top: 10px;
+        spacing: 9px;
+        HorizontalLayout {
+            spacing: 7px;
+            alignment: start;
+            Rectangle {
+                width: 20px;
+                height: 20px;
+                border-radius: 10px;
+                background: Theme.accent-soft;
+                Image {
+                    source: root.icon;
+                    width: 12px;
+                    height: 12px;
+                    colorize: Theme.accent;
+                }
+            }
+            Text {
+                text: root.title;
+                font-family: Theme.font;
+                font-size: Theme.fs-small;
+                font-weight: 650;
+                letter-spacing: 0.8px;
+                color: Theme.text-dim;
+                vertical-alignment: center;
+            }
+        }
+        @children
+    }
+}
+
+/// Pole z ikoną na początku.
+export component IconField inherits Rectangle {
+    in property <image> icon;
+    in-out property <string> text;
+    in property <string> placeholder;
+    in property <string> tip;
+    in property <length> w: 120px;
+    width: root.w;
+    height: 30px * Theme.scale;
+    border-radius: Theme.r-small;
+    background: Theme.raised;
+    border-width: 1px;
+    border-color: ti.has-focus ? Theme.accent : Theme.line;
+    Image {
+        x: 8px;
+        source: root.icon;
+        width: 14px * Theme.scale;
+        height: 14px * Theme.scale;
+        colorize: ti.has-focus ? Theme.accent : Theme.text-faint;
+    }
+    ti := TextInput {
+        x: 28px * Theme.scale;
+        width: parent.width - self.x - 8px;
+        height: parent.height;
+        text <=> root.text;
+        font-family: Theme.font;
+        font-size: Theme.fs;
+        color: Theme.text;
+        vertical-alignment: center;
+        single-line: true;
+        selection-background-color: Theme.selection;
+    }
+    if root.text == "" && !ti.has-focus: Text {
+        x: 28px * Theme.scale;
+        text: root.placeholder;
+        font-family: Theme.font;
+        font-size: Theme.fs;
+        color: Theme.text-faint;
+        vertical-alignment: center;
+        height: parent.height;
+    }
+    TouchArea {
+        enabled: !ti.has-focus;
+        mouse-cursor: text;
+        clicked => {
+            ti.focus();
+        }
+    }
+    TipArea {
+        x: 0;
+        width: 26px;
+        tip: root.tip;
+    }
+}
+
+/// Liczba z ikoną i strzałkami (zamiast podpisu tekstowego).
+export component IconSpin inherits Rectangle {
+    in property <image> icon;
+    in property <string> tip;
+    in property <string> value;
+    in property <string> unit;
+    in property <length> w: 104px;
+    callback changed-value(string);
+    callback step(int);
+    width: root.w;
+    height: 30px * Theme.scale;
+    border-radius: Theme.r-small;
+    background: Theme.raised;
+    border-width: 1px;
+    border-color: inp.has-focus ? Theme.accent : Theme.line;
+    HorizontalLayout {
+        padding-left: 8px;
+        spacing: 4px;
+        Rectangle {
+            width: 16px * Theme.scale;
+            Image {
+                source: root.icon;
+                width: 14px * Theme.scale;
+                height: 14px * Theme.scale;
+                colorize: inp.has-focus ? Theme.accent : Theme.text-dim;
+            }
+            TipArea {
+                tip: root.tip;
+            }
+        }
+        inp := TextInput {
+            text: root.value;
+            font-family: Theme.font;
+            font-size: Theme.fs;
+            color: Theme.text;
+            vertical-alignment: center;
+            horizontal-alignment: right;
+            single-line: true;
+            accepted => {
+                root.changed-value(self.text);
+            }
+            changed has-focus => {
+                if (!self.has-focus && self.text != root.value) {
+                    root.changed-value(self.text);
+                }
+            }
+        }
+        Text {
+            text: root.unit;
+            font-size: Theme.fs-small;
+            color: Theme.text-faint;
+            vertical-alignment: center;
+            width: root.unit == "" ? 0 : self.preferred-width;
+        }
+        VerticalLayout {
+            width: 16px;
+            for d[k] in [1, -1]: Rectangle {
+                background: sa.has-hover ? Theme.hover : transparent;
+                border-radius: 3px;
+                Image {
+                    source: d > 0 ? Icons.chevron-up : Icons.chevron-down;
+                    width: 10px;
+                    height: 10px;
+                    colorize: Theme.text-dim;
+                }
+                sa := TouchArea {
+                    clicked => {
+                        root.step(d);
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 /// Próbka koloru z podpowiedzią.
 export component Swatch inherits Rectangle {
@@ -577,12 +829,15 @@ export component Segmented inherits Rectangle {
         for it[i] in root.items: Rectangle {
             min-width: st.preferred-width + 18px;
             border-radius: Theme.r-small - 1px;
-            background: i == root.current ? Theme.accent : sta.has-hover ? Theme.hover : transparent;
+            background: i == root.current ? Theme.accent-soft : sta.has-hover ? Theme.hover : transparent;
+            border-width: i == root.current ? 1px : 0;
+            border-color: Theme.accent.with-alpha(0.6);
             st := Text {
                 text: it;
                 font-family: Theme.font;
                 font-size: Theme.fs-small;
-                color: i == root.current ? Theme.accent-text : Theme.text;
+                font-weight: i == root.current ? 600 : 400;
+                color: i == root.current ? Theme.accent : Theme.text-dim;
             }
             sta := TipArea {
                 tip: root.tip;
@@ -631,5 +886,44 @@ export component Slider inherits Rectangle {
                 root.moved(clamp(self.mouse-x / self.width, 0, 1));
             }
         }
+    }
+}
+
+/// Szybki wybór koloru: próbki i pole szesnastkowe.
+export component ColorRow inherits HorizontalLayout {
+    in-out property <string> value;
+    in property <string> placeholder: "#rrggbb";
+    in property <string> tip;
+    in property <bool> allow-none;
+    property <[string]> hx: ["#000000", "#595959", "#a6a6a6", "#ffffff", "#c00000", "#e36c09", "#f2c200", "#00a650", "#1f5fc0", "#7030a0"];
+    property <[color]> cs: [#000000, #595959, #a6a6a6, #ffffff, #c00000, #e36c09, #f2c200, #00a650, #1f5fc0, #7030a0];
+    spacing: 4px;
+    alignment: start;
+    if root.allow-none: Swatch {
+        swatch: transparent;
+        size: 20px;
+        y: (parent.height - self.height) / 2;
+        selected: root.value == "";
+        tip: @tr("Brak");
+        clicked => {
+            root.value = "";
+        }
+    }
+    for c[i] in root.cs: Swatch {
+        swatch: c;
+        size: 20px;
+        y: (parent.height - self.height) / 2;
+        selected: root.value == root.hx[i];
+        tip: root.hx[i];
+        clicked => {
+            root.value = root.hx[i];
+        }
+    }
+    IconField {
+        icon: Icons.hash;
+        w: 96px;
+        text <=> root.value;
+        placeholder: root.placeholder;
+        tip: root.tip;
     }
 }
