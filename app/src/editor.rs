@@ -106,7 +106,7 @@ impl Editor {
 
     pub fn relayout(&mut self) {
         // Obiekty zakotwiczone w tekście zależą od składu – kilka przebiegów, aż położenia się ustalą.
-        for _ in 0..4 {
+        for _ in 0..6 {
             self.layout = self.engine.layout(&self.doc);
             if !opendtp_core::layout::apply_anchors(&mut self.doc, &self.layout) {
                 break;

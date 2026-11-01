@@ -1144,7 +1144,8 @@ pub fn apply_anchors(doc: &mut Document, lay: &Layout) -> bool {
             }
         }
         let mut page = page;
-        let mut y = refy + o.anchor_dy;
+        // Odstęp co najmniej taki jak margines opływania – inaczej obiekt spycha wiersz, za którym stoi.
+        let mut y = refy + o.anchor_dy.max(if o.wrap.mode.excludes() { o.wrap.dist + 1.0 } else { 0.0 });
         let snapshot = o.clone();
         if let ObjKind::Table { table } = &mut o.kind {
             table.take = None;
