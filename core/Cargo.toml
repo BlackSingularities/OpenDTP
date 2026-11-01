@@ -1,6 +1,6 @@
 [package]
 name = "opendtp-core"
-version = "0.5.0"
+version = "0.6.0"
 description = "OpenDTP – model dokumentu, silnik składu, renderer, eksport i aktualizacje"
 authors = ["Adam Rędzikowski"]
 edition = "2021"

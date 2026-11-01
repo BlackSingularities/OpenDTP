@@ -1,5 +1,13 @@
 # Zmiany
 
+## 0.6.0
+
+- Śledzenie zmian: oznaczanie wstawień i usunięć, akceptowanie i odrzucanie pojedynczo albo wszystkich naraz, eksport do DOCX jako zmiany Worda.
+- Komentarze z odpowiedziami i oznaczaniem jako rozwiązane.
+- Historia wersji zapisywana w pliku dokumentu, z przywracaniem.
+- Eksport do EPUB 3: rozdziały z nagłówków, spis treści, obrazy.
+- Preflight ostrzega o niezaakceptowanych zmianach i otwartych komentarzach.
+
 ## 0.5.0
 
 - Obrazy osadzone i linkowane: łącze do pliku na dysku z automatycznym odświeżaniem po zmianie, przełączanie w obie strony, panel Obrazy z rozdzielczością i ostrzeżeniami, pakowanie dokumentu z obrazami.
