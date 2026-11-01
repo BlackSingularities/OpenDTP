@@ -3536,3 +3536,78 @@ msgstr "Check linked images"
 
 msgid "Spakuj dokument z obrazami"
 msgstr "Package document with images"
+
+msgid "Wyrażenie regularne: \\d+ – liczby, (a|b) – jedno z dwóch, w zamienniku $1 – pierwsza grupa"
+msgstr "Regular expression: \\d+ – numbers, (a|b) – either, $1 in replacement – first group"
+
+msgid "Styl:"
+msgstr "Style:"
+
+msgid "Wszystkie akapity"
+msgstr "All paragraphs"
+
+msgid "Szukaj tylko w akapitach wybranego stylu (bez tekstu – wszystkie akapity tego stylu)"
+msgstr "Search only paragraphs of the chosen style (with no text – all paragraphs of that style)"
+
+msgid "Błędny wzorzec: {}"
+msgstr "Invalid pattern: {}"
+
+msgid "Przesuń rozdział wyżej (razem z podrozdziałami)"
+msgstr "Move chapter up (with its sections)"
+
+msgid "Przesuń rozdział niżej (razem z podrozdziałami)"
+msgstr "Move chapter down (with its sections)"
+
+msgid "Rozdziału nie da się przesunąć dalej w obrębie rozdziału nadrzędnego"
+msgstr "The chapter can't move further within its parent chapter"
+
+msgid "Zaznacz tekst albo obiekty, które chcesz zapisać w bibliotece"
+msgstr "Select text or objects to save to the library"
+
+msgid "Zapisano w bibliotece: {}"
+msgstr "Saved to library: {}"
+
+msgid "obiekty"
+msgstr "objects"
+
+msgid "tekst"
+msgstr "text"
+
+msgid "Zaznacz obiekty do zapisania"
+msgstr "Select objects to save"
+
+msgid "Zapisz w bibliotece"
+msgstr "Save to library"
+
+msgid "Nazwa elementu w bibliotece"
+msgstr "Library item name"
+
+msgid "Zamknij bez zapisywania"
+msgstr "Close without saving"
+
+msgid "Zapisz zaznaczony tekst albo obiekty do ponownego użycia w innych dokumentach"
+msgstr "Save the selected text or objects for reuse in other documents"
+
+msgid "Biblioteka"
+msgstr "Library"
+
+msgid "Biblioteka jest pusta. Zaznacz tekst albo obiekty (np. logo, ramkę z podpisem) i wybierz „Zapisz w bibliotece”."
+msgstr "The library is empty. Select text or objects (e.g. a logo or a captioned frame) and choose “Save to library”."
+
+msgid "Wstaw: {}"
+msgstr "Insert: {}"
+
+msgid "Usuń z biblioteki"
+msgstr "Remove from library"
+
+msgid "Zapisz zaznaczenie"
+msgstr "Save selection"
+
+msgid "Panel z zapisanymi fragmentami tekstu i obiektami do wstawienia"
+msgstr "Panel with saved text snippets and objects to insert"
+
+msgid "Panel z obrazami: osadzone i linkowane, rozdzielczość, łącza do plików"
+msgstr "Images panel: embedded and linked, resolution, file links"
+
+msgid "Zapisz zaznaczenie w bibliotece"
+msgstr "Save selection to library"

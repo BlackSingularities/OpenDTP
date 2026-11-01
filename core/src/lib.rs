@@ -8,6 +8,7 @@ pub mod geom;
 pub mod io;
 pub mod lang;
 pub mod layout;
+pub mod library;
 pub mod model;
 pub mod paint;
 pub mod paths;

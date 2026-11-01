@@ -108,6 +108,7 @@ pub const ALL: &[Cmd] = &[
     c("links-refresh", "Sprawdź obrazy linkowane", "refresh-cw", ""),
     c("links-embed-all", "Osadź wszystkie obrazy linkowane", "save-all", ""),
     c("package", "Spakuj dokument z obrazami", "folder-open", ""),
+    c("lib-save", "Zapisz zaznaczenie w bibliotece", "book-a", ""),
     c("index-mark", "Oznacz hasło indeksu", "hash", ""),
     c("index-mark-all", "Oznacz wszystkie wystąpienia w indeksie", "whole-word", ""),
     c("index", "Wstaw albo odśwież indeks", "book-a", ""),

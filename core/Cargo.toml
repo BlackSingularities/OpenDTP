@@ -33,6 +33,7 @@ parking_lot = "0.12"
 i_overlay = "9"
 unicode-normalization = "0.1"
 hyphenation = { version = "0.8", features = ["embed_all"] }
+regex = "1"
 
 [dev-dependencies]
 

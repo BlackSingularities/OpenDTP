@@ -398,6 +398,11 @@ fn sync(st: &mut State, ui: &AppWindow) {
     app.set_spell_live(st.view.spell);
     app.set_zoom((st.view.zoom * 100.0).round() as i32);
     app.set_node_mode(ed.node_mode);
+    let fsid = app.get_find_style();
+    if !fsid.is_empty() {
+        let name = ed.doc.style(&fsid).map(|s| tr_style(&s.name)).unwrap_or_default();
+        app.set_find_style_name(name.into());
+    }
 
     // Style (tylko po zmianie).
     let key = format!("{:?}", ed.doc.styles);
@@ -424,6 +429,10 @@ fn sync(st: &mut State, ui: &AppWindow) {
             })
             .collect();
         app.set_styles(ModelRc::new(VecModel::from(items)));
+        // Wybór stylu w panelu Znajdź – wszystkie style akapitu, także spoza galerii.
+        let mut fs = vec![ItemV { id: "".into(), label: opendtp_core::lang::tr("Wszystkie akapity").into(), ..Default::default() }];
+        fs.extend(ed.doc.styles.iter().map(|s| ItemV { id: s.id.clone().into(), label: tr_style(&s.name).into(), ..Default::default() }));
+        app.set_find_styles(ModelRc::new(VecModel::from(fs)));
     }
     // Nawigator.
     if st.nav_version != ed.version {

@@ -1171,6 +1171,37 @@ component InsertTab inherits HorizontalLayout {
         }
     }
     Group {
+        title: @tr("Biblioteka");
+        Col {
+            RowButton {
+                icon: Icons.book-a;
+                label: @tr("Biblioteka");
+                tip: @tr("Panel z zapisanymi fragmentami tekstu i obiektami do wstawienia");
+                active: App.left-panel == "library";
+                clicked => {
+                    App.cmd("panel", "library");
+                }
+            }
+            RowButton {
+                icon: Icons.plus;
+                label: @tr("Zapisz w bibliotece");
+                tip: @tr("Zapisz zaznaczony tekst albo obiekty do ponownego użycia w innych dokumentach");
+                clicked => {
+                    App.cmd("lib-save", "");
+                }
+            }
+            RowButton {
+                icon: Icons.image;
+                label: @tr("Obrazy");
+                tip: @tr("Panel z obrazami: osadzone i linkowane, rozdzielczość, łącza do plików");
+                active: App.left-panel == "images";
+                clicked => {
+                    App.cmd("panel", "images");
+                }
+            }
+        }
+    }
+    Group {
         title: @tr("Nagłówek i stopka");
         last: true;
         Col {

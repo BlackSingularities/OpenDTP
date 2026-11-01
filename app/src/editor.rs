@@ -1053,8 +1053,8 @@ impl Editor {
         self.changed();
     }
 
-    pub fn find_run(&mut self, needle: &str, case: bool, whole: bool) {
-        self.find = edit::find_all(self.story_ref(), needle, case, whole);
+    pub fn find_run(&mut self, needle: &str, opts: &edit::FindOpts) {
+        self.find = edit::find_all_ex(self.story_ref(), needle, opts);
         let (a, _) = self.range();
         self.find_i = self.find.iter().position(|&(p, s, _)| (p, s) >= (a.para, a.off)).unwrap_or(0);
     }
@@ -1071,16 +1071,25 @@ impl Editor {
         true
     }
 
-    pub fn replace_all(&mut self, needle: &str, with: &str, case: bool, whole: bool) -> usize {
-        let hits = edit::find_all(self.story_ref(), needle, case, whole);
+    pub fn replace_all(&mut self, needle: &str, with: &str, opts: &edit::FindOpts) -> usize {
+        let hits = edit::find_all_ex(self.story_ref(), needle, opts);
         if hits.is_empty() {
             return 0;
         }
+        // Wyrażenie regularne: w zamienniku działają odwołania do grup ($1, ${nazwa}).
+        let re = if opts.regex { opts.pattern(needle).ok() } else { None };
         self.begin(Kind::Other);
         for &(p, a, b) in hits.iter().rev() {
             let fmt = self.story_ref().paras[p].fmt_at(a + 1);
+            let text = match &re {
+                Some(re) => {
+                    let found = self.story_ref().paras[p].text()[a..b].to_string();
+                    re.replace(&found, with).to_string()
+                }
+                None => with.to_string(),
+            };
             edit::delete(self.story_mut(), At::new(p, a), At::new(p, b));
-            edit::insert_text(self.story_mut(), At::new(p, a), with, &fmt);
+            edit::insert_text(self.story_mut(), At::new(p, a), &text, &fmt);
         }
         self.changed();
         hits.len()

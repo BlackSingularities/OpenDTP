@@ -312,6 +312,57 @@ pub fn find_all(s: &Story, needle: &str, case: bool, whole: bool) -> Vec<(usize,
     out
 }
 
+/// Opcje wyszukiwania: wielkość liter, całe wyrazy, wyrażenie regularne, tylko akapity danego stylu.
+#[derive(Clone, Debug, Default)]
+pub struct FindOpts {
+    pub case: bool,
+    pub whole: bool,
+    pub regex: bool,
+    /// Identyfikator stylu akapitu (pusty – wszystkie).
+    pub style: String,
+}
+
+impl FindOpts {
+    /// Skompilowany wzorzec (dla `regex`); `Err` – opis błędu we wzorcu.
+    pub fn pattern(&self, needle: &str) -> Result<regex::Regex, String> {
+        let mut src = if self.regex { needle.to_string() } else { regex::escape(needle) };
+        if self.whole {
+            src = format!(r"\b(?:{src})\b");
+        }
+        regex::RegexBuilder::new(&src).case_insensitive(!self.case).build().map_err(|e| e.to_string())
+    }
+}
+
+/// Wyszukiwanie z opcjami. Pusty wynik przy błędnym wzorcu (opis błędu – `FindOpts::pattern`).
+pub fn find_all_ex(s: &Story, needle: &str, o: &FindOpts) -> Vec<(usize, usize, usize)> {
+    let mut out = Vec::new();
+    if needle.is_empty() && o.style.is_empty() {
+        return out;
+    }
+    // Sam styl bez tekstu – trafieniem jest cały akapit.
+    if needle.is_empty() {
+        for (pi, p) in s.paras.iter().enumerate() {
+            if p.style == o.style && p.len() > 0 {
+                out.push((pi, 0, p.len()));
+            }
+        }
+        return out;
+    }
+    let Ok(re) = o.pattern(needle) else { return out };
+    for (pi, p) in s.paras.iter().enumerate() {
+        if !o.style.is_empty() && p.style != o.style {
+            continue;
+        }
+        let t = p.text();
+        for m in re.find_iter(&t) {
+            if m.end() > m.start() {
+                out.push((pi, m.start(), m.end()));
+            }
+        }
+    }
+    out
+}
+
 /// Liczba wyrazów i znaków (bez spacji / ze spacjami).
 pub fn stats(s: &Story) -> (usize, usize, usize) {
     let mut words = 0;

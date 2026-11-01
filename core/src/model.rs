@@ -1663,6 +1663,51 @@ impl Document {
         }
     }
 
+    /// Koniec rozdziału zaczynającego się nagłówkiem `i`: pierwszy akapit z nagłówkiem
+    /// tego samego albo wyższego rzędu (albo koniec treści).
+    pub fn chapter_end(&self, i: usize) -> usize {
+        let Some(lvl) = self.body.paras.get(i).and_then(|p| self.outline_level(p)) else { return (i + 1).min(self.body.paras.len()) };
+        let mut j = i + 1;
+        while j < self.body.paras.len() {
+            if self.outline_level(&self.body.paras[j]).is_some_and(|l| l <= lvl) {
+                break;
+            }
+            j += 1;
+        }
+        j
+    }
+
+    /// Przesuwa rozdział (nagłówek `i` z podrozdziałami) przed poprzedni albo za następny rozdział
+    /// tego samego rzędu – nie wychodzi poza rozdział nadrzędny. Zwraca nowy indeks nagłówka.
+    pub fn move_chapter(&mut self, i: usize, up: bool) -> Option<usize> {
+        let lvl = self.outline_level(self.body.paras.get(i)?)?;
+        let end = self.chapter_end(i);
+        if up {
+            let mut j = i;
+            loop {
+                if j == 0 {
+                    return None;
+                }
+                j -= 1;
+                match self.outline_level(&self.body.paras[j]) {
+                    Some(l) if l == lvl => break,
+                    Some(l) if l < lvl => return None,
+                    _ => {}
+                }
+            }
+            // [j, i) – poprzedni rozdział, [i, end) – przesuwany.
+            self.body.paras[j..end].rotate_left(i - j);
+            Some(j)
+        } else {
+            if end >= self.body.paras.len() || self.outline_level(&self.body.paras[end]) != Some(lvl) {
+                return None;
+            }
+            let end2 = self.chapter_end(end);
+            self.body.paras[i..end2].rotate_left(end - i);
+            Some(i + (end2 - end))
+        }
+    }
+
     /// Wymiary obrazu w pikselach (dla linkowanego – oryginału, nie podglądu).
     pub fn image_px(&self, asset: &str) -> Option<(u32, u32)> {
         match self.links.get(asset) {

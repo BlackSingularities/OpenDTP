@@ -343,19 +343,19 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
                 let t = opendtp_core::edit::fragment_text(&f);
                 if !t.contains('\n') && t.len() < 100 {
                     app.set_find_text(t.clone().into());
-                    st.ed.find_run(&t, app.get_find_case(), app.get_find_whole());
+                    st.ed.find_run(&t, &find_opts(&app));
                 }
             }
             find_info(st);
         }
         "find-run" => {
-            st.ed.find_run(arg, app.get_find_case(), app.get_find_whole());
+            st.ed.find_run(arg, &find_opts(&app));
             find_info(st);
         }
         "find-next" | "find-prev" => {
             if st.ed.find.is_empty() {
                 let t = app.get_find_text().to_string();
-                st.ed.find_run(&t, app.get_find_case(), app.get_find_whole());
+                st.ed.find_run(&t, &find_opts(&app));
                 st.ed.find_i = st.ed.find_i.wrapping_sub(1);
             }
             if st.ed.story != StoryRef::Body {
@@ -374,13 +374,13 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
                 st.ed.insert(&with);
             }
             let t = app.get_find_text().to_string();
-            st.ed.find_run(&t, app.get_find_case(), app.get_find_whole());
+            st.ed.find_run(&t, &find_opts(&app));
             st.ed.find_select(0);
             find_info(st);
             scroll = true;
         }
         "replace-all" => {
-            let n = st.ed.replace_all(&app.get_find_text(), &app.get_replace_text(), app.get_find_case(), app.get_find_whole());
+            let n = st.ed.replace_all(&app.get_find_text(), &app.get_replace_text(), &find_opts(&app));
             toast(st, &opendtp_core::trf!("Zamieniono: {}", n));
             st.ed.find.clear();
             find_info(st);
@@ -2189,6 +2189,125 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             } else {
                 let cur = app.get_left_panel();
                 app.set_left_panel(if cur == arg { "".into() } else { arg.into() });
+                if arg == "library" {
+                    library_list(&app);
+                }
+            }
+        }
+        "lib-save" => {
+            if st.ed.obj.is_none() && !st.ed.has_sel() {
+                toast(st, tr("Zaznacz tekst albo obiekty, które chcesz zapisać w bibliotece"));
+                return;
+            }
+            let name = match st.ed.object() {
+                Some(o) if !o.name.is_empty() => o.name.clone(),
+                Some(o) => kind_label(o),
+                None => {
+                    let t = opendtp_core::edit::fragment_text(&st.ed.fragment());
+                    t.lines().next().unwrap_or("").chars().take(40).collect::<String>().trim().to_string()
+                }
+            };
+            app.set_lib_name(name.into());
+            app.set_dialog("lib-save".into());
+            return;
+        }
+        "lib-save-apply" => {
+            app.set_dialog("".into());
+            let name = arg.trim();
+            let res = if let Some(id) = st.ed.obj {
+                let ids: Vec<u64> = std::iter::once(id).chain(st.ed.multi.iter().copied()).collect();
+                opendtp_core::library::save_objects(name, &st.ed.doc, &ids)
+            } else {
+                opendtp_core::library::save_text(name, &st.ed.doc, st.ed.fragment())
+            };
+            match res {
+                Ok(_) => toast(st, &opendtp_core::trf!("Zapisano w bibliotece: {}", name)),
+                Err(e) => toast(st, &e),
+            }
+            library_list(&app);
+            return;
+        }
+        "lib-insert" => {
+            let doc = match opendtp_core::library::load(std::path::Path::new(arg)) {
+                Ok(d) => d,
+                Err(e) => {
+                    toast(st, &e);
+                    return;
+                }
+            };
+            // Style elementu, których nie ma w dokumencie.
+            let missing: Vec<Style> = doc.styles.iter().filter(|s| st.ed.doc.style(&s.id).is_none()).cloned().collect();
+            if !missing.is_empty() {
+                st.ed.begin(Kind::Other);
+                st.ed.doc.styles.extend(missing);
+                st.ed.changed();
+            }
+            if doc.objects.is_empty() {
+                if st.ed.obj.is_some() {
+                    st.ed.obj = None;
+                }
+                st.ed.paste(&doc.body.paras);
+                scroll = true;
+            } else {
+                let ps = st.ed.doc.page.clone();
+                let (page, y) = st.ed.caret_page().map(|c| (c.0, c.2)).unwrap_or((0, ps.margin_top));
+                let mut map: Vec<(u64, u64)> = Vec::new();
+                let mut first = None;
+                for o in &doc.objects {
+                    let mut c = o.clone();
+                    c.page = page;
+                    c.x += ps.margin_left;
+                    c.y += y;
+                    if let ObjKind::Image { asset, .. } = &mut c.kind {
+                        let key = format!("img{}", st.ed.doc.new_id());
+                        if let Some(a) = doc.assets.get(asset.as_str()) {
+                            st.ed.doc.assets.insert(key.clone(), a.clone());
+                        }
+                        if let Some(l) = doc.links.get(asset.as_str()) {
+                            st.ed.doc.links.insert(key.clone(), l.clone());
+                        }
+                        *asset = key;
+                    }
+                    let new = st.ed.add_object(c);
+                    map.push((o.id, new));
+                    first.get_or_insert(new);
+                }
+                // Łańcuchy ramek – nowe identyfikatory.
+                for &(_, new) in &map {
+                    if let Some(ObjKind::Text { next, .. }) = st.ed.doc.object_mut(new).map(|o| &mut o.kind) {
+                        *next = next.and_then(|n| map.iter().find(|m| m.0 == n).map(|m| m.1));
+                    }
+                }
+                st.ed.relayout();
+                st.ed.obj = first;
+                st.ed.multi = map.iter().map(|m| m.1).filter(|id| Some(*id) != first).collect();
+            }
+        }
+        "lib-remove" => {
+            if let Err(e) = opendtp_core::library::remove(std::path::Path::new(arg)) {
+                toast(st, &e);
+            }
+            library_list(&app);
+            return;
+        }
+        "chapter-move" => {
+            let (p, dir) = arg.split_once(':').unwrap_or((arg, "down"));
+            let Ok(p) = p.parse::<usize>() else { return };
+            st.ed.begin(Kind::Other);
+            let moved = st.ed.doc.move_chapter(p, dir == "up");
+            match moved {
+                Some(np) => {
+                    st.ed.obj = None;
+                    st.ed.story = StoryRef::Body;
+                    st.ed.anchor = At::new(np, 0);
+                    st.ed.head = At::new(np, 0);
+                    st.ed.changed();
+                    scroll = true;
+                }
+                None => {
+                    st.ed.changed();
+                    toast(st, tr("Rozdziału nie da się przesunąć dalej w obrębie rozdziału nadrzędnego"));
+                }
             }
         }
         "goto-para" => {
@@ -2617,12 +2736,36 @@ thread_local! {
     static OBJ_CLIP: std::cell::RefCell<Option<Object>> = const { std::cell::RefCell::new(None) };
 }
 
+/// Lista elementów biblioteki do panelu.
+fn library_list(app: &App) {
+    let items: Vec<ItemV> = opendtp_core::library::list()
+        .into_iter()
+        .map(|i| ItemV {
+            id: i.path.to_string_lossy().to_string().into(),
+            label: i.name.into(),
+            hint: if i.objects { tr("obiekty") } else { tr("tekst") }.into(),
+            icon: commands::icon(if i.objects { "shapes" } else { "file-text" }),
+            ..Default::default()
+        })
+        .collect();
+    app.set_library(ModelRc::new(VecModel::from(items)));
+}
+
+/// Opcje wyszukiwania z panelu Znajdź i zamień.
+fn find_opts(app: &App) -> opendtp_core::edit::FindOpts {
+    opendtp_core::edit::FindOpts { case: app.get_find_case(), whole: app.get_find_whole(), regex: app.get_find_regex(), style: app.get_find_style().to_string() }
+}
+
 fn find_info(st: &State) {
     if let Some(ui) = st.ui.upgrade() {
         let app = ui.global::<App>();
         let n = st.ed.find.len();
-        let txt = if app.get_find_text().is_empty() {
+        let opts = find_opts(&app);
+        let bad = if opts.regex { opts.pattern(&app.get_find_text()).err() } else { None };
+        let txt = if app.get_find_text().is_empty() && opts.style.is_empty() {
             String::new()
+        } else if let Some(e) = bad {
+            opendtp_core::trf!("Błędny wzorzec: {}", e.lines().last().unwrap_or(""))
         } else if n == 0 {
             tr("Brak wyników").to_string()
         } else {

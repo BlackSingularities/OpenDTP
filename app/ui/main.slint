@@ -628,6 +628,42 @@ export component AppWindow inherits Window {
             lf.focus-input();
         }
     }
+    if App.dialog == "lib-save": Dialog {
+        width: parent.width;
+        height: parent.height;
+        title: @tr("Zapisz w bibliotece");
+        lnf := Field {
+            tip: @tr("Nazwa elementu w bibliotece");
+            w: 384px;
+            text <=> App.lib-name;
+            placeholder: @tr("Nazwa");
+            accepted(t) => {
+                App.cmd("lib-save-apply", t);
+            }
+        }
+        HorizontalLayout {
+            alignment: end;
+            spacing: 8px;
+            Button {
+                tip: @tr("Zamknij bez zapisywania");
+                label: @tr("Anuluj");
+                clicked => {
+                    App.dialog = "";
+                }
+            }
+            Button {
+                tip: @tr("Zapisz zaznaczony tekst albo obiekty do ponownego użycia w innych dokumentach");
+                label: @tr("Zapisz");
+                primary: true;
+                clicked => {
+                    App.cmd("lib-save-apply", App.lib-name);
+                }
+            }
+        }
+        init => {
+            lnf.focus-input();
+        }
+    }
     if App.dialog == "ai": Dialog {
         width: parent.width;
         height: parent.height;

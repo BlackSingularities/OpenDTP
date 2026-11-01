@@ -5,6 +5,7 @@ import { ScrollView, ListView, TextEdit } from "std-widgets.slint";
 import { Theme } from "theme.slint";
 import { Icons } from "icons.slint";
 import { App, NavV, StyleV, ImgV } from "state.slint";
+import { MenuButton } from "ribbon.slint";
 import { TipArea, IconButton, Field, Spin, Switch, MenuItem, MenuSep, Segmented, IconSeg, Toggle, Label, Dim, Button, Slider } from "widgets.slint";
 
 component PanelHead inherits HorizontalLayout {
@@ -96,6 +97,33 @@ export component LeftPanel inherits Rectangle {
                         tip: @tr("Przejdź do: {}", n.label);
                         clicked => {
                             App.cmd("goto-para", n.para);
+                        }
+                    }
+                    // Przesuwanie rozdziału (z podrozdziałami) – wyraźne pod kursorem.
+                    HorizontalLayout {
+                        x: parent.width - self.width - 30px;
+                        width: 52px;
+                        spacing: 0px;
+                        opacity: nta.has-hover || n.current ? 1 : 0.3;
+                        IconButton {
+                            icon: Icons.chevron-up;
+                            size: 24px;
+                            icon-size: 13px;
+                            y: (parent.height - self.height) / 2;
+                            tip: @tr("Przesuń rozdział wyżej (razem z podrozdziałami)");
+                            clicked => {
+                                App.cmd("chapter-move", n.para + ":up");
+                            }
+                        }
+                        IconButton {
+                            icon: Icons.chevron-down;
+                            size: 24px;
+                            icon-size: 13px;
+                            y: (parent.height - self.height) / 2;
+                            tip: @tr("Przesuń rozdział niżej (razem z podrozdziałami)");
+                            clicked => {
+                                App.cmd("chapter-move", n.para + ":down");
+                            }
                         }
                     }
                 }
@@ -211,6 +239,86 @@ export component LeftPanel inherits Rectangle {
                     tip: @tr("Osadź wszystkie obrazy linkowane");
                     clicked => {
                         App.cmd("links-embed-all", "");
+                    }
+                }
+            }
+        }
+        if App.left-panel == "library": VerticalLayout {
+            PanelHead {
+                title: @tr("Biblioteka");
+                icon: Icons.book-a;
+                close => {
+                    App.left-panel = "";
+                }
+            }
+            if App.library.length == 0: Dim {
+                text: @tr("Biblioteka jest pusta. Zaznacz tekst albo obiekty (np. logo, ramkę z podpisem) i wybierz „Zapisz w bibliotece”.");
+                wrap: word-wrap;
+                x: 14px;
+                width: parent.width - 28px;
+                height: 76px;
+            }
+            ListView {
+                for it in App.library: Rectangle {
+                    height: 34px;
+                    border-radius: Theme.r-small;
+                    background: lta.has-hover ? Theme.hover : transparent;
+                    lta := TipArea {
+                        tip: @tr("Wstaw: {}", it.label);
+                        clicked => {
+                            App.cmd("lib-insert", it.id);
+                        }
+                    }
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        padding-right: 6px;
+                        spacing: 8px;
+                        Image {
+                            source: it.icon;
+                            width: 15px;
+                            height: 15px;
+                            y: (parent.height - self.height) / 2;
+                            colorize: Theme.text-faint;
+                        }
+                        Text {
+                            text: it.label;
+                            font-family: Theme.font;
+                            font-size: Theme.fs;
+                            color: Theme.text;
+                            vertical-alignment: center;
+                            overflow: elide;
+                            horizontal-stretch: 1;
+                        }
+                        Text {
+                            text: it.hint;
+                            font-family: Theme.font;
+                            font-size: Theme.fs-small;
+                            color: Theme.text-faint;
+                            vertical-alignment: center;
+                        }
+                        IconButton {
+                            icon: Icons.trash-2;
+                            size: 24px;
+                            icon-size: 13px;
+                            y: (parent.height - self.height) / 2;
+                            tip: @tr("Usuń z biblioteki");
+                            clicked => {
+                                App.cmd("lib-remove", it.id);
+                            }
+                        }
+                    }
+                }
+            }
+            HorizontalLayout {
+                padding-left: 10px;
+                padding-right: 10px;
+                padding-top: 6px;
+                Button {
+                    label: @tr("Zapisz zaznaczenie");
+                    icon: Icons.plus;
+                    tip: @tr("Zapisz zaznaczony tekst albo obiekty do ponownego użycia w innych dokumentach");
+                    clicked => {
+                        App.cmd("lib-save", "");
                     }
                 }
             }
@@ -383,6 +491,15 @@ export component RightPanel inherits Rectangle {
                             App.cmd("find-run", App.find-text);
                         }
                     }
+                    Toggle {
+                        icon: Icons.text-select;
+                        on: App.find-regex;
+                        tip: @tr("Wyrażenie regularne: \\d+ – liczby, (a|b) – jedno z dwóch, w zamienniku $1 – pierwsza grupa");
+                        toggled => {
+                            App.find-regex = !App.find-regex;
+                            App.cmd("find-run", App.find-text);
+                        }
+                    }
                     Rectangle {
                         horizontal-stretch: 1;
                     }
@@ -412,6 +529,25 @@ export component RightPanel inherits Rectangle {
                         tip: @tr("Zamień wszystkie wystąpienia w dokumencie");
                         clicked => {
                             App.cmd("replace-all", "");
+                        }
+                    }
+                }
+                HorizontalLayout {
+                    spacing: 6px;
+                    Dim {
+                        text: @tr("Styl:");
+                    }
+                    MenuButton {
+                        horizontal-stretch: 1;
+                        icon: Icons.letter-text;
+                        label: App.find-style == "" ? @tr("Wszystkie akapity") : App.find-style-name;
+                        tip: @tr("Szukaj tylko w akapitach wybranego stylu (bez tekstu – wszystkie akapity tego stylu)");
+                        items: App.find-styles;
+                        current: App.find-style;
+                        menu-w: 240px;
+                        picked(id) => {
+                            App.find-style = id;
+                            App.cmd("find-run", App.find-text);
                         }
                     }
                 }
