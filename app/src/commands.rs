@@ -78,6 +78,8 @@ pub const ALL: &[Cmd] = &[
     c("shape-rect", "Kształt: prostokąt", "square", ""),
     c("shape-ellipse", "Kształt: elipsa", "circle", ""),
     c("shape-line", "Kształt: linia", "minus", ""),
+    c("table", "Wstaw tabelę", "layout-template", ""),
+    c("page-border", "Obramowanie strony", "square-dashed", ""),
     c("chart-column", "Wykres kolumnowy", "chart-column", ""),
     c("chart-pie", "Wykres kołowy", "chart-pie", ""),
     c("chart-line", "Wykres liniowy", "chart-line", ""),

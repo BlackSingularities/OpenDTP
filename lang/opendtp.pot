@@ -2330,3 +2330,81 @@ msgstr ""
 msgid "np. Ulotka na otwarcie kawiarni „Pod Lipą”: menu śniadaniowe, godziny, rabat na start, ciepłe kolory"
 msgstr ""
 
+msgid "Minimalizuj"
+msgstr ""
+
+msgid "Przywróć"
+msgstr ""
+
+msgid "Maksymalizuj"
+msgstr ""
+
+msgid "Tabela"
+msgstr ""
+
+msgid "Wstaw tabelę – dane edytujesz w panelu właściwości"
+msgstr ""
+
+msgid "Tło strony"
+msgstr ""
+
+msgid "Znak wodny, np. PROJEKT"
+msgstr ""
+
+msgid "Ukośny napis w tle każdej strony"
+msgstr ""
+
+msgid "POUFNE"
+msgstr ""
+
+msgid "Znak wodny „POUFNE”"
+msgstr ""
+
+msgid "Bez znaku wodnego"
+msgstr ""
+
+msgid "Obramowanie strony"
+msgstr ""
+
+msgid "Ramka dookoła każdej strony"
+msgstr ""
+
+msgid "TABELA"
+msgstr ""
+
+msgid "Każdy wiersz w osobnej linii, komórki oddzielone średnikiem (albo tabulatorem – można wkleić z Excela)."
+msgstr ""
+
+msgid "Nagłówek"
+msgstr ""
+
+msgid "Pasy"
+msgstr ""
+
+msgid "Kolor nagłówka"
+msgstr ""
+
+msgid "Pozycja"
+msgstr ""
+
+msgid "Ilość"
+msgstr ""
+
+msgid "Cena"
+msgstr ""
+
+msgid "Razem"
+msgstr ""
+
+msgid "Skład"
+msgstr ""
+
+msgid "Druk"
+msgstr ""
+
+msgid "Tabela nie może być pusta"
+msgstr ""
+
+msgid "Wstaw tabelę"
+msgstr ""
+

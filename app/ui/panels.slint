@@ -481,6 +481,64 @@ export component RightPanel inherits Card {
                             }
                         }
                     }
+                    if App.obj-kind == "table": VerticalLayout {
+                        spacing: 6px;
+                        Section {
+                            text: @tr("TABELA");
+                        }
+                        Dim {
+                            text: @tr("Każdy wiersz w osobnej linii, komórki oddzielone średnikiem (albo tabulatorem – można wkleić z Excela).");
+                            wrap: word-wrap;
+                            height: 32px;
+                        }
+                        TextEdit {
+                            height: 170px;
+                            text <=> App.table-data;
+                            font-size: 12px;
+                        }
+                        HorizontalLayout {
+                            spacing: 8px;
+                            Switch {
+                                label: @tr("Nagłówek");
+                                on: App.table-header;
+                                toggled => {
+                                    App.cmd("table-header", "");
+                                }
+                            }
+                            Switch {
+                                label: @tr("Pasy");
+                                on: App.table-stripes;
+                                toggled => {
+                                    App.cmd("table-stripes", "");
+                                }
+                            }
+                        }
+                        HorizontalLayout {
+                            spacing: 6px;
+                            for c in [#1f4e79, #00796b, #8a1c1c, #5b3a7a, #d05a00, #333333]: Rectangle {
+                                width: 22px;
+                                height: 22px;
+                                border-radius: 4px;
+                                background: c;
+                                border-width: App.table-accent == c ? 2px : 0;
+                                border-color: Theme.accent;
+                                TipArea {
+                                    tip: @tr("Kolor nagłówka");
+                                    clicked => {
+                                        App.table-accent = c;
+                                        App.cmd("table-accent", "");
+                                    }
+                                }
+                            }
+                        }
+                        Button {
+                            label: @tr("Zastosuj dane");
+                            primary: true;
+                            clicked => {
+                                App.cmd("table-data", App.table-data);
+                            }
+                        }
+                    }
                     if App.obj-kind == "path-text": VerticalLayout {
                         spacing: 6px;
                         Section {

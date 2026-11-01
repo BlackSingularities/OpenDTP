@@ -837,6 +837,59 @@ impl Default for Chart {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Table {
+    pub rows: Vec<Vec<String>>,
+    #[serde(default = "yes")]
+    pub header: bool,
+    /// Co drugi wiersz z delikatnym tłem.
+    #[serde(default = "yes")]
+    pub stripes: bool,
+    #[serde(default = "chart_font")]
+    pub font: String,
+    #[serde(default = "table_size")]
+    pub size: f32,
+    #[serde(default = "table_accent")]
+    pub accent: Color,
+    #[serde(default = "table_line")]
+    pub line: Color,
+    /// Wyrównanie kolumn liczbowych do prawej.
+    #[serde(default = "yes")]
+    pub numbers_right: bool,
+}
+
+fn table_size() -> f32 {
+    10.0
+}
+
+fn table_accent() -> Color {
+    Color::rgb(0x1f, 0x4e, 0x79)
+}
+
+fn table_line() -> Color {
+    Color::rgb(0xd0, 0xd5, 0xdd)
+}
+
+impl Default for Table {
+    fn default() -> Self {
+        Table {
+            rows: vec![
+                vec!["Pozycja".into(), "Ilość".into(), "Cena".into(), "Razem".into()],
+                vec!["Projekt".into(), "1".into(), "1200".into(), "1200".into()],
+                vec!["Skład".into(), "12".into(), "80".into(), "960".into()],
+                vec!["Druk".into(), "500".into(), "1,2".into(), "600".into()],
+            ],
+            header: true,
+            stripes: true,
+            font: chart_font(),
+            size: table_size(),
+            accent: table_accent(),
+            line: table_line(),
+            numbers_right: true,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum ObjKind {
     /// Ramka tekstowa o dowolnym kształcie. Tekst należy do pierwszej ramki łańcucha (`next`).
@@ -864,6 +917,8 @@ pub enum ObjKind {
     /// Sam kształt (wypełnienie i obrys).
     Shape,
     Chart { chart: Chart },
+    /// Tabela: wiersze komórek, pierwszy wiersz może być nagłówkiem.
+    Table { table: Table },
     /// Tekst biegnący po krzywej kształtu.
     PathText {
         story: Story,
@@ -938,6 +993,7 @@ impl Object {
             ObjKind::Text { .. } => "text",
             ObjKind::Image { .. } => "image",
             ObjKind::Shape => "shape",
+            ObjKind::Table { .. } => "table",
             ObjKind::Chart { .. } => "chart",
             ObjKind::PathText { .. } => "path-text",
         }
@@ -970,6 +1026,18 @@ pub struct PageSetup {
     /// Numeracja stron od tej liczby.
     #[serde(default = "one32")]
     pub first_number: u32,
+    /// Znak wodny – ukośny napis na każdej stronie (pusty – brak).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub watermark: String,
+    /// Obramowanie strony (odstęp od krawędzi kartki w punktach).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub border: Option<StrokeStyle>,
+    #[serde(default = "border_inset")]
+    pub border_inset: f32,
+}
+
+fn border_inset() -> f32 {
+    24.0
 }
 
 fn default_hd() -> f32 {
@@ -1001,6 +1069,9 @@ impl Default for PageSetup {
             different_first: false,
             color: Color::WHITE,
             first_number: 1,
+            watermark: String::new(),
+            border: None,
+            border_inset: border_inset(),
         }
     }
 }

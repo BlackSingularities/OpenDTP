@@ -2330,3 +2330,81 @@ msgstr "Custom (OpenAI-compatible)"
 msgid "np. Ulotka na otwarcie kawiarni „Pod Lipą”: menu śniadaniowe, godziny, rabat na start, ciepłe kolory"
 msgstr "e.g. Flyer for the opening of the “Linden Tree” café: breakfast menu, opening hours, launch discount, warm colours"
 
+msgid "Minimalizuj"
+msgstr "Minimise"
+
+msgid "Przywróć"
+msgstr "Restore"
+
+msgid "Maksymalizuj"
+msgstr "Maximise"
+
+msgid "Tabela"
+msgstr "Table"
+
+msgid "Wstaw tabelę – dane edytujesz w panelu właściwości"
+msgstr "Insert a table – edit its data in the properties panel"
+
+msgid "Tło strony"
+msgstr "Page background"
+
+msgid "Znak wodny, np. PROJEKT"
+msgstr "Watermark, e.g. DRAFT"
+
+msgid "Ukośny napis w tle każdej strony"
+msgstr "Diagonal text behind every page"
+
+msgid "POUFNE"
+msgstr "CONFIDENTIAL"
+
+msgid "Znak wodny „POUFNE”"
+msgstr "“CONFIDENTIAL” watermark"
+
+msgid "Bez znaku wodnego"
+msgstr "No watermark"
+
+msgid "Obramowanie strony"
+msgstr "Page border"
+
+msgid "Ramka dookoła każdej strony"
+msgstr "A border around every page"
+
+msgid "TABELA"
+msgstr "TABLE"
+
+msgid "Każdy wiersz w osobnej linii, komórki oddzielone średnikiem (albo tabulatorem – można wkleić z Excela)."
+msgstr "One row per line, cells separated by semicolons (or tabs – you can paste from Excel)."
+
+msgid "Nagłówek"
+msgstr "Header"
+
+msgid "Pasy"
+msgstr "Stripes"
+
+msgid "Kolor nagłówka"
+msgstr "Header colour"
+
+msgid "Pozycja"
+msgstr "Item"
+
+msgid "Ilość"
+msgstr "Quantity"
+
+msgid "Cena"
+msgstr "Price"
+
+msgid "Razem"
+msgstr "Total"
+
+msgid "Skład"
+msgstr "Layout"
+
+msgid "Druk"
+msgstr "Print"
+
+msgid "Tabela nie może być pusta"
+msgstr "The table cannot be empty"
+
+msgid "Wstaw tabelę"
+msgstr "Insert table"
+

@@ -1038,6 +1038,14 @@ component InsertTab inherits HorizontalLayout {
                 App.cmd("shape", id);
             }
         }
+        BigButton {
+            icon: Icons.layout-template;
+            label: @tr("Tabela");
+            tip: @tr("Wstaw tabelę – dane edytujesz w panelu właściwości");
+            clicked => {
+                App.cmd("table", "");
+            }
+        }
         BigMenuButton {
             icon: Icons.chart-column;
             label: @tr("Wykres");
@@ -1210,6 +1218,46 @@ component DesignTab inherits HorizontalLayout {
                 tip: @tr("Motyw: {} – kroje i kolory stylów", t.label);
                 clicked => {
                     App.cmd("doc-theme", t.id);
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Tło strony");
+        Col {
+            Field {
+                w: 150px;
+                text: App.watermark;
+                placeholder: @tr("Znak wodny, np. PROJEKT");
+                tip: @tr("Ukośny napis w tle każdej strony");
+                accepted(t) => {
+                    App.cmd("watermark", t);
+                }
+            }
+            Row {
+                RowButton {
+                    icon: Icons.sparkles;
+                    label: @tr("POUFNE");
+                    tip: @tr("Znak wodny „POUFNE”");
+                    clicked => {
+                        App.cmd("watermark", @tr("POUFNE"));
+                    }
+                }
+                RowButton {
+                    icon: Icons.x;
+                    label: @tr("Usuń");
+                    tip: @tr("Bez znaku wodnego");
+                    clicked => {
+                        App.cmd("watermark", "");
+                    }
+                }
+            }
+            Switch {
+                label: @tr("Obramowanie strony");
+                tip: @tr("Ramka dookoła każdej strony");
+                on: App.page-border;
+                toggled => {
+                    App.cmd("page-border", "");
                 }
             }
         }

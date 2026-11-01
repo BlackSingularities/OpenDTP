@@ -35,6 +35,7 @@ pub fn kind_label(o: &Object) -> String {
         ObjKind::Text { .. } => tr("Kształt tekstu").into(),
         ObjKind::Image { .. } => tr("Obraz").into(),
         ObjKind::Shape => tr("Kształt").into(),
+        ObjKind::Table { .. } => tr("Tabela").into(),
         ObjKind::Chart { .. } => tr("Wykres").into(),
         ObjKind::PathText { .. } => tr("Tekst na ścieżce").into(),
     }
@@ -669,6 +670,73 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             st.ed.add_object(o);
             object_selected(st);
             app.set_right_panel("props".into());
+        }
+        "table" => {
+            let page = st.ed.caret_page().map(|c| c.0).unwrap_or(0);
+            let ps = st.ed.doc.page.clone();
+            let y = st.ed.caret_page().map(|c| c.2).unwrap_or(ps.margin_top);
+            let mut t = Table::default();
+            t.rows = vec![
+                vec![tr("Pozycja").into(), tr("Ilość").into(), tr("Cena").into(), tr("Razem").into()],
+                vec![tr("Projekt").into(), "1".into(), "1200".into(), "1200".into()],
+                vec![tr("Skład").into(), "12".into(), "80".into(), "960".into()],
+                vec![tr("Druk").into(), "500".into(), "1,2".into(), "600".into()],
+            ];
+            if let Some(c) = st.ed.doc.style("heading1").and_then(|s| s.chars.color) {
+                t.accent = c;
+            }
+            let w = ps.content_width();
+            let h = t.rows.len() as f32 * 22.0;
+            let o = new_obj(page, ps.margin_left, y, w, h, Shape::rect(), ObjKind::Table { table: t }, WrapMode::TopBottom);
+            st.ed.add_object(o);
+            object_selected(st);
+            app.set_right_panel("props".into());
+        }
+        "table-data" => {
+            let rows: Vec<Vec<String>> = arg.lines().filter(|l| !l.trim().is_empty()).map(|l| l.split([';', '\t']).map(|c| c.trim().to_string()).collect()).collect();
+            if rows.is_empty() {
+                toast(st, tr("Tabela nie może być pusta"));
+                return;
+            }
+            let n = rows.len() as f32;
+            st.ed.edit_obj(&move |o| {
+                if let ObjKind::Table { table } = &mut o.kind {
+                    // Wysokość wiersza zostaje taka jak była.
+                    let rh = o.h / table.rows.len().max(1) as f32;
+                    table.rows = rows.clone();
+                    o.h = (rh * n).max(12.0);
+                }
+            });
+        }
+        "table-header" => st.ed.edit_obj(&|o| {
+            if let ObjKind::Table { table } = &mut o.kind {
+                table.header = !table.header;
+            }
+        }),
+        "table-stripes" => st.ed.edit_obj(&|o| {
+            if let ObjKind::Table { table } = &mut o.kind {
+                table.stripes = !table.stripes;
+            }
+        }),
+        "table-accent" => {
+            let c = color_of(app.get_table_accent());
+            st.ed.edit_obj(&move |o| {
+                if let ObjKind::Table { table } = &mut o.kind {
+                    table.accent = c;
+                }
+            });
+        }
+        "watermark" => {
+            st.ed.begin(Kind::Other);
+            st.ed.doc.page.watermark = arg.trim().to_string();
+            st.ed.changed();
+            app.set_watermark(arg.trim().into());
+        }
+        "page-border" => {
+            st.ed.begin(Kind::Other);
+            let p = &mut st.ed.doc.page;
+            p.border = if p.border.is_some() { None } else { Some(StrokeStyle { color: Color::rgb(0x40, 0x40, 0x40), width: 1.5, dash: vec![] }) };
+            st.ed.changed();
         }
         "symbol" => {
             st.ed.insert(arg);
@@ -1797,6 +1865,9 @@ pub fn object_selected(st: &mut State) {
         }
         if let ObjKind::PathText { story, .. } = &o.kind {
             app.set_path_text(story.text().into());
+        }
+        if let ObjKind::Table { table } = &o.kind {
+            app.set_table_data(table.rows.iter().map(|r| r.join(";")).collect::<Vec<_>>().join("\n").into());
         }
     }
 }

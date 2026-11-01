@@ -618,6 +618,7 @@ fn render_png(doc: &Document, layout: &Layout, o: &Object) -> Vec<u8> {
     let mut ops = Vec::new();
     match &o.kind {
         ObjKind::Chart { chart } => crate::paint::chart_ops(chart, geom::Rect::new(0.0, 0.0, o.w, o.h), &mut ops),
+        ObjKind::Table { table } => crate::paint::table_ops(table, geom::Rect::new(0.0, 0.0, o.w, o.h), &mut ops),
         _ => {
             // Tekst na ścieżce: lista rysowania strony ograniczona do tego obiektu, przesunięta do (0,0).
             let opts = crate::paint::PaintOpts { screen: false, marks: false, guides: false, misspelled: None, hide_obj: None };
@@ -662,7 +663,7 @@ fn objects_xml(ctx: &mut Ctx, page: usize) -> String {
                 let g = pic_graphic(&rel, o.w, o.h, src, &geom_xml(o), &ln_xml(o.stroke.as_ref()));
                 out.push_str(&anchor(ctx, o, z, o.x, o.y, o.w, o.h, wrap, &g));
             }
-            ObjKind::Chart { .. } | ObjKind::PathText { .. } => {
+            ObjKind::Chart { .. } | ObjKind::PathText { .. } | ObjKind::Table { .. } => {
                 let png = render_png(doc, layout, o);
                 if png.is_empty() {
                     continue;
@@ -888,7 +889,7 @@ pub fn export(doc: &Document, layout: &Layout, opts: &DocxOpts) -> Result<Vec<u8
     let sect = format!(
         concat!(
             r#"<w:sectPr>{refs}<w:pgSz w:w="{w}" w:h="{h}"{orient}/><w:pgMar w:top="{t}" w:right="{r}" w:bottom="{b}" w:left="{l}" w:header="{hd}" w:footer="{fd}" w:gutter="0"/>"#,
-            r#"<w:pgNumType w:start="{start}"/><w:cols w:num="{cols}" w:space="{gap}"{sep}/>{title}</w:sectPr>"#
+            r#"{borders}<w:pgNumType w:start="{start}"/><w:cols w:num="{cols}" w:space="{gap}"{sep}/>{title}</w:sectPr>"#
         ),
         refs = sect_refs,
         w = tw(ps.width),
@@ -905,6 +906,16 @@ pub fn export(doc: &Document, layout: &Layout, opts: &DocxOpts) -> Result<Vec<u8
         gap = tw(ps.column_gap),
         sep = if ps.column_rule { r#" w:sep="1""# } else { "" },
         title = if ps.different_first { "<w:titlePg/>" } else { "" },
+        borders = match &ps.border {
+            Some(b) if b.width > 0.0 => {
+                let sz = (b.width * 8.0).round().clamp(2.0, 96.0) as i64;
+                let sp = ps.border_inset.round().clamp(0.0, 31.0) as i64;
+                let c = b.color.hex6();
+                let v = if b.dash.len() >= 2 { "dashed" } else { "single" };
+                format!(r#"<w:pgBorders w:offsetFrom="page"><w:top w:val="{v}" w:sz="{sz}" w:space="{sp}" w:color="{c}"/><w:left w:val="{v}" w:sz="{sz}" w:space="{sp}" w:color="{c}"/><w:bottom w:val="{v}" w:sz="{sz}" w:space="{sp}" w:color="{c}"/><w:right w:val="{v}" w:sz="{sz}" w:space="{sp}" w:color="{c}"/></w:pgBorders>"#)
+            }
+            _ => String::new(),
+        },
     );
     let bg = if ps.color != Color::WHITE { format!(r#"<w:background w:color="{}"/>"#, ps.color.hex6()) } else { String::new() };
     let document = format!(r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document {NS}>{bg}<w:body>{body}{sect}</w:body></w:document>"#);

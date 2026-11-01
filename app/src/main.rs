@@ -236,6 +236,10 @@ fn sync(st: &mut State, ui: &AppWindow) {
     app.set_orphans(ed.doc.settings.orphans);
     app.set_baseline_grid(ed.doc.settings.baseline_grid > 0.0);
     app.set_doc_theme(st.doc_theme.clone().into());
+    app.set_page_border(ps.border.is_some());
+    if app.get_watermark().as_str() != ps.watermark {
+        app.set_watermark(ps.watermark.clone().into());
+    }
 
     if let Some(o) = ed.object() {
         app.set_wrap_mode(wrap_index(o.wrap.mode));
@@ -318,6 +322,11 @@ fn sync(st: &mut State, ui: &AppWindow) {
                 }
             }
             ObjKind::Shape => {}
+            ObjKind::Table { table } => {
+                app.set_table_header(table.header);
+                app.set_table_stripes(table.stripes);
+                app.set_table_accent(slint_color(table.accent));
+            }
         }
     } else {
         app.set_linked(false);

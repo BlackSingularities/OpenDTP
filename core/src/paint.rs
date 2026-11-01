@@ -167,6 +167,15 @@ pub fn page_ops(doc: &Document, layout: &Layout, page: usize, o: &PaintOpts) -> 
     let mut ops = Vec::new();
     let ps = &doc.page;
     ops.push(Op::Fill { path: Path::rect(Rect::new(0.0, 0.0, ps.width, ps.height)), paint: Paint::Solid(ps.color), opacity: 1.0 });
+    if let Some(b) = &ps.border {
+        if b.width > 0.0 {
+            let i = ps.border_inset;
+            ops.push(Op::Stroke { path: Path::rect(Rect::new(i, i, ps.width - 2.0 * i, ps.height - 2.0 * i)), color: b.color, width: b.width, dash: b.dash.clone(), opacity: 1.0 });
+        }
+    }
+    if !ps.watermark.trim().is_empty() {
+        watermark_ops(&ps.watermark, ps, &mut ops);
+    }
     let Some(info) = layout.pages.get(page) else { return ops };
     let objs: Vec<&Object> = doc.objects.iter().filter(|ob| ob.page == page && Some(ob.id) != o.hide_obj).collect();
 
@@ -233,6 +242,7 @@ fn object_ops(doc: &Document, layout: &Layout, ob: &Object, page: usize, o: &Pai
             }
         }
         ObjKind::Chart { chart } => chart_ops(chart, r, ops),
+        ObjKind::Table { table } => table_ops(table, r, ops),
         _ => {}
     }
     if let Some(s) = &ob.stroke {
@@ -731,6 +741,80 @@ pub fn chart_ops(ch: &Chart, r: Rect, ops: &mut Vec<Op>) {
             }
         }
     }
+}
+
+/// Znak wodny: napis po przekątnej strony, jasny i półprzezroczysty, za treścią.
+fn watermark_ops(text: &str, ps: &PageSetup, ops: &mut Vec<Op>) {
+    let ang = -(ps.height.atan2(ps.width));
+    let diag = (ps.width * ps.width + ps.height * ps.height).sqrt();
+    let mut props = CharProps { font: "Segoe UI".into(), size: 100.0, bold: true, color: Color::rgb(0xc8, 0xc8, 0xc8).with_alpha(110), ..CharProps::default() };
+    let (_, w0) = text::measure(text, &props);
+    props.size = (100.0 * diag * 0.7 / w0.max(1.0)).clamp(24.0, 160.0);
+    let (gs, w) = text::measure(text, &props);
+    let (cx, cy) = (ps.width / 2.0, ps.height / 2.0);
+    let (sin, cos) = ang.sin_cos();
+    let mut s = -w / 2.0;
+    let rise = props.size * 0.35;
+    for g in gs {
+        let x = cx + cos * s + sin * rise;
+        let y = cy + sin * s - cos * rise;
+        ops.push(Op::Glyphs(GlyphRun { font: g.font, size: g.size, color: props.color, fake_bold: g.fake_bold, fake_italic: false, outline: 0.0, glyphs: vec![(g.gid, x, y)], text: String::new(), ranges: vec![0..0], rot: ang, link: None }));
+        s += g.adv;
+    }
+}
+
+/// Tabela w prostokącie ramki: równe wiersze, kolumny dopasowane do treści.
+pub fn table_ops(t: &Table, r: Rect, ops: &mut Vec<Op>) {
+    let rows = t.rows.len().max(1);
+    let cols = t.rows.iter().map(|r| r.len()).max().unwrap_or(1).max(1);
+    let rh = r.h / rows as f32;
+    let fs = t.size.min(rh * 0.6).max(4.0);
+    let props = CharProps { font: t.font.clone(), size: fs, ..CharProps::default() };
+    // Szerokości kolumn proporcjonalnie do najdłuższej treści (z minimum).
+    let mut want = vec![20.0f32; cols];
+    for row in &t.rows {
+        for (c, cell) in row.iter().enumerate() {
+            let w = text::measure(cell, &props).1 + fs * 1.4;
+            want[c] = want[c].max(w);
+        }
+    }
+    let total: f32 = want.iter().sum();
+    let widths: Vec<f32> = want.iter().map(|w| w / total * r.w).collect();
+    let numeric = |c: usize| t.numbers_right && t.rows.iter().skip(if t.header { 1 } else { 0 }).all(|row| row.get(c).is_none_or(|v| v.trim().is_empty() || v.trim().replace([',', '.', ' ', '%', '-', '+'], "").chars().all(|ch| ch.is_ascii_digit() || "złeur$€".contains(ch))));
+    let mix = |c: Color, k: f32| Color::rgb((c.r as f32 * k + 255.0 * (1.0 - k)) as u8, (c.g as f32 * k + 255.0 * (1.0 - k)) as u8, (c.b as f32 * k + 255.0 * (1.0 - k)) as u8);
+    for (ri, row) in t.rows.iter().enumerate() {
+        let y = r.y + ri as f32 * rh;
+        let head = t.header && ri == 0;
+        let bg = if head { Some(t.accent) } else if t.stripes && ri % 2 == 0 { Some(mix(t.accent, 0.07)) } else { None };
+        if let Some(bg) = bg {
+            ops.push(Op::Fill { path: Path::rect(Rect::new(r.x, y, r.w, rh)), paint: Paint::Solid(bg), opacity: 1.0 });
+        }
+        let mut x = r.x;
+        for c in 0..cols {
+            let cell = row.get(c).map(|s| s.as_str()).unwrap_or("");
+            let w = widths[c];
+            let pad = fs * 0.6;
+            let right = numeric(c) && !head;
+            let color = if head { Color::WHITE } else { Color::rgb(0x22, 0x22, 0x22) };
+            label(ops, cell, if right { x + w - pad } else { x + pad }, y + rh / 2.0 + fs * 0.35, fs, color, &t.font, if right { 1.0 } else { 0.0 }, head);
+            x += w;
+        }
+    }
+    // Linie: poziome między wierszami, ramka dookoła i delikatne pionowe.
+    let mut p = Vec::new();
+    for ri in 1..rows {
+        let y = r.y + ri as f32 * rh;
+        p.push(PathCmd::M(r.x, y));
+        p.push(PathCmd::L(r.right(), y));
+    }
+    let mut x = r.x;
+    for w in widths.iter().take(cols - 1) {
+        x += w;
+        p.push(PathCmd::M(x, r.y));
+        p.push(PathCmd::L(x, r.bottom()));
+    }
+    ops.push(Op::Stroke { path: Path(p), color: t.line, width: 0.5, dash: vec![], opacity: 1.0 });
+    ops.push(Op::Stroke { path: Path::rect(r), color: t.line, width: 0.75, dash: vec![], opacity: 1.0 });
 }
 
 fn nice(span: f32) -> f32 {

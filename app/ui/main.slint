@@ -13,6 +13,30 @@ import { Backstage } from "backstage.slint";
 
 export { App, Theme, Icons, Tip, PageV, BoxV, NodeV, ItemV, StyleV, NavV, RecentV }
 
+/// Przycisk okna (minimalizuj, maksymalizuj, zamknij) w pasku tytułu.
+component WinButton inherits Rectangle {
+    in property <int> kind;
+    in property <string> tip;
+    width: 46px;
+    background: ta.pressed ? (kind == 3 ? #c42b1c : Theme.press) : ta.has-hover ? (kind == 3 ? #e81123 : Theme.hover) : transparent;
+    Path {
+        width: 10px;
+        height: 10px;
+        viewbox-width: 10;
+        viewbox-height: 10;
+        stroke: ta.has-hover && root.kind == 3 ? #ffffff : Theme.text;
+        stroke-width: 1px;
+        fill: transparent;
+        commands: root.kind == 1 ? "M 0 5 L 10 5" : root.kind == 3 ? "M 0 0 L 10 10 M 10 0 L 0 10" : App.maximized ? "M 2 0 L 10 0 L 10 8 M 0 2 L 8 2 L 8 10 L 0 10 Z" : "M 0 0 L 10 0 L 10 10 L 0 10 Z";
+    }
+    ta := TipArea {
+        tip: root.tip;
+        clicked => {
+            App.win(root.kind);
+        }
+    }
+}
+
 component TopBar inherits Rectangle {
     height: 40px * Theme.scale;
     background: Theme.panel;
@@ -157,29 +181,6 @@ component TopBar inherits Rectangle {
     }
 }
 
-/// Przycisk okna (minimalizuj, maksymalizuj, zamknij) w pasku tytułu.
-component WinButton inherits Rectangle {
-    in property <int> kind;
-    in property <string> tip;
-    width: 46px;
-    background: ta.pressed ? (kind == 3 ? #c42b1c : Theme.press) : ta.has-hover ? (kind == 3 ? #e81123 : Theme.hover) : transparent;
-    Path {
-        width: 10px;
-        height: 10px;
-        viewbox-width: 10;
-        viewbox-height: 10;
-        stroke: ta.has-hover && root.kind == 3 ? #ffffff : Theme.text;
-        stroke-width: 1px;
-        fill: transparent;
-        commands: root.kind == 1 ? "M 0 5 L 10 5" : root.kind == 3 ? "M 0 0 L 10 10 M 10 0 L 0 10" : App.maximized ? "M 2 0 L 10 0 L 10 8 M 0 2 L 8 2 L 8 10 L 0 10 Z" : "M 0 0 L 10 0 L 10 10 L 0 10 Z";
-    }
-    ta := TipArea {
-        tip: root.tip;
-        clicked => {
-            App.win(root.kind);
-        }
-    }
-}
 
 component StatusBar inherits Rectangle {
     height: 26px * Theme.scale;
