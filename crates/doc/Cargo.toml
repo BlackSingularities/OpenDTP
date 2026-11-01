@@ -1,0 +1,19 @@
+[package]
+name = "opendtp-doc"
+description = "OpenDTP – model dokumentu, style, geometria i edycja"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+name = "opendtp_doc"
+
+[dependencies]
+opendtp-base.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+i_overlay.workspace = true
+regex.workspace = true
+unicode-segmentation.workspace = true

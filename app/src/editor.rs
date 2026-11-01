@@ -42,6 +42,9 @@ pub enum Move {
     ParaDown,
 }
 
+/// Ile kroków cofania pamiętamy.
+const UNDO_LIMIT: usize = 300;
+
 pub struct Editor {
     pub doc: Document,
     pub path: Option<PathBuf>,
@@ -63,7 +66,7 @@ pub struct Editor {
     pub painter: Option<(CharFmt, Option<(String, ParaFmt)>)>,
     pub find: Vec<(usize, usize, usize)>,
     pub find_i: usize,
-    undo: Vec<Snap>,
+    undo: std::collections::VecDeque<Snap>,
     redo: Vec<Snap>,
     last_kind: Kind,
     last_time: Instant,
@@ -94,7 +97,7 @@ impl Editor {
             painter: None,
             find: Vec::new(),
             find_i: 0,
-            undo: Vec::new(),
+            undo: std::collections::VecDeque::new(),
             redo: Vec::new(),
             last_kind: Kind::Other,
             last_time: Instant::now(),
@@ -152,10 +155,8 @@ impl Editor {
         let now = Instant::now();
         let merge = kind != Kind::Other && kind == self.last_kind && now.duration_since(self.last_time).as_millis() < 1500;
         if !merge {
-            self.undo.push(Snap { doc: self.doc.clone(), story: self.story, anchor: self.anchor, head: self.head, obj: self.obj });
-            if self.undo.len() > 300 {
-                self.undo.remove(0);
-            }
+            let snap = Snap { doc: self.doc.clone(), story: self.story, anchor: self.anchor, head: self.head, obj: self.obj };
+            self.push_undo(snap);
         }
         self.redo.clear();
         self.last_kind = kind;
@@ -177,12 +178,20 @@ impl Editor {
         }
     }
 
+    /// Najstarszy krok wypada z przodu kolejki w stałym czasie (wcześniej `remove(0)` przesuwało całą listę).
+    fn push_undo(&mut self, snap: Snap) {
+        self.undo.push_back(snap);
+        if self.undo.len() > UNDO_LIMIT {
+            self.undo.pop_front();
+        }
+    }
+
     pub fn break_group(&mut self) {
         self.last_kind = Kind::Other;
     }
 
     pub fn undo(&mut self) -> bool {
-        let Some(s) = self.undo.pop() else { return false };
+        let Some(s) = self.undo.pop_back() else { return false };
         self.redo.push(Snap { doc: std::mem::replace(&mut self.doc, s.doc), story: self.story, anchor: self.anchor, head: self.head, obj: self.obj });
         self.story = s.story;
         self.anchor = s.anchor;
@@ -195,7 +204,8 @@ impl Editor {
 
     pub fn redo(&mut self) -> bool {
         let Some(s) = self.redo.pop() else { return false };
-        self.undo.push(Snap { doc: std::mem::replace(&mut self.doc, s.doc), story: self.story, anchor: self.anchor, head: self.head, obj: self.obj });
+        let snap = Snap { doc: std::mem::replace(&mut self.doc, s.doc), story: self.story, anchor: self.anchor, head: self.head, obj: self.obj };
+        self.push_undo(snap);
         self.story = s.story;
         self.anchor = s.anchor;
         self.head = s.head;
@@ -793,6 +803,25 @@ impl Editor {
     }
 
     /// Sortuje zaznaczone akapity alfabetycznie (polska kolejność liter: a < ą < b).
+    /// Usuwa zaznaczone akapity (w całości) i zwraca ich tekst – do zamiany tekstu w tabelę.
+    pub fn take_selected_paras(&mut self) -> Vec<String> {
+        let (a, b) = self.range();
+        self.begin(Kind::Other);
+        let s = self.story_mut();
+        let end = b.para.min(s.paras.len().saturating_sub(1));
+        if a.para > end {
+            return Vec::new();
+        }
+        let lines: Vec<String> = s.paras[a.para..=end].iter().map(|p| p.text()).collect();
+        s.paras.drain(a.para..=end);
+        // Pusty akapit na miejscu tekstu – w nim stanie kotwica tabeli.
+        s.paras.insert(a.para, Paragraph::default());
+        self.anchor = At::new(a.para, 0);
+        self.head = self.anchor;
+        self.changed();
+        lines
+    }
+
     pub fn sort_paras(&mut self, desc: bool) {
         let (a, b) = self.range();
         if a.para >= b.para {

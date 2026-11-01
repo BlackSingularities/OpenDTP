@@ -1,0 +1,22 @@
+[package]
+name = "opendtp-core"
+description = "OpenDTP – model dokumentu, silnik składu, renderer, eksport i aktualizacje"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+name = "opendtp_core"
+
+[dependencies]
+opendtp-base.workspace = true
+opendtp-doc.workspace = true
+opendtp-text.workspace = true
+opendtp-format.workspace = true
+opendtp-render.workspace = true
+opendtp-io.workspace = true
+opendtp-ai.workspace = true
+opendtp-update.workspace = true
+opendtp-tools.workspace = true

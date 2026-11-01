@@ -29,7 +29,7 @@ fn main() {
     rs.push_str("];\n");
     let out = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
     std::fs::write(out.join("icons.rs"), rs).unwrap();
-    // Tłumaczenia: lang/<kod>/LC_MESSAGES/opendtp.po (te same pliki czyta core/src/lang.rs).
+    // Tłumaczenia: lang/<kod>/LC_MESSAGES/opendtp.po (te same pliki czyta crates/base/src/lang.rs).
     println!("cargo:rerun-if-changed=../lang");
     let cfg = slint_build::CompilerConfiguration::new()
         .with_style("fluent-dark".into())

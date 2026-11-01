@@ -4499,3 +4499,330 @@ msgstr "Book chapter"
 
 msgid "Format A5, inicjał, pagina"
 msgstr "A5 format, drop cap, page numbers"
+
+msgid "Dokument został zachowany i otworzy się przy następnym uruchomieniu."
+msgstr "The document was kept and will open the next time you start OpenDTP."
+
+msgid "Przy następnym uruchomieniu program otworzy ostatnią kopię zapisaną automatycznie."
+msgstr "The last automatically saved copy will open the next time you start OpenDTP."
+
+msgid "OpenDTP napotkał nieoczekiwany błąd i musi zostać zamknięty."
+msgstr "OpenDTP ran into an unexpected error and has to close."
+
+msgid "Szczegóły błędu zapisano w dzienniku:"
+msgstr "Error details were written to the log:"
+
+msgid "Brak pól korespondencji – wpisz w treści np. «Imię» albo {{Imię}}"
+msgstr "No mail merge fields – type e.g. «Name» or {{Name}} in the text"
+
+msgid "Pola korespondencji: {}"
+msgstr "Mail merge fields: {}"
+
+msgid "Dokument nie zawiera komentarzy, zmian, historii wersji ani danych osobowych"
+msgstr "The document contains no comments, changes, version history or personal data"
+
+msgid " · osoby: {}"
+msgstr " · people: {}"
+
+msgid "Komentarze: {} · zmiany: {} · wersje: {} · dane autora: {}{}"
+msgstr "Comments: {} · changes: {} · versions: {} · author data: {}{}"
+
+msgid "tak"
+msgstr "yes"
+
+msgid "nie"
+msgstr "no"
+
+msgid "Nie ma czego usuwać"
+msgstr "Nothing to remove"
+
+msgid "Usunięto komentarze, historię wersji i dane autora; zmiany zostały przyjęte"
+msgstr "Removed comments, version history and author data; changes were accepted"
+
+msgid "Zaznacz tabelę"
+msgstr "Select a table"
+
+msgid "Suma kolumny {}: {}"
+msgstr "Column {} total: {}"
+
+msgid "W tej kolumnie nie ma liczb"
+msgstr "This column contains no numbers"
+
+msgid "Dane do korespondencji (CSV)"
+msgstr "Mail merge data (CSV)"
+
+msgid "Plik CSV nie zawiera danych (pierwszy wiersz to nazwy kolumn)"
+msgstr "The CSV file has no data (the first row holds column names)"
+
+msgid "Folder na dokumenty"
+msgstr "Folder for the documents"
+
+msgid "Zapisano dokumentów: {} z {}"
+msgstr "Documents saved: {} of {}"
+
+msgid "Scalono {} rekordów – każdy od nowej strony"
+msgstr "Merged {} records – each starts on a new page"
+
+msgid "Brak kolumn w CSV: {} – te pola zostały bez zmian"
+msgstr "Columns missing in the CSV: {} – these fields were left unchanged"
+
+msgid "Porównaj z wcześniejszą wersją"
+msgstr "Compare with an earlier version"
+
+msgid "Dokumenty mają tę samą treść"
+msgstr "The documents have the same content"
+
+msgid "Różnice: {} – przejrzyj je na karcie Recenzja (przyjmij albo odrzuć)"
+msgstr "Differences: {} – review them on the Review tab (accept or reject)"
+
+msgid "Zamiana w tabelę działa w treści głównej"
+msgstr "Converting to a table works in the main text"
+
+msgid "Zaznacz akapity z kolumnami oddzielonymi tabulatorem, średnikiem albo przecinkiem"
+msgstr "Select paragraphs with columns separated by tabs, semicolons or commas"
+
+msgid "{} · dostępność: {}"
+msgstr "{} · accessibility: {}"
+
+msgid "Dostępność: {}"
+msgstr "Accessibility: {}"
+
+msgid "Porównaj z wcześniejszą wersją…"
+msgstr "Compare with an earlier version…"
+
+msgid "Inspektor dokumentu – co zawiera plik"
+msgstr "Document inspector – what the file contains"
+
+msgid "Usuń komentarze, wersje i dane autora"
+msgstr "Remove comments, versions and author data"
+
+msgid "Sprawdź dostępność"
+msgstr "Check accessibility"
+
+msgid "Korespondencja seryjna – scal z CSV…"
+msgstr "Mail merge – merge with CSV…"
+
+msgid "Korespondencja seryjna – osobne pliki…"
+msgstr "Mail merge – separate files…"
+
+msgid "Pokaż pola korespondencji"
+msgstr "Show mail merge fields"
+
+msgid "Zamień tekst w tabelę"
+msgstr "Convert text to table"
+
+msgid "Zamień tabelę w tekst"
+msgstr "Convert table to text"
+
+msgid "Sortuj tabelę rosnąco (kolumna komórki)"
+msgstr "Sort table ascending (column of the cell)"
+
+msgid "Sortuj tabelę malejąco"
+msgstr "Sort table descending"
+
+msgid "Suma kolumny tabeli"
+msgstr "Table column total"
+
+msgid "Sortuj rosnąco według tej kolumny"
+msgstr "Sort ascending by this column"
+
+msgid "Sortuj malejąco według tej kolumny"
+msgstr "Sort descending by this column"
+
+msgid "Suma kolumny"
+msgstr "Column total"
+
+msgid "Zamień w tekst"
+msgstr "Convert to text"
+
+msgid "Porównanie i kontrola"
+msgstr "Compare and check"
+
+msgid "Porównaj"
+msgstr "Compare"
+
+msgid "Porównaj z wcześniejszą wersją pliku – różnice jako śledzone zmiany"
+msgstr "Compare with an earlier version of the file – differences as tracked changes"
+
+msgid "Inspektor dokumentu i kontrola dostępności"
+msgstr "Document inspector and accessibility check"
+
+msgid "Co zawiera plik (inspektor)"
+msgstr "What the file contains (inspector)"
+
+msgid "Korespondencja"
+msgstr "Mail merge"
+
+msgid "Korespondencja seryjna: pola «Nazwa» w treści, dane z pliku CSV"
+msgstr "Mail merge: «Name» fields in the text, data from a CSV file"
+
+msgid "Scal z CSV w jeden dokument"
+msgstr "Merge with CSV into one document"
+
+msgid "Osobny plik dla każdego wiersza"
+msgstr "A separate file for each row"
+
+msgid "Pokaż użyte pola"
+msgstr "Show the fields used"
+
+msgid "Dokument nie ma tytułu (polecenie „Edytuj metadane dokumentu”) – czytnik ekranu przeczyta nazwę pliku"
+msgstr "The document has no title (“Edit document metadata” command) – a screen reader will read the file name"
+
+msgid "Nie ustawiono języka dokumentu – czytnik ekranu nie dobierze wymowy"
+msgstr "The document language is not set – a screen reader cannot choose the pronunciation"
+
+msgid "Obraz albo wykres bez tekstu alternatywnego – wpisz opis w polu nazwy we właściwościach"
+msgstr "Image or chart without alternative text – type a description in the name field in Properties"
+
+msgid "Tabela bez wiersza nagłówka – czytnik ekranu nie powiąże komórek z kolumnami"
+msgstr "Table without a header row – a screen reader cannot relate cells to columns"
+
+msgid "Pusty nagłówek – usuń go albo zmień styl na zwykły tekst"
+msgstr "Empty heading – remove it or change the style to normal text"
+
+msgid "Nagłówek „{}” przeskakuje poziom ({} po {}) – spis treści i nawigacja będą niespójne"
+msgstr "Heading “{}” skips a level ({} after {}) – the table of contents and navigation will be inconsistent"
+
+msgid "Za słaby kontrast tekstu w {} miejscach (np. „{}”) – potrzeba co najmniej 4,5:1"
+msgstr "Text contrast too low in {} places (e.g. “{}”) – at least 4.5:1 is needed"
+
+msgid "Łącza opisane samym adresem: {} – lepiej opisać, dokąd prowadzą"
+msgstr "Links described only by their address: {} – better describe where they lead"
+
+msgid "To nie jest plik RTF"
+msgstr "This is not an RTF file"
+
+msgid "To nie jest plik ODT"
+msgstr "This is not an ODT file"
+
+msgid "Cytowania i źródła"
+msgstr "Citations and sources"
+
+msgid "Styl cytowań i bibliografii – zmiana przelicza wszystkie cytowania"
+msgstr "Citation and bibliography style – changing it recalculates all citations"
+
+msgid "Brak źródeł – dodaj je poniżej albo zaimportuj z BibTeX lub RIS (Zotero, Mendeley, Google Scholar)."
+msgstr "No sources – add them below or import them from BibTeX or RIS (Zotero, Mendeley, Google Scholar)."
+
+msgid "Kliknij źródło, aby wstawić cytowanie w miejscu kursora."
+msgstr "Click a source to insert a citation at the cursor."
+
+msgid "Wstaw cytowanie tego źródła"
+msgstr "Insert a citation of this source"
+
+msgid "Rodzaj: książka / artykuł / rozdział / strona\nAutorzy: Kowalski, Jan; Nowak, Anna\nTytuł: …\nRok: 2024\nWydawca: …   Miejsce: …\nCzasopismo: …   Tom: …   Numer: …   Strony: …\nURL: …   DOI: …"
+msgstr "Type: book / article / chapter / web page\nAuthors: Smith, John; Doe, Anna\nTitle: …\nYear: 2024\nPublisher: …   Place: …\nJournal: …   Volume: …   Issue: …   Pages: …\nURL: …   DOI: …"
+
+msgid "Plik .bib albo .ris z Zotero, Mendeleya, JabRef lub Google Scholar"
+msgstr "A .bib or .ris file from Zotero, Mendeley, JabRef or Google Scholar"
+
+msgid "Importuj…"
+msgstr "Import…"
+
+msgid "Wstaw albo odśwież bibliografię w miejscu kursora"
+msgstr "Insert or refresh the bibliography at the cursor"
+
+msgid "Bibliografia"
+msgstr "Bibliography"
+
+msgid "Dodaj źródło z formularza powyżej"
+msgstr "Add the source from the form above"
+
+msgid "Dodaj źródło"
+msgstr "Add source"
+
+msgid "OpenDocument (.odt)"
+msgstr "OpenDocument (.odt)"
+
+msgid "Dla LibreOffice i urzędów: tekst z formatowaniem, nagłówki, listy, łącza"
+msgstr "For LibreOffice and public institutions: formatted text, headings, lists, links"
+
+msgid "RTF (.rtf)"
+msgstr "RTF (.rtf)"
+
+msgid "Dla WordPada i starszych edytorów: tekst z formatowaniem"
+msgstr "For WordPad and older editors: formatted text"
+
+msgid "Spis ilustracji"
+msgstr "Table of figures"
+
+msgid "Lista podpisów z numerami stron – rysunki, tabele albo wzory"
+msgstr "List of captions with page numbers – figures, tables or equations"
+
+msgid "Spis tabel"
+msgstr "Table of tables"
+
+msgid "Spis wzorów"
+msgstr "Table of equations"
+
+msgid "Cytowania"
+msgstr "Citations"
+
+msgid "Cytowanie"
+msgstr "Citation"
+
+msgid "Wstaw cytowanie źródła – APA, MLA, Chicago albo IEEE; dodawanie i import źródeł"
+msgstr "Insert a citation – APA, MLA, Chicago or IEEE; add and import sources"
+
+msgid "Wstaw albo odśwież listę źródeł w wybranym stylu"
+msgstr "Insert or refresh the list of sources in the chosen style"
+
+msgid "Zaktualizowano spisy, indeks, bibliografię, cytowania, numery podpisów i odsyłacze"
+msgstr "Updated tables of contents, index, bibliography, citations, caption numbers and cross-references"
+
+msgid "Dodano źródło"
+msgstr "Source added"
+
+msgid "To źródło już jest na liście"
+msgstr "This source is already on the list"
+
+msgid "Wpisz co najmniej tytuł („Tytuł: …”)"
+msgstr "Type at least a title (“Title: …”)"
+
+msgid "Importuj źródła"
+msgstr "Import sources"
+
+msgid "Zaimportowano źródeł: {}"
+msgstr "Sources imported: {}"
+
+msgid "Najpierw dodaj źródła (Odwołania › Cytowanie)"
+msgstr "Add sources first (References › Citation)"
+
+msgid "Bibliografia zaktualizowana"
+msgstr "Bibliography updated"
+
+msgid "Spis"
+msgstr "List"
+
+msgid "Spis zaktualizowany"
+msgstr "List updated"
+
+msgid "Brak podpisów „{}” – wstaw je poleceniem Podpis"
+msgstr "No “{}” captions – insert them with the Caption command"
+
+msgid "Adresy do etykiet (CSV)"
+msgstr "Addresses for labels (CSV)"
+
+msgid "Etykiety: {} na arkuszach A4: {} ({}×{})"
+msgstr "Labels: {} on A4 sheets: {} ({}×{})"
+
+msgid "Eksportuj do OpenDocument (ODT)"
+msgstr "Export to OpenDocument (ODT)"
+
+msgid "Eksportuj do RTF"
+msgstr "Export to RTF"
+
+msgid "Wstaw cytowanie…"
+msgstr "Insert citation…"
+
+msgid "Wstaw albo odśwież bibliografię"
+msgstr "Insert or refresh bibliography"
+
+msgid "Importuj źródła (BibTeX, RIS)…"
+msgstr "Import sources (BibTeX, RIS)…"
+
+msgid "Etykiety adresowe z CSV (3 × 8)…"
+msgstr "Address labels from CSV (3 × 8)…"
+
+msgid "Etykiety adresowe z CSV (2 × 7)…"
+msgstr "Address labels from CSV (2 × 7)…"

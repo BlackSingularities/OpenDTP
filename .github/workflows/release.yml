@@ -35,8 +35,8 @@ jobs:
           }
           "version=$v" >> $env:GITHUB_OUTPUT
 
-      - name: Testy rdzenia
-        run: cargo test --release -p opendtp-core
+      - name: Testy modułów
+        run: cargo test --release --workspace --exclude opendtp
 
       - name: Budowanie OpenDTP
         env:

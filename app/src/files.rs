@@ -52,6 +52,16 @@ pub fn load_any(path: &Path) -> Result<Document, String> {
     match ext.as_str() {
         "odtp" => io::odtp::from_bytes(&bytes),
         "docx" => io::docx_in::import(&bytes),
+        "odt" => io::odt_in::import(&bytes),
+        "rtf" => io::rtf_in::import(&bytes),
+        "html" | "htm" => {
+            let paras = io::html_in::fragment_from_html(&String::from_utf8_lossy(&bytes));
+            let mut d = Document::new();
+            if !paras.is_empty() {
+                d.body = Story { paras };
+            }
+            Ok(d)
+        }
         "md" | "markdown" => Ok(io::plain::from_markdown(&String::from_utf8_lossy(&bytes))),
         _ => Ok(io::plain::from_text(&String::from_utf8_lossy(&bytes))),
     }
@@ -78,9 +88,12 @@ pub fn open_path(st: &mut State, p: &str) -> bool {
 pub fn open_dialog(st: &mut State) {
     let pick = rfd::FileDialog::new()
         .set_title(tr("Otwórz dokument"))
-        .add_filter(tr("Dokumenty"), &["odtp", "docx", "txt", "md"])
+        .add_filter(tr("Dokumenty"), &["odtp", "docx", "odt", "rtf", "html", "htm", "txt", "md"])
         .add_filter("OpenDTP", &["odtp"])
         .add_filter("Microsoft Word", &["docx"])
+        .add_filter("OpenDocument", &["odt"])
+        .add_filter("RTF", &["rtf"])
+        .add_filter("HTML", &["html", "htm"])
         .add_filter(tr("Tekst i Markdown"), &["txt", "md"])
         .pick_file();
     if let Some(p) = pick {
@@ -97,10 +110,12 @@ fn write_as(st: &mut State, path: &Path) -> Result<(), String> {
     match ext.as_str() {
         "docx" => {
             let b = io::docx::export(&st.ed.doc, &st.ed.layout, &io::docx::DocxOpts { exact_shapes: st.prefs.exact_shapes })?;
-            std::fs::write(path, b).map_err(|e| e.to_string())
+            opendtp_core::fsx::write_atomic(path, &b).map_err(|e| e.to_string())
         }
-        "txt" => std::fs::write(path, io::plain::to_text(&st.ed.doc)).map_err(|e| e.to_string()),
-        "md" => std::fs::write(path, io::plain::to_markdown(&st.ed.doc)).map_err(|e| e.to_string()),
+        "odt" => opendtp_core::fsx::write_atomic(path, &io::odt_out::export(&st.ed.doc)?).map_err(|e| e.to_string()),
+        "rtf" => opendtp_core::fsx::write_atomic(path, &io::rtf_out::export(&st.ed.doc)).map_err(|e| e.to_string()),
+        "txt" => opendtp_core::fsx::write_atomic(path, io::plain::to_text(&st.ed.doc).as_bytes()).map_err(|e| e.to_string()),
+        "md" => opendtp_core::fsx::write_atomic(path, io::plain::to_markdown(&st.ed.doc).as_bytes()).map_err(|e| e.to_string()),
         _ => io::odtp::save(&st.ed.doc, path),
     }
 }
@@ -116,6 +131,8 @@ pub fn save(st: &mut State, as_new: bool) -> bool {
                 .set_file_name(&name)
                 .add_filter("OpenDTP", &["odtp"])
                 .add_filter("Microsoft Word", &["docx"])
+                .add_filter("OpenDocument", &["odt"])
+                .add_filter("RTF", &["rtf"])
                 .add_filter(tr("Tekst"), &["txt"])
                 .add_filter("Markdown", &["md"])
                 .save_file()
@@ -150,6 +167,8 @@ pub fn export(st: &mut State, kind: &str) {
     let (ext, filter) = match kind {
         "docx" => ("docx", "Microsoft Word"),
         "pdf" | "pdf-print" => ("pdf", "PDF"),
+        "odt" => ("odt", "OpenDocument"),
+        "rtf" => ("rtf", "RTF"),
         "epub" => ("epub", "EPUB"),
         "html" => ("html", "HTML"),
         "md" => ("md", "Markdown"),
@@ -170,12 +189,14 @@ pub fn export(st: &mut State, kind: &str) {
             "pdf" => io::pdf::export(doc, lay)?,
             "pdf-print" => io::pdf::export_with(doc, lay, true)?,
             "epub" => io::epub::export(doc)?,
+            "odt" => io::odt_out::export(doc)?,
+            "rtf" => io::rtf_out::export(doc),
             "html" => io::plain::to_html(doc).into_bytes(),
             "md" => io::plain::to_markdown(doc).into_bytes(),
             "png" => page_png(st, st.ed.caret_page().map(|c| c.0).unwrap_or(0), 300.0)?,
             _ => io::plain::to_text(doc).into_bytes(),
         };
-        std::fs::write(&path, bytes).map_err(|e| e.to_string())
+        opendtp_core::fsx::write_atomic(&path, &bytes).map_err(|e| e.to_string())
     })();
     match res {
         Ok(()) => {
@@ -204,7 +225,7 @@ pub fn print(st: &mut State) {
     match io::pdf::export(&st.ed.doc, &st.ed.layout) {
         Ok(b) => {
             let p = opendtp_core::paths::cache().join(format!("{}-druk.pdf", doc_name(&st.ed)));
-            if std::fs::write(&p, b).is_ok() {
+            if opendtp_core::fsx::write_atomic(&p, &b).is_ok() {
                 let _ = open::that(&p);
                 toast(st, tr("Otwarto PDF do wydruku"));
             }
@@ -245,7 +266,27 @@ pub fn autosave_tick(st: &mut State) {
         doc.meta.keywords = format!("{}\u{1}{}", doc.meta.keywords, p.display());
     }
     if let Ok(b) = io::odtp::to_bytes(&doc) {
-        let _ = std::fs::write(recovery_file(st), b);
+        if let Err(e) = opendtp_core::fsx::write_atomic(&recovery_file(st), &b) {
+            opendtp_core::log::warn(&format!("kopia odzyskiwania: {e}"));
+        }
+    }
+}
+
+/// Zapis ratunkowy po awarii: dokument (ze ścieżką oryginału) do folderu odzyskiwania.
+pub fn rescue(st: &State) -> bool {
+    if !st.ed.dirty {
+        return true;
+    }
+    let mut doc = st.ed.doc.clone();
+    if let Some(p) = &st.ed.path {
+        doc.meta.keywords = format!("{}\u{1}{}", doc.meta.keywords, p.display());
+    }
+    match io::odtp::to_bytes(&doc).map_err(|e| e.to_string()).and_then(|b| opendtp_core::fsx::write_atomic(&recovery_file(st), &b).map_err(|e| e.to_string())) {
+        Ok(()) => true,
+        Err(e) => {
+            opendtp_core::log::error(&format!("zapis ratunkowy: {e}"));
+            false
+        }
     }
 }
 
@@ -256,8 +297,14 @@ pub fn clear_recovery(st: &State) {
 /// Kopia z poprzedniej sesji (program zamknięty bez zapisu albo awaria) – otwieramy ją.
 pub fn recover(st: &mut State) -> bool {
     let dir = opendtp_core::paths::recovery();
+    opendtp_core::fsx::sweep_temporaries(&dir);
+    // Kopie działających właśnie innych okien OpenDTP zostają w spokoju.
+    let mine = |p: &Path| {
+        let pid = p.file_stem().and_then(|s| s.to_str()).and_then(|s| s.strip_prefix("sesja-")).and_then(|s| s.parse::<u32>().ok());
+        !pid.is_some_and(crate::win::process_alive)
+    };
     let mut files: Vec<(std::time::SystemTime, PathBuf)> = std::fs::read_dir(&dir)
-        .map(|d| d.flatten().filter_map(|e| Some((e.metadata().ok()?.modified().ok()?, e.path()))).filter(|(_, p)| p.extension().is_some_and(|x| x == "odtp")).collect())
+        .map(|d| d.flatten().filter_map(|e| Some((e.metadata().ok()?.modified().ok()?, e.path()))).filter(|(_, p)| p.extension().is_some_and(|x| x == "odtp") && mine(p)).collect())
         .unwrap_or_default();
     files.sort();
     let Some((_, path)) = files.pop() else { return false };
@@ -276,9 +323,7 @@ pub fn recover(st: &mut State) -> bool {
         }
         Err(_) => false,
     };
-    for (_, p) in files {
-        let _ = std::fs::remove_file(p);
-    }
+    // Starsze kopie (kilka awarii z rzędu) zostają – otworzą się przy kolejnych uruchomieniach.
     let _ = std::fs::remove_file(path);
     ok
 }

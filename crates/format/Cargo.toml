@@ -1,0 +1,23 @@
+[package]
+name = "opendtp-format"
+description = "OpenDTP – własny format .odtp, tekst i Markdown, metapliki WMF, biblioteka"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+name = "opendtp_format"
+
+[dependencies]
+opendtp-base.workspace = true
+opendtp-doc.workspace = true
+opendtp-text.workspace = true
+serde_json.workspace = true
+zip.workspace = true
+image.workspace = true
+usvg.workspace = true
+base64.workspace = true
+ttf-parser.workspace = true
+windows.workspace = true

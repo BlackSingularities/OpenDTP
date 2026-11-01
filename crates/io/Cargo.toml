@@ -1,0 +1,26 @@
+[package]
+name = "opendtp-io"
+description = "OpenDTP – import i eksport DOCX, PDF, EPUB i HTML"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+name = "opendtp_io"
+
+[dependencies]
+opendtp-base.workspace = true
+opendtp-doc.workspace = true
+opendtp-text.workspace = true
+opendtp-format.workspace = true
+opendtp-render.workspace = true
+tiny-skia.workspace = true
+zip.workspace = true
+quick-xml.workspace = true
+image.workspace = true
+krilla.workspace = true
+krilla-svg.workspace = true
+usvg.workspace = true
+ttf-parser.workspace = true

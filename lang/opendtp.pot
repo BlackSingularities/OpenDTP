@@ -3332,3 +3332,330 @@ msgstr ""
 
 msgid "Format A5, inicjał, pagina"
 msgstr ""
+
+msgid "Dokument został zachowany i otworzy się przy następnym uruchomieniu."
+msgstr ""
+
+msgid "Przy następnym uruchomieniu program otworzy ostatnią kopię zapisaną automatycznie."
+msgstr ""
+
+msgid "OpenDTP napotkał nieoczekiwany błąd i musi zostać zamknięty."
+msgstr ""
+
+msgid "Szczegóły błędu zapisano w dzienniku:"
+msgstr ""
+
+msgid "Brak pól korespondencji – wpisz w treści np. «Imię» albo {{Imię}}"
+msgstr ""
+
+msgid "Pola korespondencji: {}"
+msgstr ""
+
+msgid "Dokument nie zawiera komentarzy, zmian, historii wersji ani danych osobowych"
+msgstr ""
+
+msgid " · osoby: {}"
+msgstr ""
+
+msgid "Komentarze: {} · zmiany: {} · wersje: {} · dane autora: {}{}"
+msgstr ""
+
+msgid "tak"
+msgstr ""
+
+msgid "nie"
+msgstr ""
+
+msgid "Nie ma czego usuwać"
+msgstr ""
+
+msgid "Usunięto komentarze, historię wersji i dane autora; zmiany zostały przyjęte"
+msgstr ""
+
+msgid "Zaznacz tabelę"
+msgstr ""
+
+msgid "Suma kolumny {}: {}"
+msgstr ""
+
+msgid "W tej kolumnie nie ma liczb"
+msgstr ""
+
+msgid "Dane do korespondencji (CSV)"
+msgstr ""
+
+msgid "Plik CSV nie zawiera danych (pierwszy wiersz to nazwy kolumn)"
+msgstr ""
+
+msgid "Folder na dokumenty"
+msgstr ""
+
+msgid "Zapisano dokumentów: {} z {}"
+msgstr ""
+
+msgid "Scalono {} rekordów – każdy od nowej strony"
+msgstr ""
+
+msgid "Brak kolumn w CSV: {} – te pola zostały bez zmian"
+msgstr ""
+
+msgid "Porównaj z wcześniejszą wersją"
+msgstr ""
+
+msgid "Dokumenty mają tę samą treść"
+msgstr ""
+
+msgid "Różnice: {} – przejrzyj je na karcie Recenzja (przyjmij albo odrzuć)"
+msgstr ""
+
+msgid "Zamiana w tabelę działa w treści głównej"
+msgstr ""
+
+msgid "Zaznacz akapity z kolumnami oddzielonymi tabulatorem, średnikiem albo przecinkiem"
+msgstr ""
+
+msgid "{} · dostępność: {}"
+msgstr ""
+
+msgid "Dostępność: {}"
+msgstr ""
+
+msgid "Porównaj z wcześniejszą wersją…"
+msgstr ""
+
+msgid "Inspektor dokumentu – co zawiera plik"
+msgstr ""
+
+msgid "Usuń komentarze, wersje i dane autora"
+msgstr ""
+
+msgid "Sprawdź dostępność"
+msgstr ""
+
+msgid "Korespondencja seryjna – scal z CSV…"
+msgstr ""
+
+msgid "Korespondencja seryjna – osobne pliki…"
+msgstr ""
+
+msgid "Pokaż pola korespondencji"
+msgstr ""
+
+msgid "Zamień tekst w tabelę"
+msgstr ""
+
+msgid "Zamień tabelę w tekst"
+msgstr ""
+
+msgid "Sortuj tabelę rosnąco (kolumna komórki)"
+msgstr ""
+
+msgid "Sortuj tabelę malejąco"
+msgstr ""
+
+msgid "Suma kolumny tabeli"
+msgstr ""
+
+msgid "Sortuj rosnąco według tej kolumny"
+msgstr ""
+
+msgid "Sortuj malejąco według tej kolumny"
+msgstr ""
+
+msgid "Suma kolumny"
+msgstr ""
+
+msgid "Zamień w tekst"
+msgstr ""
+
+msgid "Porównanie i kontrola"
+msgstr ""
+
+msgid "Porównaj"
+msgstr ""
+
+msgid "Porównaj z wcześniejszą wersją pliku – różnice jako śledzone zmiany"
+msgstr ""
+
+msgid "Inspektor dokumentu i kontrola dostępności"
+msgstr ""
+
+msgid "Co zawiera plik (inspektor)"
+msgstr ""
+
+msgid "Korespondencja"
+msgstr ""
+
+msgid "Korespondencja seryjna: pola «Nazwa» w treści, dane z pliku CSV"
+msgstr ""
+
+msgid "Scal z CSV w jeden dokument"
+msgstr ""
+
+msgid "Osobny plik dla każdego wiersza"
+msgstr ""
+
+msgid "Pokaż użyte pola"
+msgstr ""
+
+msgid "Dokument nie ma tytułu (polecenie „Edytuj metadane dokumentu”) – czytnik ekranu przeczyta nazwę pliku"
+msgstr ""
+
+msgid "Nie ustawiono języka dokumentu – czytnik ekranu nie dobierze wymowy"
+msgstr ""
+
+msgid "Obraz albo wykres bez tekstu alternatywnego – wpisz opis w polu nazwy we właściwościach"
+msgstr ""
+
+msgid "Tabela bez wiersza nagłówka – czytnik ekranu nie powiąże komórek z kolumnami"
+msgstr ""
+
+msgid "Pusty nagłówek – usuń go albo zmień styl na zwykły tekst"
+msgstr ""
+
+msgid "Nagłówek „{}” przeskakuje poziom ({} po {}) – spis treści i nawigacja będą niespójne"
+msgstr ""
+
+msgid "Za słaby kontrast tekstu w {} miejscach (np. „{}”) – potrzeba co najmniej 4,5:1"
+msgstr ""
+
+msgid "Łącza opisane samym adresem: {} – lepiej opisać, dokąd prowadzą"
+msgstr ""
+
+msgid "To nie jest plik RTF"
+msgstr ""
+
+msgid "To nie jest plik ODT"
+msgstr ""
+
+msgid "Cytowania i źródła"
+msgstr ""
+
+msgid "Styl cytowań i bibliografii – zmiana przelicza wszystkie cytowania"
+msgstr ""
+
+msgid "Brak źródeł – dodaj je poniżej albo zaimportuj z BibTeX lub RIS (Zotero, Mendeley, Google Scholar)."
+msgstr ""
+
+msgid "Kliknij źródło, aby wstawić cytowanie w miejscu kursora."
+msgstr ""
+
+msgid "Wstaw cytowanie tego źródła"
+msgstr ""
+
+msgid "Rodzaj: książka / artykuł / rozdział / strona\nAutorzy: Kowalski, Jan; Nowak, Anna\nTytuł: …\nRok: 2024\nWydawca: …   Miejsce: …\nCzasopismo: …   Tom: …   Numer: …   Strony: …\nURL: …   DOI: …"
+msgstr ""
+
+msgid "Plik .bib albo .ris z Zotero, Mendeleya, JabRef lub Google Scholar"
+msgstr ""
+
+msgid "Importuj…"
+msgstr ""
+
+msgid "Wstaw albo odśwież bibliografię w miejscu kursora"
+msgstr ""
+
+msgid "Bibliografia"
+msgstr ""
+
+msgid "Dodaj źródło z formularza powyżej"
+msgstr ""
+
+msgid "Dodaj źródło"
+msgstr ""
+
+msgid "OpenDocument (.odt)"
+msgstr ""
+
+msgid "Dla LibreOffice i urzędów: tekst z formatowaniem, nagłówki, listy, łącza"
+msgstr ""
+
+msgid "RTF (.rtf)"
+msgstr ""
+
+msgid "Dla WordPada i starszych edytorów: tekst z formatowaniem"
+msgstr ""
+
+msgid "Spis ilustracji"
+msgstr ""
+
+msgid "Lista podpisów z numerami stron – rysunki, tabele albo wzory"
+msgstr ""
+
+msgid "Spis tabel"
+msgstr ""
+
+msgid "Spis wzorów"
+msgstr ""
+
+msgid "Cytowania"
+msgstr ""
+
+msgid "Cytowanie"
+msgstr ""
+
+msgid "Wstaw cytowanie źródła – APA, MLA, Chicago albo IEEE; dodawanie i import źródeł"
+msgstr ""
+
+msgid "Wstaw albo odśwież listę źródeł w wybranym stylu"
+msgstr ""
+
+msgid "Zaktualizowano spisy, indeks, bibliografię, cytowania, numery podpisów i odsyłacze"
+msgstr ""
+
+msgid "Dodano źródło"
+msgstr ""
+
+msgid "To źródło już jest na liście"
+msgstr ""
+
+msgid "Wpisz co najmniej tytuł („Tytuł: …”)"
+msgstr ""
+
+msgid "Importuj źródła"
+msgstr ""
+
+msgid "Zaimportowano źródeł: {}"
+msgstr ""
+
+msgid "Najpierw dodaj źródła (Odwołania › Cytowanie)"
+msgstr ""
+
+msgid "Bibliografia zaktualizowana"
+msgstr ""
+
+msgid "Spis"
+msgstr ""
+
+msgid "Spis zaktualizowany"
+msgstr ""
+
+msgid "Brak podpisów „{}” – wstaw je poleceniem Podpis"
+msgstr ""
+
+msgid "Adresy do etykiet (CSV)"
+msgstr ""
+
+msgid "Etykiety: {} na arkuszach A4: {} ({}×{})"
+msgstr ""
+
+msgid "Eksportuj do OpenDocument (ODT)"
+msgstr ""
+
+msgid "Eksportuj do RTF"
+msgstr ""
+
+msgid "Wstaw cytowanie…"
+msgstr ""
+
+msgid "Wstaw albo odśwież bibliografię"
+msgstr ""
+
+msgid "Importuj źródła (BibTeX, RIS)…"
+msgstr ""
+
+msgid "Etykiety adresowe z CSV (3 × 8)…"
+msgstr ""
+
+msgid "Etykiety adresowe z CSV (2 × 7)…"
+msgstr ""

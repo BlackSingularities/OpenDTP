@@ -1,0 +1,19 @@
+[package]
+name = "opendtp-update"
+description = "OpenDTP – aktualizacje przez redzikowski.com"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+name = "opendtp_update"
+
+[dependencies]
+opendtp-base.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+ureq.workspace = true
+zip.workspace = true
+windows.workspace = true

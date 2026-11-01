@@ -1,5 +1,26 @@
 # Zmiany
 
+## Niewydane
+
+- Rdzeń podzielony na osobne moduły (`crates/`): podstawa, dokument, tekst, format, skład, wymiana plików, AI, aktualizacje.
+- Bezpieczny zapis wszystkich plików (dokument, eksport DOCX/PDF/EPUB/HTML/MD/TXT/PNG, kopie odzyskiwania, ustawienia, słownik): plik tymczasowy, zapis na dysk, podmiana z ponawianiem, gdy plik chwilowo blokuje antywirus albo OneDrive. Przerwany zapis nie psuje już istniejącego pliku.
+- Dziennik programu i zapis awarii (bez treści dokumentu); po awarii dokument zostaje zachowany i otwiera się przy następnym uruchomieniu, a program pokazuje komunikat z miejscem dziennika.
+- Odzyskiwanie nie usuwa już kopii z innego otwartego okna OpenDTP ani starszych kopii z kilku awarii.
+- Szybsze cofanie przy długiej historii zmian.
+- Korespondencja seryjna: pola «Nazwa» albo {{Nazwa}} w treści, dane z CSV (średnik, przecinek albo tabulator; UTF-8 lub Windows-1250) – jeden dokument z rekordem na każdej stronie albo osobny plik dla każdego wiersza.
+- Porównywanie dokumentów: różnice względem wcześniejszej wersji (ODTP, DOCX, ODT, RTF, TXT, MD) jako śledzone zmiany na poziomie akapitów i słów.
+- Inspektor dokumentu: komentarze, zmiany, historia wersji i dane autora w pliku – z usuwaniem jednym poleceniem.
+- Kontrola dostępności w panelu Preflight: tekst alternatywny obrazów i wykresów, poziomy nagłówków, wiersz nagłówka tabel, kontrast tekstu (WCAG), język i tytuł dokumentu, łącza opisane adresem.
+- Tabele: sortowanie według kolumny (liczby jako liczby, polski porządek alfabetyczny), suma kolumny, zamiana tekstu w tabelę i tabeli w tekst.
+- Otwieranie plików ODT (LibreOffice), RTF i HTML.
+- PDF: zakładki z nagłówków i klikalne łącza.
+- Przyjęcie albo odrzucenie zmian usuwa akapity, które w całości były zmianą (bez pustych wierszy).
+- Cytowania i bibliografia w stylach APA 7, MLA 9, Chicago (autor–data) i IEEE: źródła z formularza albo z plików BibTeX i RIS (Zotero, Mendeley, JabRef, Google Scholar), cytowanie kliknięciem, bibliografia ze stylem z wysunięciem; zmiana stylu przelicza wszystkie cytowania (IEEE – numery według kolejności użycia).
+- Spis ilustracji, tabel i wzorów z numerami stron, odświeżany razem ze spisem treści.
+- Eksport do OpenDocument (ODT) i RTF.
+- Etykiety adresowe z CSV na arkuszach A4 (3 × 8, 3 × 7, 2 × 7, 2 × 4), z wzorem z treści dokumentu albo ze wszystkich kolumn.
+- „Aktualizuj wszystko” odświeża też cytowania, bibliografię i spisy ilustracji.
+
 ## 0.7.0
 
 - Przebudowana wstążka: przyciski ustawień w nagłówkach grup, równe nagłówki u dołu, zwężanie do szerokości okna jak w Wordzie, przycisk zwijania w prawym dolnym rogu.

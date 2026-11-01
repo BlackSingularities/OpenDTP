@@ -11,7 +11,7 @@ name = "OpenDTP"
 path = "src/main.rs"
 
 [dependencies]
-opendtp-core = { path = "../core" }
+opendtp-core = { path = "../crates/core" }
 slint = { version = "1.18", default-features = false, features = ["std", "compat-1-2", "accessibility", "backend-winit", "renderer-skia", "unstable-winit-030"] }
 raw-window-handle = "0.6"
 rfd = "0.15"
@@ -28,7 +28,7 @@ barcoders = "2"
 
 [dependencies.windows]
 version = "0.61"
-features = ["Win32_Foundation", "Win32_Graphics_Dwm", "Win32_UI_Controls", "Win32_UI_WindowsAndMessaging", "Win32_Security_Cryptography"]
+features = ["Win32_Foundation", "Win32_Graphics_Dwm", "Win32_UI_Controls", "Win32_UI_WindowsAndMessaging", "Win32_Security_Cryptography", "Win32_System_Threading"]
 
 [build-dependencies]
 slint-build = "1.18"

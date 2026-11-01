@@ -184,10 +184,7 @@ impl Prefs {
 
     pub fn save(&self) {
         if let Ok(s) = serde_json::to_string_pretty(self) {
-            let tmp = file().with_extension("tmp");
-            if std::fs::write(&tmp, s).is_ok() {
-                let _ = std::fs::rename(&tmp, file());
-            }
+            let _ = opendtp_core::fsx::write_atomic(&file(), s.as_bytes());
         }
     }
 

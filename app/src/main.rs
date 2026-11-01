@@ -9,6 +9,7 @@ mod editor;
 mod files;
 mod input;
 mod settings;
+mod tools;
 mod view;
 mod win;
 
@@ -597,7 +598,24 @@ pub fn preflight_list(app: &App, ed: &Editor) {
             },
         })
         .collect();
-    let sum = if errors + warns == 0 { opendtp_core::lang::tr("Gotowe do druku – bez błędów i ostrzeżeń").to_string() } else { opendtp_core::trf!("Błędy: {} · ostrzeżenia: {}", errors, warns) };
+    let mut sum = if errors + warns == 0 { opendtp_core::lang::tr("Gotowe do druku – bez błędów i ostrzeżeń").to_string() } else { opendtp_core::trf!("Błędy: {} · ostrzeżenia: {}", errors, warns) };
+    // Pod kontrolą druku – dostępność (czytniki ekranu, kontrast, struktura nagłówków).
+    let a11y = opendtp_core::a11y::check(&ed.doc);
+    if !a11y.is_empty() {
+        sum = opendtp_core::trf!("{} · dostępność: {}", sum, a11y.len());
+    }
+    let mut items = items;
+    items.extend(a11y.into_iter().map(|f| PreV {
+        id: match (f.obj, f.page) {
+            (Some(o), _) => format!("obj:{o}"),
+            (None, Some(p)) => format!("page:{p}"),
+            _ => String::new(),
+        }
+        .into(),
+        text: opendtp_core::trf!("Dostępność: {}", f.text).into(),
+        page: f.page.map(|p| p as i32).unwrap_or(-1),
+        level: if f.error { 1 } else { 2 },
+    }));
     app.set_preflight_sum(sum.into());
     app.set_preflight(ModelRc::new(VecModel::from(items)));
 }
@@ -748,6 +766,8 @@ pub fn sync_ai(st: &State, ui: &AppWindow) {
 }
 
 fn main() {
+    opendtp_core::log::install_panic_hook();
+    opendtp_core::log::info("start");
     let prefs = Prefs::load();
     let code = opendtp_core::lang::init(&prefs.lang);
     let ui = AppWindow::new().expect("okno");
@@ -947,8 +967,19 @@ fn main() {
         });
     }
     snapshot_mode(&ui, &args);
-    slint::run_event_loop().expect("pętla zdarzeń");
+    // Awaria w dowolnym poleceniu wraca tu (winit przenosi ją przez pętlę zdarzeń). Stan nie jest
+    // już wtedy pożyczony, więc dokument da się jeszcze zapisać do odzyskania przy następnym starcie.
+    let run = std::panic::catch_unwind(std::panic::AssertUnwindSafe(slint::run_event_loop));
     drop(monitor_watch);
+    match run {
+        Ok(Ok(())) => {}
+        Ok(Err(e)) => opendtp_core::log::error(&format!("pętla zdarzeń: {e}")),
+        Err(_) => {
+            let saved = shared.try_borrow().is_ok_and(|st| files::rescue(&st));
+            win::crash_message(saved);
+            std::process::exit(1);
+        }
+    }
 }
 
 fn wire(ui: &AppWindow, shared: &Shared) {

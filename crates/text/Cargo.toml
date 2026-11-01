@@ -1,0 +1,24 @@
+[package]
+name = "opendtp-text"
+description = "OpenDTP – czcionki, kształtowanie tekstu, dzielenie wyrazów i pisownia"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+name = "opendtp_text"
+
+[dependencies]
+opendtp-base.workspace = true
+opendtp-doc.workspace = true
+fontdb.workspace = true
+rustybuzz.workspace = true
+ttf-parser.workspace = true
+parking_lot.workspace = true
+dirs.workspace = true
+hyphenation.workspace = true
+unicode-linebreak.workspace = true
+unicode-segmentation.workspace = true
+spellbook.workspace = true

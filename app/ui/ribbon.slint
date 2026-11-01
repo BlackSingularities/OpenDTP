@@ -2490,6 +2490,39 @@ component RefsTab inherits HorizontalLayout {
                 App.cmd("caption", id);
             }
         }
+        BigMenuButton {
+            icon: Icons.list-tree;
+            label: @tr("Spis ilustracji");
+            tip: @tr("Lista podpisów z numerami stron – rysunki, tabele albo wzory");
+            items: [
+                { id: "figure", label: @tr("Spis ilustracji"), icon: Icons.image },
+                { id: "table", label: @tr("Spis tabel"), icon: Icons.table },
+                { id: "equation", label: @tr("Spis wzorów"), icon: Icons.sigma },
+            ];
+            menu-w: 200px;
+            picked(id) => {
+                App.cmd("tof", id);
+            }
+        }
+    }
+    Group {
+        title: @tr("Cytowania");
+        BigButton {
+            icon: Icons.quote;
+            label: @tr("Cytowanie");
+            tip: @tr("Wstaw cytowanie źródła – APA, MLA, Chicago albo IEEE; dodawanie i import źródeł");
+            clicked => {
+                App.cmd("cite", "");
+            }
+        }
+        BigButton {
+            icon: Icons.book-a;
+            label: @tr("Bibliografia");
+            tip: @tr("Wstaw albo odśwież listę źródeł w wybranym stylu");
+            clicked => {
+                App.cmd("bibliography", "");
+            }
+        }
     }
     Group {
         title: @tr("Odsyłacze");
@@ -2674,6 +2707,46 @@ component ReviewTab inherits HorizontalLayout {
             active: App.left-panel == "versions";
             clicked => {
                 App.cmd("panel", "versions");
+            }
+        }
+    }
+    Group {
+        title: @tr("Porównanie i kontrola");
+        optional: true;
+        BigButton {
+            icon: Icons.squares-intersect;
+            label: @tr("Porównaj");
+            tip: @tr("Porównaj z wcześniejszą wersją pliku – różnice jako śledzone zmiany");
+            clicked => {
+                App.cmd("compare", "");
+            }
+        }
+        BigMenuButton {
+            icon: Icons.scan;
+            label: @tr("Sprawdź");
+            tip: @tr("Inspektor dokumentu i kontrola dostępności");
+            items: [
+                { id: "inspect", label: @tr("Co zawiera plik (inspektor)"), icon: Icons.scan },
+                { id: "inspect-clean", label: @tr("Usuń komentarze, wersje i dane autora"), icon: Icons.eraser },
+                { id: "a11y", label: @tr("Sprawdź dostępność"), icon: Icons.eye },
+            ];
+            menu-w: 280px;
+            picked(id) => {
+                App.cmd(id, "");
+            }
+        }
+        BigMenuButton {
+            icon: Icons.files;
+            label: @tr("Korespondencja");
+            tip: @tr("Korespondencja seryjna: pola «Nazwa» w treści, dane z pliku CSV");
+            items: [
+                { id: "merge", label: @tr("Scal z CSV w jeden dokument"), icon: Icons.files },
+                { id: "merge-each", label: @tr("Osobny plik dla każdego wiersza"), icon: Icons.folder-open },
+                { id: "merge-fields", label: @tr("Pokaż użyte pola"), icon: Icons.braces },
+            ];
+            menu-w: 280px;
+            picked(id) => {
+                App.cmd(id, "");
             }
         }
     }

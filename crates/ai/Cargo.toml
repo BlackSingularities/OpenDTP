@@ -1,0 +1,19 @@
+[package]
+name = "opendtp-ai"
+description = "OpenDTP – generowanie dokumentów przez modele językowe"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+name = "opendtp_ai"
+
+[dependencies]
+opendtp-base.workspace = true
+opendtp-doc.workspace = true
+opendtp-format.workspace = true
+opendtp-render.workspace = true
+serde_json.workspace = true
+ureq.workspace = true

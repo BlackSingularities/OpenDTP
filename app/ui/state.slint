@@ -337,6 +337,10 @@ export global App {
     in-out property <bool> track;
     in-out property <int> rev-count;
     in-out property <string> comment-text;
+    // Okno cytowań: źródła dokumentu, styl (0 APA, 1 MLA, 2 Chicago, 3 IEEE), formularz nowego źródła.
+    in-out property <[ItemV]> cite-sources;
+    in-out property <int> cite-style;
+    in-out property <string> cite-new;
     in-out property <string> ver-name;
     in-out property <string> preflight-sum;
     in-out property <[SwatchV]> swatches;

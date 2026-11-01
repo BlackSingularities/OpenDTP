@@ -153,3 +153,42 @@ pub fn screen_ppi(modes: &[(u32, u32, u32, u32)], w: u32, h: u32) -> Option<f32>
 pub fn monitor_size(ui: &AppWindow) -> Option<(u32, u32)> {
     ui.window().with_winit_window(|w| w.current_monitor().map(|m| (m.size().width, m.size().height))).flatten()
 }
+
+/// Komunikat po awarii programu: czy dokument udało się zachować i gdzie jest dziennik.
+pub fn crash_message(saved: bool) {
+    use windows::core::PCWSTR;
+    use windows::Win32::UI::WindowsAndMessaging::{MessageBoxW, MB_ICONERROR, MB_OK};
+    let what = if saved {
+        crate::tr("Dokument został zachowany i otworzy się przy następnym uruchomieniu.")
+    } else {
+        crate::tr("Przy następnym uruchomieniu program otworzy ostatnią kopię zapisaną automatycznie.")
+    };
+    let text = format!(
+        "{}\n\n{}\n\n{}\n{}",
+        crate::tr("OpenDTP napotkał nieoczekiwany błąd i musi zostać zamknięty."),
+        what,
+        crate::tr("Szczegóły błędu zapisano w dzienniku:"),
+        opendtp_core::log::file().display()
+    );
+    let wide = |s: &str| s.encode_utf16().chain(Some(0)).collect::<Vec<u16>>();
+    let (t, c) = (wide(&text), wide("OpenDTP"));
+    unsafe {
+        MessageBoxW(None, PCWSTR(t.as_ptr()), PCWSTR(c.as_ptr()), MB_OK | MB_ICONERROR);
+    }
+}
+
+/// Czy proces o tym numerze wciąż działa (np. druga kopia programu z własną kopią odzyskiwania).
+pub fn process_alive(pid: u32) -> bool {
+    use windows::Win32::Foundation::{CloseHandle, STILL_ACTIVE};
+    use windows::Win32::System::Threading::{GetExitCodeProcess, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION};
+    if pid == std::process::id() {
+        return true;
+    }
+    unsafe {
+        let Ok(h) = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid) else { return false };
+        let mut code = 0u32;
+        let alive = GetExitCodeProcess(h, &mut code).is_ok() && code == STILL_ACTIVE.0 as u32;
+        let _ = CloseHandle(h);
+        alive
+    }
+}

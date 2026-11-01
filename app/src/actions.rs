@@ -124,6 +124,9 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             return run(st, "field", "date");
         }
     }
+    if crate::tools::run(st, id, arg) {
+        return;
+    }
     let Some(ui) = ui_app(st) else { return };
     let app = ui.global::<App>();
     let unit = st.prefs.unit;
@@ -719,7 +722,7 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
                         dlg = dlg.set_directory(dir);
                     }
                     let Some(p) = dlg.save_file() else { return };
-                    if let Err(e) = std::fs::write(&p, a.data.as_slice()) {
+                    if let Err(e) = opendtp_core::fsx::write_atomic(&p, a.data.as_slice()) {
                         toast(st, &e.to_string());
                         return;
                     }
@@ -1482,9 +1485,11 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             if has_idx {
                 run(st, "index-update", "");
             }
+            // Cytowania, bibliografia i spisy ilustracji.
+            crate::tools::refresh_refs(st);
             st.ed.relayout();
             st.view.invalidate();
-            toast(st, tr("Zaktualizowano spis treści, indeks, numery podpisów i odsyłacze"));
+            toast(st, tr("Zaktualizowano spisy, indeks, bibliografię, cytowania, numery podpisów i odsyłacze"));
         }
         "toc" | "toc-update" => {
             let paras = opendtp_core::layout::toc(&st.ed.doc, &st.ed.layout);
@@ -3126,7 +3131,7 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
 }
 
 /// Nowy obiekt wstawiony podczas pisania w treści głównej płynie z tekstem (kotwica w akapicie kursora).
-fn anchor_new(st: &mut State, id: u64) {
+pub(crate) fn anchor_new(st: &mut State, id: u64) {
     if st.ed.story != StoryRef::Body {
         return;
     }
@@ -3521,7 +3526,7 @@ fn parse_chart(t: &str) -> (Vec<String>, Vec<Series>) {
     (labels, series)
 }
 
-fn new_obj(page: usize, x: f32, y: f32, w: f32, h: f32, shape: Shape, kind: ObjKind, wrap: WrapMode) -> Object {
+pub(crate) fn new_obj(page: usize, x: f32, y: f32, w: f32, h: f32, shape: Shape, kind: ObjKind, wrap: WrapMode) -> Object {
     Object {
         id: 0,
         name: String::new(),

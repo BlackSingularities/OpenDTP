@@ -1,0 +1,16 @@
+[package]
+name = "opendtp-base"
+description = "OpenDTP – tłumaczenia, ścieżki, narzędzia i wersja"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+name = "opendtp_base"
+
+[dependencies]
+windows.workspace = true
+dirs.workspace = true
+parking_lot.workspace = true

@@ -1,0 +1,15 @@
+[package]
+name = "opendtp-tools"
+description = "OpenDTP – narzędzia dokumentu: korespondencja seryjna, porównywanie, inspektor, dostępność, tabele"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+name = "opendtp_tools"
+
+[dependencies]
+opendtp-base.workspace = true
+opendtp-doc.workspace = true

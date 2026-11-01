@@ -1,0 +1,23 @@
+[package]
+name = "opendtp-render"
+description = "OpenDTP – silnik składu, lista rysowania, renderer, preflight i szablony"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+name = "opendtp_render"
+
+[dependencies]
+opendtp-base.workspace = true
+opendtp-doc.workspace = true
+opendtp-text.workspace = true
+opendtp-format.workspace = true
+tiny-skia.workspace = true
+image.workspace = true
+resvg.workspace = true
+usvg.workspace = true
+ttf-parser.workspace = true
+unicode-segmentation.workspace = true

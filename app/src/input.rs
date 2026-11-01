@@ -831,6 +831,15 @@ fn context(st: &mut State, page: usize, px: f32, py: f32) {
                     ("tbl-col-del", tr("Usuń kolumnę"), "unfold-horizontal", false),
                 ],
             )
+            .row(
+                tr("Dane"),
+                &[
+                    ("table-sort", tr("Sortuj rosnąco według tej kolumny"), "arrow-down-to-line", false),
+                    ("table-sort-desc", tr("Sortuj malejąco według tej kolumny"), "arrow-up-from-line", false),
+                    ("table-sum", tr("Suma kolumny"), "sigma", false),
+                    ("table-to-text", tr("Zamień w tekst"), "rows-3", false),
+                ],
+            )
             .add("panel:props", tr("Dane i wygląd tabeli…"), "layout-template", "")
             .sep();
         }
@@ -934,7 +943,7 @@ fn context(st: &mut State, page: usize, px: f32, py: f32) {
         }
 
         // Łącze pod kursorem.
-        if let Some(url) = cp.link.clone().filter(|u| !u.is_empty()) {
+        if let Some(url) = cp.link.clone().filter(|u| !u.is_empty() && !internal_link(u)) {
             m.add(&format!("open-url:{url}"), tr("Otwórz łącze"), "external-link", "")
                 .add("link", tr("Edytuj łącze…"), "link", "Ctrl+K")
                 .sep();

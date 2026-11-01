@@ -669,6 +669,92 @@ export component AppWindow inherits Window {
             code-field.focus-input();
         }
     }
+    if App.dialog == "cite": Dialog {
+        width: parent.width;
+        height: parent.height;
+        w: 560px;
+        title: @tr("Cytowania i źródła");
+        Segmented {
+            tip: @tr("Styl cytowań i bibliografii – zmiana przelicza wszystkie cytowania");
+            items: ["APA 7", "MLA 9", "Chicago", "IEEE"];
+            current: App.cite-style;
+            picked(i) => {
+                App.cmd("cite-style", i);
+            }
+        }
+        Dim {
+            text: App.cite-sources.length == 0 ? @tr("Brak źródeł – dodaj je poniżej albo zaimportuj z BibTeX lub RIS (Zotero, Mendeley, Google Scholar).") : @tr("Kliknij źródło, aby wstawić cytowanie w miejscu kursora.");
+            wrap: word-wrap;
+        }
+        if App.cite-sources.length > 0: Rectangle {
+            height: min(200px, App.cite-sources.length * 26px + 8px);
+            border-radius: Theme.r-small;
+            background: Theme.raised;
+            border-width: 1px;
+            border-color: Theme.line;
+            ScrollView {
+                VerticalLayout {
+                    padding: 4px;
+                    for s in App.cite-sources: RowButton {
+                        icon: s.icon;
+                        label: s.label;
+                        compactable: false;
+                        tip: @tr("Wstaw cytowanie tego źródła");
+                        clicked => {
+                            App.cmd("cite-insert", s.id);
+                        }
+                    }
+                }
+            }
+        }
+        Rectangle {
+            height: 120px;
+            border-radius: Theme.r-small;
+            background: Theme.raised;
+            border-width: 1px;
+            border-color: Theme.line-strong;
+            TextEdit {
+                x: 1px;
+                y: 1px;
+                width: parent.width - 2px;
+                height: parent.height - 2px;
+                text <=> App.cite-new;
+                font-size: 12px;
+                placeholder-text: @tr("Rodzaj: książka / artykuł / rozdział / strona\nAutorzy: Kowalski, Jan; Nowak, Anna\nTytuł: …\nRok: 2024\nWydawca: …   Miejsce: …\nCzasopismo: …   Tom: …   Numer: …   Strony: …\nURL: …   DOI: …");
+            }
+        }
+        HorizontalLayout {
+            spacing: 8px;
+            Button {
+                tip: @tr("Plik .bib albo .ris z Zotero, Mendeleya, JabRef lub Google Scholar");
+                label: @tr("Importuj…");
+                icon: Icons.file-input;
+                clicked => {
+                    App.cmd("cite-import", "");
+                }
+            }
+            Button {
+                tip: @tr("Wstaw albo odśwież bibliografię w miejscu kursora");
+                label: @tr("Bibliografia");
+                icon: Icons.book-a;
+                clicked => {
+                    App.cmd("bibliography", "");
+                }
+            }
+            Rectangle {
+                horizontal-stretch: 1;
+            }
+            Button {
+                tip: @tr("Dodaj źródło z formularza powyżej");
+                label: @tr("Dodaj źródło");
+                icon: Icons.plus;
+                primary: true;
+                clicked => {
+                    App.cmd("cite-add", App.cite-new);
+                }
+            }
+        }
+    }
     if App.dialog == "comment": Dialog {
         width: parent.width;
         height: parent.height;
