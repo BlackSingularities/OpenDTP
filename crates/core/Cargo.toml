@@ -20,3 +20,6 @@ opendtp-io.workspace = true
 opendtp-ai.workspace = true
 opendtp-update.workspace = true
 opendtp-tools.workspace = true
+
+[dev-dependencies]
+tiny-skia.workspace = true
