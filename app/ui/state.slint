@@ -288,6 +288,8 @@ export global App {
     in-out property <bool> ai-insert;
 
     in-out property <bool> maximized;
+    // Wysokość okna – listy rozwijane mieszczą się pod przyciskiem.
+    in-out property <length> win-h: 900px;
     // Okno bez ramki systemowej: 0 – przeciągnij, 1 – minimalizuj, 2 – maksymalizuj/przywróć, 3 – zamknij,
     // 11..18 – zmiana rozmiaru od krawędzi (N, S, W, E, NW, NE, SW, SE).
     callback win(int);

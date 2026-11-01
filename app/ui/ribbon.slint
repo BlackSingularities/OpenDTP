@@ -180,7 +180,7 @@ export component MenuButton inherits Rectangle {
         y: root.height + 2px;
         Card {
             width: root.menu-w;
-            height: min(vl.preferred-height, 460px);
+            height: min(vl.preferred-height, 460px, max(160px, App.win-h - root.absolute-position.y - root.height - 14px));
             ScrollView {
                 vl := VerticalLayout {
                     padding: 5px;
@@ -236,7 +236,7 @@ export component BigMenuButton inherits Rectangle {
         y: root.height + 2px;
         Card {
             width: root.menu-w;
-            height: min(vl.preferred-height, 460px);
+            height: min(vl.preferred-height, 460px, max(160px, App.win-h - root.absolute-position.y - root.height - 14px));
             ScrollView {
                 vl := VerticalLayout {
                     padding: 5px;
@@ -304,7 +304,7 @@ export component FontBox inherits Rectangle {
         close-policy: close-on-click-outside;
         Card {
             width: 300px;
-            height: 440px;
+            height: min(440px, max(160px, App.win-h - root.absolute-position.y - root.height - 14px));
             VerticalLayout {
                 padding: 8px;
                 spacing: 6px;
@@ -398,7 +398,7 @@ export component SizeBox inherits Rectangle {
         y: root.height + 2px;
         Card {
             width: 80px;
-            height: 360px;
+            height: min(360px, max(160px, App.win-h - root.absolute-position.y - root.height - 14px));
             ListView {
                 for s in ["8", "9", "10", "10,5", "11", "12", "14", "16", "18", "20", "22", "24", "28", "32", "36", "40", "48", "54", "60", "72", "96"]: MenuItem {
                     label: s;

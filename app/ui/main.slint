@@ -458,6 +458,12 @@ export component AppWindow inherits Window {
     min-height: 560px;
     default-font-family: Theme.font;
     property <int> tip-shown: -1;
+    init => {
+        App.win-h = self.height;
+    }
+    changed height => {
+        App.win-h = self.height;
+    }
 
     callback close-requested();
 
