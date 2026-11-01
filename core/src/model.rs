@@ -152,13 +152,19 @@ pub struct CharFmt {
     /// Obrys tekstu (kontur) w punktach.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub outline: Option<f32>,
+    /// Kerning z czcionki (domyślnie włączony).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kerning: Option<bool>,
+    /// Funkcje OpenType oddzielone przecinkami, np. „onum,tnum,ss01”.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub features: Option<String>,
 }
 
 impl CharFmt {
     /// Nakłada `o` na siebie (pola ustawione w `o` wygrywają).
     pub fn merge(&mut self, o: &CharFmt) {
         macro_rules! m { ($($f:ident),*) => { $( if o.$f.is_some() { self.$f = o.$f.clone(); } )* } }
-        m!(font, size, bold, italic, underline, strike, color, highlight, script, caps, tracking, scale, baseline, lang, link, ligatures, outline);
+        m!(font, size, bold, italic, underline, strike, color, highlight, script, caps, tracking, scale, baseline, lang, link, ligatures, outline, kerning, features);
     }
 
     pub fn is_empty(&self) -> bool {
@@ -186,6 +192,8 @@ pub struct CharProps {
     pub link: Option<String>,
     pub ligatures: bool,
     pub outline: f32,
+    pub kerning: bool,
+    pub features: String,
 }
 
 impl Default for CharProps {
@@ -208,6 +216,8 @@ impl Default for CharProps {
             link: None,
             ligatures: true,
             outline: 0.0,
+            kerning: true,
+            features: String::new(),
         }
     }
 }
@@ -218,7 +228,10 @@ impl CharProps {
             self.font = v.clone();
         }
         macro_rules! a { ($($f:ident),*) => { $( if let Some(v) = f.$f { self.$f = v; } )* } }
-        a!(size, bold, italic, underline, strike, color, highlight, script, caps, tracking, scale, baseline, ligatures, outline);
+        a!(size, bold, italic, underline, strike, color, highlight, script, caps, tracking, scale, baseline, ligatures, outline, kerning);
+        if let Some(v) = &f.features {
+            self.features = v.clone();
+        }
         if let Some(v) = &f.lang {
             self.lang = v.clone();
         }

@@ -42,6 +42,8 @@ pub struct ShapedPara {
     pub breaks: Vec<usize>,
     /// Styl końca akapitu (pusty akapit, znacznik listy).
     pub end_style: u16,
+    /// Miejsca podziału wyrazu (indeksy glifów, także w `breaks`) – na końcu wiersza dostają dywiz.
+    pub hyph: Vec<usize>,
 }
 
 impl ShapedPara {
@@ -90,6 +92,23 @@ fn orphan_word(w: &str) -> bool {
 }
 
 pub fn shape(p: &Paragraph, base: &CharProps, fields: &FieldValues, orphans: bool) -> ShapedPara {
+    shape_ex(p, base, fields, orphans, false)
+}
+
+fn dictionary(lang: &str) -> Option<&'static hyphenation::Standard> {
+    use hyphenation::{Language, Load, Standard};
+    use std::sync::OnceLock;
+    static PL: OnceLock<Option<Standard>> = OnceLock::new();
+    static EN: OnceLock<Option<Standard>> = OnceLock::new();
+    if lang.starts_with("en") {
+        EN.get_or_init(|| Standard::from_embedded(Language::EnglishUS).ok()).as_ref()
+    } else {
+        PL.get_or_init(|| Standard::from_embedded(Language::Polish).ok()).as_ref()
+    }
+}
+
+/// Kształtowanie z opcjonalnym dzieleniem wyrazów (wzorce Knutha–Lianga dla języka tekstu).
+pub fn shape_ex(p: &Paragraph, base: &CharProps, fields: &FieldValues, orphans: bool, hyphenate: bool) -> ShapedPara {
     let mut styles: Vec<CharProps> = Vec::with_capacity(p.runs.len());
     let mut chars: Vec<DChar> = Vec::new();
     let mut text = String::new();
@@ -211,9 +230,41 @@ pub fn shape(p: &Paragraph, base: &CharProps, fields: &FieldValues, orphans: boo
             breaks.push(gi + 1);
         }
     }
+    // Podział wyrazów: dłuższe słowa (co najmniej 6 liter, po 2 litery z każdej strony).
+    let mut hyph = Vec::new();
+    if hyphenate {
+        use hyphenation::Hyphenator;
+        use unicode_segmentation::UnicodeSegmentation;
+        for (i, w) in text.split_word_bound_indices() {
+            if w.chars().count() < 6 || !w.chars().all(|c| c.is_alphabetic()) {
+                continue;
+            }
+            let gi0 = glyphs.partition_point(|g| g.cluster < i);
+            let lang = glyphs.get(gi0).map(|g| styles[g.style as usize].lang.clone()).unwrap_or_else(|| base.lang.clone());
+            let Some(dict) = dictionary(&lang) else { continue };
+            let lower = w.to_lowercase();
+            if lower.len() != w.len() {
+                continue;
+            }
+            for b in dict.hyphenate(&lower).breaks {
+                let left = w[..b].chars().count();
+                let right = w[b..].chars().count();
+                if left < 2 || right < 2 {
+                    continue;
+                }
+                let gi = glyphs.partition_point(|g| g.cluster < i + b);
+                if gi > 0 && gi < glyphs.len() {
+                    hyph.push(gi);
+                    breaks.push(gi);
+                }
+            }
+        }
+    }
     breaks.sort_unstable();
     breaks.dedup();
-    ShapedPara { text, glyphs, styles, breaks, end_style }
+    hyph.sort_unstable();
+    hyph.dedup();
+    ShapedPara { text, glyphs, styles, breaks, end_style, hyph }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -235,6 +286,16 @@ fn shape_chunk(chars: &[DChar], font: FontId, fake_bold: bool, fake_italic: bool
             if let Ok(f) = rustybuzz::Feature::from_str(f) {
                 feats.push(f);
             }
+        }
+    }
+    if !st.kerning {
+        if let Ok(f) = rustybuzz::Feature::from_str("-kern") {
+            feats.push(f);
+        }
+    }
+    for f in st.features.split([',', ' ']).map(str::trim).filter(|f| !f.is_empty()) {
+        if let Ok(f) = rustybuzz::Feature::from_str(f) {
+            feats.push(f);
         }
     }
     let res = rustybuzz::shape(&l.hb, &feats, buf);

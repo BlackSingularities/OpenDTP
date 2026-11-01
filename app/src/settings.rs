@@ -45,6 +45,7 @@ pub struct Prefs {
     pub ai_model: String,
     pub ai_temp: f32,
     pub ai_base: String,
+    pub ruler: bool,
 }
 
 impl Default for Prefs {
@@ -86,6 +87,7 @@ impl Default for Prefs {
             ai_model: String::new(),
             ai_temp: 0.7,
             ai_base: String::new(),
+            ruler: true,
         }
     }
 }

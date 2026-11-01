@@ -721,6 +721,14 @@ component HomeTab inherits HorizontalLayout {
                         App.cmd("clear-format", "");
                     }
                 }
+                IconButton {
+                    icon: Icons.sliders-horizontal;
+                    tip: @tr("Czcionka – wszystkie ustawienia");
+                    size: 24px;
+                    clicked => {
+                        App.cmd("font-dialog", "");
+                    }
+                }
             }
             Row {
                 IconButton {
@@ -874,6 +882,14 @@ component HomeTab inherits HorizontalLayout {
                     size: 26px;
                     clicked => {
                         App.cmd("marks", "");
+                    }
+                }
+                IconButton {
+                    icon: Icons.sliders-vertical;
+                    tip: @tr("Akapit – wszystkie ustawienia");
+                    size: 26px;
+                    clicked => {
+                        App.cmd("para-dialog", "");
                     }
                 }
             }
@@ -1286,6 +1302,14 @@ component DesignTab inherits HorizontalLayout {
                 on: App.orphans;
                 toggled => {
                     App.cmd("orphans", "");
+                }
+            }
+            Switch {
+                label: @tr("Dzielenie wyrazów");
+                tip: @tr("Automatyczne przenoszenie wyrazów z dywizem (polski i angielski)");
+                on: App.hyphenate;
+                toggled => {
+                    App.cmd("hyphenate", "");
                 }
             }
             Switch {
@@ -1881,8 +1905,7 @@ component ShapesTab inherits HorizontalLayout {
         }
     }
     Group {
-        title: @tr("Wygląd");
-        last: true;
+        title: @tr("Wypełnienie i obrys");
         ColorPick {
             big: true;
             icon: Icons.paint-bucket;
@@ -1910,19 +1933,6 @@ component ShapesTab inherits HorizontalLayout {
             }
         }
         Col {
-            Spin {
-                label: @tr("Obrys");
-                tip: @tr("Grubość obrysu (pt)");
-                value: App.stroke-w;
-                unit: "pt";
-                w: 70px;
-                changed-value(v) => {
-                    App.cmd("stroke-w", v);
-                }
-                step(d) => {
-                    App.cmd("stroke-w-step", d);
-                }
-            }
             Segmented {
                 items: [@tr("Jednolite"), @tr("Gradient"), @tr("Kołowy")];
                 current: App.fill-kind;
@@ -1931,34 +1941,39 @@ component ShapesTab inherits HorizontalLayout {
                     App.cmd("fill-kind", i);
                 }
             }
-            Row {
-                Switch {
-                    label: @tr("Cień");
-                    on: App.shadow;
-                    toggled => {
-                        App.cmd("shadow", "");
-                    }
+            Spin {
+                label: @tr("Obrys");
+                tip: @tr("Grubość obrysu (pt)");
+                value: App.stroke-w;
+                unit: "pt";
+                w: 76px;
+                changed-value(v) => {
+                    App.cmd("stroke-w", v);
                 }
-                Switch {
-                    label: @tr("Kreski");
-                    tip: @tr("Obrys przerywany");
-                    on: App.dashed;
-                    toggled => {
-                        App.cmd("dashed", "");
-                    }
+                step(d) => {
+                    App.cmd("stroke-w-step", d);
+                }
+            }
+            Switch {
+                label: @tr("Kreski");
+                tip: @tr("Obrys przerywany");
+                on: App.dashed;
+                toggled => {
+                    App.cmd("dashed", "");
                 }
             }
         }
+    }
+    Group {
+        title: @tr("Efekty");
+        last: true;
         Col {
-            Dim {
-                text: @tr("Krycie {}%", round(App.opacity * 100));
-            }
-            Slider {
-                width: 100px;
-                value: App.opacity;
-                tip: @tr("Krycie obiektu");
-                moved(v) => {
-                    App.cmd("opacity", v);
+            Switch {
+                label: @tr("Cień");
+                tip: @tr("Miękki cień pod kształtem");
+                on: App.shadow;
+                toggled => {
+                    App.cmd("shadow", "");
                 }
             }
             Spin {
@@ -1966,12 +1981,31 @@ component ShapesTab inherits HorizontalLayout {
                 tip: @tr("Zaokrąglenie narożników prostokąta (pt)");
                 value: App.corner;
                 unit: "pt";
-                w: 64px;
+                w: 70px;
                 changed-value(v) => {
                     App.cmd("corner", v);
                 }
                 step(d) => {
                     App.cmd("corner-step", d);
+                }
+            }
+            HorizontalLayout {
+                spacing: 8px;
+                Dim {
+                    text: @tr("Krycie");
+                }
+                Slider {
+                    width: 90px;
+                    y: (parent.height - self.height) / 2;
+                    value: App.opacity;
+                    tip: @tr("Krycie obiektu");
+                    moved(v) => {
+                        App.cmd("opacity", v);
+                    }
+                }
+                Dim {
+                    text: round(App.opacity * 100) + "%";
+                    width: 34px;
                 }
             }
         }
@@ -2135,6 +2169,14 @@ component ViewTab inherits HorizontalLayout {
                 on: App.marks;
                 toggled => {
                     App.cmd("marks", "");
+                }
+            }
+            Switch {
+                label: @tr("Linijka");
+                tip: @tr("Linijka z suwakami wcięć i tabulatorami");
+                on: App.ruler-on;
+                toggled => {
+                    App.cmd("ruler-toggle", "");
                 }
             }
             Switch {

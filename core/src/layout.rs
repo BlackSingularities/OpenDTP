@@ -383,6 +383,8 @@ struct Flow<'a> {
     /// Inicjał: wiersze nad `y_end` zaczynają się za `x_end` (w regionie `ri`).
     drop: Option<(f32, f32, usize)>,
     grid: f32,
+    /// Kontrola wdów: przed tym wierszem akapitu (licząc od 0) przejdź do następnego regionu.
+    force_break: Option<usize>,
 }
 
 impl<'a> Flow<'a> {
@@ -532,7 +534,8 @@ fn fill(sp: &ShapedPara, start: usize, ivs: &[(f32, f32)], tabs: &mut TabCtx, fu
                     trim_end = p;
                 }
             }
-            if trim_end <= x1 + 0.01 {
+            let hyw = if sp.hyph.binary_search(&we).is_ok() { gl[gi].size * 0.35 } else { 0.0 };
+            if trim_end + hyw <= x1 + 0.01 {
                 let count = advs.len();
                 for (k, (a, lead)) in (gi..).zip(advs) {
                     out.push(PGlyph { g: gl[k], x: pen, y: 0.0, adv: a, leader: lead });
@@ -673,6 +676,13 @@ impl<'a> Flow<'a> {
         let mut first = true;
         let mut lines_here = 0usize;
         loop {
+            if self.force_break == Some(lines_here) && !self.top {
+                self.force_break = None;
+                if !self.next_region() {
+                    self.overflow = true;
+                    return false;
+                }
+            }
             let m = line_metrics(&sp, &sp.glyphs[gi..n.min(gi + 24)]);
             let (mut h, mut base) = line_box(m, pp.line);
             let mut tries = 0;
@@ -767,6 +777,24 @@ impl<'a> Flow<'a> {
                 break (f, x_first, x_first);
             };
             let (mut f, empty_x, text_x) = filled;
+            if f.end < n && sp.hyph.binary_search(&f.end).is_ok() {
+                if let Some(last) = f.glyphs.last().copied().filter(|g| g.g.kind == GKind::Normal) {
+                    if let Some(fl) = crate::fonts::get(last.g.font) {
+                        if let Some(gid) = fl.face.glyph_index('-') {
+                            let adv = fl.face.glyph_hor_advance(gid).unwrap_or(0) as f32 * last.g.size / fl.upem;
+                            let mut g = last.g;
+                            g.gid = gid.0;
+                            g.adv = adv;
+                            g.dx = 0.0;
+                            g.dy = 0.0;
+                            f.glyphs.push(PGlyph { g, x: last.x + last.adv, y: 0.0, adv, leader: false });
+                            if let Some(s) = f.segs.last_mut() {
+                                s.g1 = f.glyphs.len();
+                            }
+                        }
+                    }
+                }
+            }
             let baseline = self.y + base;
             for g in f.glyphs.iter_mut() {
                 let st = sp.style(&g.g);
@@ -876,13 +904,14 @@ impl Engine {
 
     fn shaped(&mut self, doc: &Document, p: &Paragraph, fv: &FieldValues) -> (Arc<ShapedPara>, ParaProps) {
         let (pp, base) = doc.resolve_para(p);
-        let k = key(p, &base, Some(fv), doc.settings.orphans);
+        let hy = pp.hyphenate || doc.settings.hyphenate;
+        let k = key(p, &base, Some(fv), doc.settings.orphans) ^ if hy { 0x9e37_79b9_7f4a_7c15 } else { 0 };
         let gen = self.gen;
         if let Some((g, sp)) = self.cache.get_mut(&k) {
             *g = gen;
             return (sp.clone(), pp);
         }
-        let sp = Arc::new(text::shape(p, &base, fv, doc.settings.orphans));
+        let sp = Arc::new(text::shape_ex(p, &base, fv, doc.settings.orphans, hy));
         self.cache.insert(k, (gen, sp.clone()));
         (sp, pp)
     }
@@ -929,8 +958,32 @@ impl Engine {
                 Some(sp) => line_box(line_metrics(sp, &sp.glyphs[..sp.glyphs.len().min(24)]), prep.props[i + 1].line).0,
                 None => 0.0,
             };
+            let saved = (flow.lines.len(), flow.ri, flow.y, flow.top, flow.drop);
             if !flow.place_para(i, prep.shaped[i].clone(), &prep.props[i], prep.markers[i].clone(), next_h) {
                 break;
+            }
+            // Wdowa: ostatni wiersz akapitu sam w nowym regionie – przenosimy też przedostatni.
+            if prep.props[i].widows {
+                let mine: Vec<&Line> = flow.lines[saved.0..].iter().collect();
+                let n = mine.len();
+                if n >= 3 {
+                    let last = mine[n - 1];
+                    let prev = mine[n - 2];
+                    let moved = last.page != prev.page || last.top < prev.top;
+                    if moved {
+                        let k = n - 2;
+                        flow.lines.truncate(saved.0);
+                        flow.ri = saved.1;
+                        flow.y = saved.2;
+                        flow.top = saved.3;
+                        flow.drop = saved.4;
+                        flow.force_break = Some(k);
+                        if !flow.place_para(i, prep.shaped[i].clone(), &prep.props[i], prep.markers[i].clone(), next_h) {
+                            break;
+                        }
+                        flow.force_break = None;
+                    }
+                }
             }
         }
     }
@@ -944,7 +997,7 @@ impl Engine {
         // Treść główna.
         let fv = FieldValues { page: doc.page.first_number, pages: 0, title: &title, author: &author };
         let prep = self.prep(doc, &doc.body, &fv);
-        let mut flow = Flow { doc, story: StoryRef::Body, regions: body_regions(doc, 0), ri: 0, y: doc.page.margin_top, top: true, grow: true, lines: Vec::new(), overflow: false, drop: None, grid: doc.settings.baseline_grid };
+        let mut flow = Flow { doc, story: StoryRef::Body, regions: body_regions(doc, 0), ri: 0, y: doc.page.margin_top, top: true, grow: true, lines: Vec::new(), overflow: false, drop: None, grid: doc.settings.baseline_grid, force_break: None };
         self.run(&mut flow, &prep);
         let body_lines = std::mem::take(&mut flow.lines);
         let body_pages = body_lines.last().map(|l| l.page + 1).unwrap_or(1);
@@ -991,7 +1044,7 @@ impl Engine {
                     excl: Arc::new(Vec::new()),
                     obj: None,
                 };
-                let mut f = Flow { doc, story: sref, regions: vec![region], ri: 0, y: 0.0, top: true, grow: false, lines: Vec::new(), overflow: false, drop: None, grid: 0.0 };
+                let mut f = Flow { doc, story: sref, regions: vec![region], ri: 0, y: 0.0, top: true, grow: false, lines: Vec::new(), overflow: false, drop: None, grid: 0.0, force_break: None };
                 f.y = f.regions[0].y0;
                 self.run(&mut f, &prep);
                 let mut lines = f.lines;
@@ -1029,7 +1082,7 @@ impl Engine {
             let fvh = FieldValues { page: ho.page as u32 + ps.first_number, ..fvo };
             let prep = self.prep(doc, story, &fvh);
             let y0 = regions[0].y0;
-            let mut f = Flow { doc, story: StoryRef::Obj(head), regions, ri: 0, y: y0, top: true, grow: false, lines: Vec::new(), overflow: false, drop: None, grid: 0.0 };
+            let mut f = Flow { doc, story: StoryRef::Obj(head), regions, ri: 0, y: y0, top: true, grow: false, lines: Vec::new(), overflow: false, drop: None, grid: 0.0, force_break: None };
             // Górny margines wewnętrzny ramki.
             f.y += f.regions[0].pad;
             self.run(&mut f, &prep);

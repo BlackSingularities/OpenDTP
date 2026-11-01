@@ -3,6 +3,7 @@
 
 import { Theme } from "theme.slint";
 import { App, PageV, BoxV, NodeV } from "state.slint";
+import { TipArea } from "widgets.slint";
 
 component Handle inherits Rectangle {
     in property <string> id;
@@ -12,6 +13,141 @@ component Handle inherits Rectangle {
     background: #ffffff;
     border-width: 1.5px;
     border-color: Theme.accent;
+}
+
+/// Suwak linijki (wcięcie albo tabulator) – przeciąganie zmienia położenie w punktach.
+component RulerMark inherits Rectangle {
+    in property <length> at;
+    in property <int> kind;
+    in property <float> value;
+    in property <string> tip;
+    callback done(float, bool);
+    property <length> dx;
+    x: root.at + root.dx - 6px;
+    width: 12px;
+    height: 12px;
+    Path {
+        width: 10px;
+        height: 8px;
+        x: 1px;
+        y: root.kind == 1 ? 0px : 4px;
+        viewbox-width: 10;
+        viewbox-height: 8;
+        fill: root.kind == 3 ? transparent : ma.pressed ? Theme.accent : Theme.text;
+        stroke: Theme.text;
+        stroke-width: root.kind == 3 ? 1.6px : 0px;
+        commands: root.kind == 1 ? "M 0 0 L 10 0 L 5 7 Z" : root.kind == 3 ? "M 2 0 L 2 7 L 9 7" : "M 5 0 L 10 7 L 0 7 Z";
+    }
+    ma := TouchArea {
+        mouse-cursor: MouseCursor.ew-resize;
+        property <length> grab;
+        property <length> dy;
+        pointer-event(e) => {
+            if (e.kind == PointerEventKind.down) {
+                self.grab = self.mouse-x;
+            } else if (e.kind == PointerEventKind.up) {
+                root.done(root.value + root.dx / (App.ruler-k * 1px), abs(self.dy) > 18px);
+                root.dx = 0;
+                self.dy = 0;
+            }
+        }
+        moved => {
+            if (self.pressed) {
+                root.dx += self.mouse-x - self.grab;
+                self.dy = self.mouse-y - 6px;
+            }
+        }
+    }
+    TipArea {
+        x: 0;
+        width: 0;
+        tip: root.tip;
+    }
+}
+
+component Ruler inherits Rectangle {
+    height: 22px;
+    background: Theme.panel;
+    property <length> ox: App.ruler-page-x + App.view-x;
+    property <length> k: App.ruler-k * 1px;
+    Rectangle {
+        y: parent.height - 1px;
+        height: 1px;
+        background: Theme.line;
+    }
+    // Obszar tekstu (kolumna) jaśniejszy.
+    Rectangle {
+        x: root.ox + App.ruler-c0 * root.k;
+        y: 4px;
+        width: max(0, (App.ruler-c1 - App.ruler-c0) * root.k);
+        height: 14px;
+        background: Theme.raised;
+        border-radius: 2px;
+    }
+    for t[i] in 60: Rectangle {
+        property <float> pt: i * App.ruler-tick / 2;
+        x: root.ox + self.pt * root.k;
+        y: mod(i, 2) == 0 ? 12px : 15px;
+        width: 1px;
+        height: mod(i, 2) == 0 ? 6px : 3px;
+        background: Theme.text-faint;
+        visible: self.x > 0 && self.x < root.width;
+    }
+    for t[i] in 30: Text {
+        x: root.ox + i * App.ruler-tick * root.k - 6px;
+        y: 1px;
+        width: 12px;
+        text: i == 0 ? "" : i;
+        font-size: 9px;
+        color: Theme.text-faint;
+        horizontal-alignment: center;
+        visible: self.x > 0 && self.x < root.width;
+    }
+    TouchArea {
+        clicked => {
+            App.cmd("ruler", "tab+;" + ((self.mouse-x - root.ox) / root.k - App.ruler-c0));
+        }
+    }
+    for t in App.ruler-tabs: RulerMark {
+        y: 9px;
+        kind: 3;
+        at: root.ox + (App.ruler-c0 + t) * root.k;
+        value: t;
+        tip: @tr("Tabulator – przeciągnij, aby przesunąć; w dół, aby usunąć");
+        done(v, off) => {
+            App.cmd("ruler", (off ? "tab-;" : "tabmv;" + t + ";") + (off ? t : v));
+        }
+    }
+    RulerMark {
+        y: 0px;
+        kind: 1;
+        at: root.ox + (App.ruler-c0 + App.ruler-left + App.ruler-first) * root.k;
+        value: App.ruler-first;
+        tip: @tr("Wcięcie pierwszego wiersza");
+        done(v, off) => {
+            App.cmd("ruler", "first;" + v);
+        }
+    }
+    RulerMark {
+        y: 10px;
+        kind: 2;
+        at: root.ox + (App.ruler-c0 + App.ruler-left) * root.k;
+        value: App.ruler-left;
+        tip: @tr("Wcięcie z lewej");
+        done(v, off) => {
+            App.cmd("ruler", "left;" + v);
+        }
+    }
+    RulerMark {
+        y: 10px;
+        kind: 2;
+        at: root.ox + (App.ruler-c1 - App.ruler-right) * root.k;
+        value: App.ruler-right;
+        tip: @tr("Wcięcie z prawej");
+        done(v, off) => {
+            App.cmd("ruler", "right;" + v);
+        }
+    }
 }
 
 export component Canvas inherits Rectangle {
@@ -26,7 +162,13 @@ export component Canvas inherits Rectangle {
     changed height => {
         App.viewport(-fl.viewport-x, -fl.viewport-y, self.width, self.height);
     }
+    if App.ruler-on: Ruler {
+        y: 0;
+        width: parent.width;
+    }
     fs := FocusScope {
+        y: App.ruler-on ? 22px : 0px;
+        height: parent.height - self.y;
         key-pressed(e) => {
             if (App.key(e.text, e.modifiers.control, e.modifiers.shift, e.modifiers.alt)) {
                 return accept;

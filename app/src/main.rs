@@ -239,6 +239,26 @@ fn sync(st: &mut State, ui: &AppWindow) {
     app.set_baseline_grid(ed.doc.settings.baseline_grid > 0.0);
     app.set_doc_theme(st.doc_theme.clone().into());
     app.set_page_border(ps.border.is_some());
+    app.set_hyphenate(ed.doc.settings.hyphenate);
+    app.set_ruler_on(st.prefs.ruler);
+    // Linijka: strona i kolumna wiersza z kursorem, wcięcia akapitu.
+    if let Some(c) = ed.layout.caret(ed.story, ed.head.para, ed.head.off) {
+        let l = &ed.layout.lines[c.line];
+        let list = pp.list.map(|lf| (lf.level as f32 + 1.0) * 18.0).unwrap_or(0.0);
+        let c0 = l.area.0 - pp.indent_left;
+        let c1 = l.area.1 + pp.indent_right;
+        let (px, _) = st.view.to_canvas(c.page, 0.0, 0.0);
+        app.set_ruler_page_x(px);
+        app.set_ruler_k(st.view.k());
+        app.set_ruler_c0(c0);
+        app.set_ruler_c1(c1);
+        app.set_ruler_left(pp.indent_left + list);
+        app.set_ruler_first(if pp.list.is_some() { -18.0 } else { pp.first_line });
+        app.set_ruler_right(pp.indent_right);
+        let tabs: Vec<f32> = pp.tabs.iter().copied().filter(|t| *t > 0.0).collect();
+        app.set_ruler_tabs(ModelRc::new(VecModel::from(tabs)));
+        app.set_ruler_tick(unit_k(if unit == 2 { 2 } else { 1 }));
+    }
     if app.get_watermark().as_str() != ps.watermark {
         app.set_watermark(ps.watermark.clone().into());
     }

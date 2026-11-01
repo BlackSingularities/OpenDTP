@@ -288,6 +288,62 @@ export global App {
     in-out property <bool> ai-insert;
 
     in-out property <bool> maximized;
+    in-out property <bool> hyphenate;
+    // Linijka: położenie strony (px bez przewinięcia), piksele na punkt, kolumna i wcięcia akapitu (pt).
+    in-out property <bool> ruler-on: true;
+    in-out property <length> ruler-page-x;
+    in-out property <float> ruler-k: 1.333;
+    in-out property <float> ruler-c0;
+    in-out property <float> ruler-c1: 400;
+    in-out property <float> ruler-left;
+    in-out property <float> ruler-first;
+    in-out property <float> ruler-right;
+    in-out property <[float]> ruler-tabs;
+    in-out property <float> ruler-tick: 28.35;
+    // Okno Czcionka.
+    in-out property <string> f-font;
+    in-out property <string> f-size;
+    in-out property <bool> f-bold;
+    in-out property <bool> f-italic;
+    in-out property <int> f-underline;
+    in-out property <bool> f-strike;
+    in-out property <int> f-caps;
+    in-out property <int> f-script;
+    in-out property <string> f-color;
+    in-out property <string> f-highlight;
+    in-out property <string> f-tracking;
+    in-out property <string> f-scale;
+    in-out property <string> f-baseline;
+    in-out property <bool> f-kerning: true;
+    in-out property <bool> f-ligatures: true;
+    in-out property <bool> f-onum;
+    in-out property <bool> f-lnum;
+    in-out property <bool> f-tnum;
+    in-out property <bool> f-smcp;
+    in-out property <bool> f-frac;
+    in-out property <string> f-ss;
+    in-out property <int> f-lang;
+    // Okno Akapit.
+    in-out property <int> p-align;
+    in-out property <string> p-left;
+    in-out property <string> p-right;
+    in-out property <string> p-first;
+    in-out property <string> p-before;
+    in-out property <string> p-after;
+    in-out property <int> p-line-kind;
+    in-out property <string> p-line;
+    in-out property <bool> p-keep-next;
+    in-out property <bool> p-keep-lines;
+    in-out property <bool> p-widows: true;
+    in-out property <bool> p-page-before;
+    in-out property <bool> p-hyphen;
+    in-out property <string> p-shading;
+    in-out property <string> p-border-w;
+    in-out property <string> p-border-color;
+    in-out property <string> p-radius;
+    in-out property <string> p-padding;
+    in-out property <int> p-dropcap;
+    in-out property <string> p-tabs;
     // Wysokość okna – listy rozwijane mieszczą się pod przyciskiem.
     in-out property <length> win-h: 900px;
     // Okno bez ramki systemowej: 0 – przeciągnij, 1 – minimalizuj, 2 – maksymalizuj/przywróć, 3 – zamknij,

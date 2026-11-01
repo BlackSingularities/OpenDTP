@@ -835,6 +835,283 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
                 }
             });
         }
+        "hyphenate" => {
+            st.ed.begin(Kind::Other);
+            st.ed.doc.settings.hyphenate = !st.ed.doc.settings.hyphenate;
+            st.ed.changed();
+        }
+        "ruler-toggle" => {
+            st.prefs.ruler = !st.prefs.ruler;
+            st.prefs.save();
+        }
+        "ruler" => {
+            let mut it = arg.split(';');
+            let kind = it.next().unwrap_or("").to_string();
+            let v1: f32 = it.next().and_then(|v| v.replace(',', ".").parse().ok()).unwrap_or(0.0);
+            let v2: f32 = it.next().and_then(|v| v.replace(',', ".").parse().ok()).unwrap_or(0.0);
+            let (_, pp, _) = st.ed.caret_props();
+            let list = pp.list.map(|lf| (lf.level as f32 + 1.0) * 18.0).unwrap_or(0.0);
+            let round = |v: f32| (v * 2.0).round() / 2.0;
+            match kind.as_str() {
+                "left" => {
+                    let v = round((v1 - list).max(0.0));
+                    st.ed.format_paras(&move |p| p.fmt.indent_left = Some(v));
+                }
+                "first" => {
+                    let v = round(v1);
+                    st.ed.format_paras(&move |p| p.fmt.first_line = Some(v));
+                }
+                "right" => {
+                    let v = round(v1.max(0.0));
+                    st.ed.format_paras(&move |p| p.fmt.indent_right = Some(v));
+                }
+                "tab+" | "tab-" | "tabmv" => {
+                    let mut tabs = pp.tabs.clone();
+                    match kind.as_str() {
+                        "tab+" if v1 > 2.0 => tabs.push(round(v1)),
+                        "tab-" => tabs.retain(|t| (t - v1).abs() > 0.6),
+                        "tabmv" => {
+                            tabs.retain(|t| (t - v1).abs() > 0.6);
+                            if v2 > 2.0 {
+                                tabs.push(round(v2));
+                            }
+                        }
+                        _ => {}
+                    }
+                    tabs.sort_by(|x, y| x.partial_cmp(y).unwrap());
+                    tabs.dedup_by(|x, y| (*x - *y).abs() < 0.6);
+                    st.ed.format_paras(&move |p| p.fmt.tabs = Some(tabs.clone()));
+                }
+                _ => {}
+            }
+        }
+        "font-dialog" => {
+            let (cp, _, _) = st.ed.caret_props();
+            app.set_f_font(cp.font.clone().into());
+            app.set_f_size(num(cp.size).into());
+            app.set_f_bold(cp.bold);
+            app.set_f_italic(cp.italic);
+            app.set_f_underline(match cp.underline {
+                Underline::None => 0,
+                Underline::Single => 1,
+                Underline::Double => 2,
+                Underline::Dotted => 3,
+                Underline::Wave => 4,
+            });
+            app.set_f_strike(cp.strike);
+            app.set_f_caps(match cp.caps {
+                Caps::None => 0,
+                Caps::All => 1,
+                Caps::Small => 2,
+            });
+            app.set_f_script(match cp.script {
+                Script::Normal => 0,
+                Script::Super => 1,
+                Script::Sub => 2,
+            });
+            app.set_f_color(cp.color.hex().into());
+            app.set_f_highlight(if cp.highlight.is_none() { String::new() } else { cp.highlight.hex() }.into());
+            app.set_f_tracking(num(cp.tracking).into());
+            app.set_f_scale(num(cp.scale).into());
+            app.set_f_baseline(num(cp.baseline).into());
+            app.set_f_kerning(cp.kerning);
+            app.set_f_ligatures(cp.ligatures);
+            let feats: Vec<String> = cp.features.split([',', ' ']).map(|f| f.trim().to_string()).filter(|f| !f.is_empty()).collect();
+            let has = |f: &str| feats.iter().any(|x| x == f);
+            app.set_f_onum(has("onum"));
+            app.set_f_lnum(has("lnum"));
+            app.set_f_tnum(has("tnum"));
+            app.set_f_smcp(has("smcp"));
+            app.set_f_frac(has("frac"));
+            app.set_f_ss(feats.iter().filter(|f| !["onum", "lnum", "tnum", "smcp", "frac"].contains(&f.as_str())).cloned().collect::<Vec<_>>().join(", ").into());
+            app.set_f_lang(if cp.lang.starts_with("en") { 1 } else { 0 });
+            app.set_dialog("font".into());
+            return;
+        }
+        "f-step" => {
+            let (k, d) = arg.split_once(';').unwrap_or(("", "0"));
+            let d: f32 = d.parse().unwrap_or(0.0);
+            match k {
+                "tracking" => app.set_f_tracking(num(parse_num(&app.get_f_tracking()).unwrap_or(0.0) + d * 0.5).into()),
+                "scale" => app.set_f_scale(num((parse_num(&app.get_f_scale()).unwrap_or(100.0) + d * 5.0).clamp(10.0, 400.0)).into()),
+                _ => app.set_f_baseline(num(parse_num(&app.get_f_baseline()).unwrap_or(0.0) + d * 0.5).into()),
+            }
+            return;
+        }
+        "font-apply" => {
+            let font = app.get_f_font().to_string();
+            let size = parse_num(&app.get_f_size());
+            let (bold, italic, strike) = (app.get_f_bold(), app.get_f_italic(), app.get_f_strike());
+            let underline = match app.get_f_underline() {
+                1 => Underline::Single,
+                2 => Underline::Double,
+                3 => Underline::Dotted,
+                4 => Underline::Wave,
+                _ => Underline::None,
+            };
+            let caps = match app.get_f_caps() {
+                1 => Caps::All,
+                2 => Caps::Small,
+                _ => Caps::None,
+            };
+            let script = match app.get_f_script() {
+                1 => Script::Super,
+                2 => Script::Sub,
+                _ => Script::Normal,
+            };
+            let color = Color::parse(&app.get_f_color());
+            let hl = app.get_f_highlight().to_string();
+            let highlight = if hl.trim().is_empty() { Some(Color::NONE) } else { Color::parse(&hl) };
+            let tracking = parse_num(&app.get_f_tracking());
+            let scale = parse_num(&app.get_f_scale());
+            let baseline = parse_num(&app.get_f_baseline());
+            let (kern, liga) = (app.get_f_kerning(), app.get_f_ligatures());
+            let mut feats: Vec<String> = Vec::new();
+            for (on, f) in [(app.get_f_onum(), "onum"), (app.get_f_lnum(), "lnum"), (app.get_f_tnum(), "tnum"), (app.get_f_smcp(), "smcp"), (app.get_f_frac(), "frac")] {
+                if on {
+                    feats.push(f.into());
+                }
+            }
+            feats.extend(app.get_f_ss().split([',', ' ']).map(|f| f.trim().to_string()).filter(|f| !f.is_empty()));
+            let features = feats.join(",");
+            let lang = if app.get_f_lang() == 1 { "en" } else { "pl" }.to_string();
+            if !font.trim().is_empty() {
+                st.prefs.add_recent_font(font.trim());
+            }
+            st.ed.format(&move |f| {
+                if !font.trim().is_empty() {
+                    f.font = Some(font.trim().to_string());
+                }
+                if let Some(v) = size {
+                    f.size = Some(v.clamp(1.0, 1600.0));
+                }
+                f.bold = Some(bold);
+                f.italic = Some(italic);
+                f.strike = Some(strike);
+                f.underline = Some(underline);
+                f.caps = Some(caps);
+                f.script = Some(script);
+                if color.is_some() {
+                    f.color = color;
+                }
+                if highlight.is_some() {
+                    f.highlight = highlight;
+                }
+                f.tracking = tracking.or(f.tracking);
+                f.scale = scale.or(f.scale);
+                f.baseline = baseline.or(f.baseline);
+                f.kerning = Some(kern);
+                f.ligatures = Some(liga);
+                f.features = Some(features.clone());
+                f.lang = Some(lang.clone());
+            });
+            app.set_dialog("".into());
+            st.view.invalidate();
+        }
+        "para-dialog" => {
+            let (_, pp, _) = st.ed.caret_props();
+            app.set_p_align(match pp.align {
+                Align::Left => 0,
+                Align::Center => 1,
+                Align::Right => 2,
+                Align::Justify => 3,
+            });
+            app.set_p_left(len_str(pp.indent_left, unit).into());
+            app.set_p_right(len_str(pp.indent_right, unit).into());
+            app.set_p_first(len_str(pp.first_line, unit).into());
+            app.set_p_before(num(pp.space_before).into());
+            app.set_p_after(num(pp.space_after).into());
+            let (kind, v) = match pp.line {
+                LineSpacing::Multiple(k) => (0, k),
+                LineSpacing::Exact(v) => (1, v),
+                LineSpacing::AtLeast(v) => (2, v),
+            };
+            app.set_p_line_kind(kind);
+            app.set_p_line(num(v).into());
+            app.set_p_keep_next(pp.keep_next);
+            app.set_p_keep_lines(pp.keep_lines);
+            app.set_p_widows(pp.widows);
+            app.set_p_page_before(pp.break_before == Break::Page);
+            app.set_p_hyphen(pp.hyphenate);
+            app.set_p_shading(if pp.shading.is_none() { String::new() } else { pp.shading.hex() }.into());
+            let b = pp.border.unwrap_or(BoxBorder { width: 0.0, color: Color::BLACK, radius: 0.0, padding: 4.0 });
+            app.set_p_border_w(num(b.width).into());
+            app.set_p_border_color(b.color.hex().into());
+            app.set_p_radius(num(b.radius).into());
+            app.set_p_padding(num(b.padding).into());
+            app.set_p_dropcap(pp.drop_cap as i32);
+            app.set_p_tabs(pp.tabs.iter().map(|t| num(*t)).collect::<Vec<_>>().join("; ").into());
+            app.set_dialog("para".into());
+            return;
+        }
+        "p-step" => {
+            let (k, d) = arg.split_once(';').unwrap_or(("", "0"));
+            let dv: f32 = d.replace(',', ".").parse().unwrap_or(0.0);
+            let lstep = if unit == 0 { 1.0 } else if unit == 3 { 2.0 } else { 0.1 };
+            let bump = |s: slint::SharedString, step: f32| num(parse_num(&s).unwrap_or(0.0) + dv * step);
+            match k {
+                "left" => app.set_p_left(bump(app.get_p_left(), lstep).into()),
+                "right" => app.set_p_right(bump(app.get_p_right(), lstep).into()),
+                "first" => app.set_p_first(bump(app.get_p_first(), lstep).into()),
+                "before" => app.set_p_before(bump(app.get_p_before(), 2.0).into()),
+                "after" => app.set_p_after(bump(app.get_p_after(), 2.0).into()),
+                "dropcap" => app.set_p_dropcap((app.get_p_dropcap() + dv as i32).clamp(0, 6)),
+                "dropcap-set" => app.set_p_dropcap((dv as i32).clamp(0, 6)),
+                _ => {}
+            }
+            return;
+        }
+        "para-apply" => {
+            let align = match app.get_p_align() {
+                1 => Align::Center,
+                2 => Align::Right,
+                3 => Align::Justify,
+                _ => Align::Left,
+            };
+            let l = parse_num(&app.get_p_left()).map(|v| v * uk);
+            let r = parse_num(&app.get_p_right()).map(|v| v * uk);
+            let fl = parse_num(&app.get_p_first()).map(|v| v * uk);
+            let before = parse_num(&app.get_p_before());
+            let after = parse_num(&app.get_p_after());
+            let lv = parse_num(&app.get_p_line()).unwrap_or(1.15);
+            let line = match app.get_p_line_kind() {
+                1 => LineSpacing::Exact(lv.max(1.0)),
+                2 => LineSpacing::AtLeast(lv.max(1.0)),
+                _ => LineSpacing::Multiple(lv.clamp(0.5, 5.0)),
+            };
+            let (kn, kl, wd, pb, hy) = (app.get_p_keep_next(), app.get_p_keep_lines(), app.get_p_widows(), app.get_p_page_before(), app.get_p_hyphen());
+            let sh = app.get_p_shading().to_string();
+            let shading = if sh.trim().is_empty() { Color::NONE } else { Color::parse(&sh).unwrap_or(Color::NONE) };
+            let bw = parse_num(&app.get_p_border_w()).unwrap_or(0.0);
+            let border = BoxBorder {
+                width: bw.max(0.0),
+                color: Color::parse(&app.get_p_border_color()).unwrap_or(Color::BLACK),
+                radius: parse_num(&app.get_p_radius()).unwrap_or(0.0).max(0.0),
+                padding: parse_num(&app.get_p_padding()).unwrap_or(4.0).max(0.0),
+            };
+            let has_border = bw > 0.0 || border.radius > 0.0 || !shading.is_none();
+            let drop = app.get_p_dropcap().clamp(0, 6) as u8;
+            let tabs: Vec<f32> = app.get_p_tabs().split([';', ' ']).filter_map(parse_num).collect();
+            st.ed.format_paras(&move |p| {
+                p.fmt.align = Some(align);
+                p.fmt.indent_left = l.or(p.fmt.indent_left);
+                p.fmt.indent_right = r.or(p.fmt.indent_right);
+                p.fmt.first_line = fl.or(p.fmt.first_line);
+                p.fmt.space_before = before.or(p.fmt.space_before);
+                p.fmt.space_after = after.or(p.fmt.space_after);
+                p.fmt.line = Some(line);
+                p.fmt.keep_next = Some(kn);
+                p.fmt.keep_lines = Some(kl);
+                p.fmt.widows = Some(wd);
+                p.fmt.break_before = Some(if pb { Break::Page } else { Break::None });
+                p.fmt.hyphenate = Some(hy);
+                p.fmt.shading = Some(shading);
+                p.fmt.border = Some(if has_border { Some(border) } else { None });
+                p.fmt.drop_cap = Some(if drop >= 2 { drop } else { 0 });
+                p.fmt.tabs = Some(tabs.clone());
+            });
+            app.set_dialog("".into());
+        }
         "watermark" => {
             st.ed.begin(Kind::Other);
             st.ed.doc.page.watermark = arg.trim().to_string();
