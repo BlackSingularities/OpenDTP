@@ -77,7 +77,8 @@ pub fn export(doc: &Document, layout: &Layout) -> Result<Vec<u8>, String> {
     let opts = paint::PaintOpts { screen: false, marks: false, guides: false, misspelled: None, hide_obj: None };
     for page in 0..layout.pages.len().max(1) {
         let ops = paint::page_ops(doc, layout, page, &opts);
-        let size = Size::from_wh(doc.page.width, doc.page.height).ok_or("zły rozmiar strony")?;
+        let (pw, ph) = layout.page_size(doc, page);
+        let size = Size::from_wh(pw, ph).ok_or("zły rozmiar strony")?;
         let mut pg = pdf.start_page_with(PageSettings::new(size));
         let mut s = pg.surface();
         for op in &ops {

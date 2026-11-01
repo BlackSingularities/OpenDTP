@@ -1417,7 +1417,37 @@ component LayoutTab inherits HorizontalLayout {
         }
     }
     Group {
-        title: @tr("Kolumny");
+        title: @tr("Sekcje");
+        BigButton {
+            icon: Icons.file-plus;
+            label: @tr("Nowa sekcja");
+            tip: @tr("Podział sekcji – dalsza treść od nowej strony, z własnymi kolumnami i orientacją");
+            clicked => {
+                App.cmd("section-new", "page");
+            }
+        }
+        Col {
+            RowButton {
+                icon: Icons.separator-horizontal;
+                label: @tr("Ciągła");
+                tip: @tr("Podział sekcji na tej samej stronie – np. zmiana liczby kolumn");
+                clicked => {
+                    App.cmd("section-new", "cont");
+                }
+            }
+            RowButton {
+                icon: Icons.x;
+                label: @tr("Usuń podział");
+                enabled: App.in-section;
+                tip: @tr("Scal tę sekcję z poprzednią");
+                clicked => {
+                    App.cmd("section-remove", "");
+                }
+            }
+        }
+    }
+    Group {
+        title: App.in-section ? @tr("Kolumny sekcji") : @tr("Kolumny");
         for n in [1, 2, 3, 4]: IconButton {
             icon: n == 1 ? Icons.file-text : n == 2 ? Icons.columns-2 : n == 3 ? Icons.columns-3 : Icons.columns-4;
             tip: n == 1 ? @tr("Jedna kolumna") : @tr("Kolumny: {}", n);
@@ -2030,6 +2060,36 @@ component RefsTab inherits HorizontalLayout {
             tip: @tr("Odśwież spis treści");
             clicked => {
                 App.cmd("toc-update", "");
+            }
+        }
+    }
+    Group {
+        title: @tr("Przypisy");
+        BigButton {
+            icon: Icons.superscript;
+            label: @tr("Przypis dolny");
+            tip: @tr("Wstaw przypis u dołu strony (numerowany automatycznie)");
+            clicked => {
+                App.cmd("footnote", "");
+            }
+        }
+        Col {
+            RowButton {
+                icon: Icons.file-text;
+                label: @tr("Przypis końcowy");
+                tip: @tr("Wstaw przypis zebrany na końcu dokumentu");
+                clicked => {
+                    App.cmd("endnote", "");
+                }
+            }
+            RowButton {
+                icon: Icons.undo-2;
+                label: @tr("Wróć do tekstu");
+                enabled: App.in-note;
+                tip: @tr("Wróć do odsyłacza w treści (Esc)");
+                clicked => {
+                    App.cmd("note-back", "");
+                }
             }
         }
     }

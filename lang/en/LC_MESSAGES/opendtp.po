@@ -2459,3 +2459,240 @@ msgstr "The object is anchored in a paragraph and moves with the text (off – f
 msgid "Każdy wiersz w osobnej linii, komórki oddzielone średnikiem (albo tabulatorem – można wkleić z Excela). Znak < scala komórkę z lewą. Dwuklik w komórkę na stronie – pisanie w niej (Tab – następna)."
 msgstr "One row per line, cells separated by semicolons (or tabs – paste from Excel). The < sign merges a cell with the one on its left. Double-click a cell on the page to type in it (Tab – next)."
 
+
+msgid "Tabulator – przeciągnij, aby przesunąć; w dół, aby usunąć"
+msgstr "Tab stop – drag to move; drag down to remove"
+
+msgid "Wcięcie pierwszego wiersza"
+msgstr "First line indent"
+
+msgid "Nazwa kroju"
+msgstr "Typeface name"
+
+msgid "Rozmiar (pt)"
+msgstr "Size (pt)"
+
+msgid "Kropki"
+msgstr "Dotted"
+
+msgid "Zwykły"
+msgstr "Regular"
+
+msgid "Kolor tekstu (szesnastkowo)"
+msgstr "Text colour (hex)"
+
+msgid "wyróżnienie"
+msgstr "highlight"
+
+msgid "Kolor wyróżnienia (pusto – brak)"
+msgstr "Highlight colour (empty – none)"
+
+msgid "Linia bazowa"
+msgstr "Baseline"
+
+msgid "Język tekstu (pisownia, dzielenie wyrazów)"
+msgstr "Text language (spelling, hyphenation)"
+
+msgid "FUNKCJE OPENTYPE (o ile czcionka je ma)"
+msgstr "OPENTYPE FEATURES (if the font has them)"
+
+msgid "Kerning"
+msgstr "Kerning"
+
+msgid "Ligatury"
+msgstr "Ligatures"
+
+msgid "Kapitaliki OT"
+msgstr "OT small caps"
+
+msgid "Ułamki"
+msgstr "Fractions"
+
+msgid "Cyfry nautyczne"
+msgstr "Old-style figures"
+
+msgid "Cyfry równej wysokości"
+msgstr "Lining figures"
+
+msgid "Cyfry tabelaryczne"
+msgstr "Tabular figures"
+
+msgid "Dodatkowe funkcje: zestawy stylistyczne ss01–ss20, swsh, salt…"
+msgstr "Extra features: stylistic sets ss01–ss20, swsh, salt…"
+
+msgid "Zastosuj"
+msgstr "Apply"
+
+msgid "Wyrównanie"
+msgstr "Alignment"
+
+msgid "Do lewej"
+msgstr "Left"
+
+msgid "Do prawej"
+msgstr "Right"
+
+msgid "Ujemne – wysunięcie"
+msgstr "Negative – hanging"
+
+msgid "Wielokrotna"
+msgstr "Multiple"
+
+msgid "Dokładnie"
+msgstr "Exactly"
+
+msgid "Co najmniej"
+msgstr "At least"
+
+msgid "Interlinia"
+msgstr "Line spacing"
+
+msgid "Wartość interlinii (wielokrotność albo pt)"
+msgstr "Line spacing value (multiple or pt)"
+
+msgid "PRZEPŁYW TEKSTU"
+msgstr "TEXT FLOW"
+
+msgid "Razem z następnym"
+msgstr "Keep with next"
+
+msgid "Wiersze razem"
+msgstr "Keep lines together"
+
+msgid "Wdowy i sieroty"
+msgstr "Widow and orphan control"
+
+msgid "Od nowej strony"
+msgstr "Page break before"
+
+msgid "Dzielenie wyrazów"
+msgstr "Hyphenation"
+
+msgid "Inicjał (wiersze)"
+msgstr "Drop cap (lines)"
+
+msgid "TŁO I RAMKA"
+msgstr "BACKGROUND AND BORDER"
+
+msgid "tło #rrggbb"
+msgstr "background #rrggbb"
+
+msgid "Cieniowanie akapitu (pusto – brak)"
+msgstr "Paragraph shading (empty – none)"
+
+msgid "Grubość ramki (pt, 0 – bez ramki)"
+msgstr "Border width (pt, 0 – no border)"
+
+msgid "ramka #rrggbb"
+msgstr "border #rrggbb"
+
+msgid "Kolor ramki"
+msgstr "Border colour"
+
+msgid "Zaokrąglenie (pt)"
+msgstr "Corner radius (pt)"
+
+msgid "Odstęp tekstu od ramki (pt)"
+msgstr "Text to border distance (pt)"
+
+msgid "Tabulatory"
+msgstr "Tab stops"
+
+msgid "np. 36; 72; -1 (−1 – do prawej z kropkami)"
+msgstr "e.g. 36; 72; -1 (−1 – right with dot leader)"
+
+msgid "Położenia tabulatorów w pt od lewej krawędzi tekstu"
+msgstr "Tab positions in pt from the left text edge"
+
+msgid "Czcionka – wszystkie ustawienia"
+msgstr "Font – all settings"
+
+msgid "Akapit – wszystkie ustawienia"
+msgstr "Paragraph – all settings"
+
+msgid "Automatyczne przenoszenie wyrazów z dywizem (polski i angielski)"
+msgstr "Automatic hyphenation (Polish and English)"
+
+msgid "Sekcje"
+msgstr "Sections"
+
+msgid "Nowa sekcja"
+msgstr "New section"
+
+msgid "Podział sekcji – dalsza treść od nowej strony, z własnymi kolumnami i orientacją"
+msgstr "Section break – following text starts on a new page with its own columns and orientation"
+
+msgid "Ciągła"
+msgstr "Continuous"
+
+msgid "Podział sekcji na tej samej stronie – np. zmiana liczby kolumn"
+msgstr "Section break on the same page – e.g. to change the number of columns"
+
+msgid "Usuń podział"
+msgstr "Remove break"
+
+msgid "Scal tę sekcję z poprzednią"
+msgstr "Merge this section with the previous one"
+
+msgid "Kolumny sekcji"
+msgstr "Section columns"
+
+msgid "Wypełnienie i obrys"
+msgstr "Fill and outline"
+
+msgid "Efekty"
+msgstr "Effects"
+
+msgid "Miękki cień pod kształtem"
+msgstr "Soft shadow under the shape"
+
+msgid "Krycie"
+msgstr "Opacity"
+
+msgid "Przypisy"
+msgstr "Footnotes"
+
+msgid "Przypis dolny"
+msgstr "Footnote"
+
+msgid "Wstaw przypis u dołu strony (numerowany automatycznie)"
+msgstr "Insert a footnote at the bottom of the page (numbered automatically)"
+
+msgid "Przypis końcowy"
+msgstr "Endnote"
+
+msgid "Wstaw przypis zebrany na końcu dokumentu"
+msgstr "Insert a note collected at the end of the document"
+
+msgid "Wróć do tekstu"
+msgstr "Back to text"
+
+msgid "Wróć do odsyłacza w treści (Esc)"
+msgstr "Back to the reference in the text (Esc)"
+
+msgid "Linijka"
+msgstr "Ruler"
+
+msgid "Linijka z suwakami wcięć i tabulatorami"
+msgstr "Ruler with indent sliders and tab stops"
+
+msgid "Sekcje dotyczą treści głównej"
+msgstr "Sections apply to the main text"
+
+msgid "Nowa sekcja – kolumny i orientacja ustawiasz teraz osobno dla niej"
+msgstr "New section – columns and orientation are now set separately for it"
+
+msgid "Przypis wstawisz w treści głównej"
+msgstr "Footnotes can be inserted in the main text"
+
+msgid "Wstaw przypis dolny"
+msgstr "Insert footnote"
+
+msgid "Wstaw przypis końcowy"
+msgstr "Insert endnote"
+
+msgid "Nowa sekcja od nowej strony"
+msgstr "New section on a new page"
+
+msgid "Nowa sekcja ciągła"
+msgstr "New continuous section"

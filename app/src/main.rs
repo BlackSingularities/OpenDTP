@@ -222,11 +222,14 @@ fn sync(st: &mut State, ui: &AppWindow) {
     app.set_in_frame(matches!(ed.story, StoryRef::Obj(_)));
 
     let ps = &ed.doc.page;
+    let sec = if ed.story == StoryRef::Body { ed.doc.setup_at(ed.head.para) } else { ps.clone() };
     app.set_page_size(page_size_name(ps).into());
-    app.set_landscape(ps.landscape());
-    app.set_columns(ps.columns as i32);
-    app.set_col_gap(len_str(ps.column_gap, unit).into());
-    app.set_col_rule(ps.column_rule);
+    app.set_landscape(sec.landscape());
+    app.set_columns(sec.columns as i32);
+    app.set_col_gap(len_str(sec.column_gap, unit).into());
+    app.set_col_rule(sec.column_rule);
+    app.set_in_section(ed.story == StoryRef::Body && ed.doc.section_start(ed.head.para).is_some());
+    app.set_in_note(matches!(ed.story, StoryRef::Note(_)));
     app.set_m_top(len_str(ps.margin_top, unit).into());
     app.set_m_bottom(len_str(ps.margin_bottom, unit).into());
     app.set_m_left(len_str(ps.margin_left, unit).into());

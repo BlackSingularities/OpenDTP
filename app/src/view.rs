@@ -72,12 +72,20 @@ impl View {
     pub fn place(&mut self, ed: &Editor) -> bool {
         let k = self.k();
         let n = ed.layout.pages.len().max(1);
-        let pw = ed.doc.page.width * k;
-        let ph = ed.doc.page.height * k;
-        let cw = (pw + 2.0 * GAP).max(self.vw);
-        let x = ((cw - pw) / 2.0).max(GAP);
-        let pages: Vec<(f32, f32, f32, f32)> = (0..n).map(|i| (x, GAP + i as f32 * (ph + GAP), pw, ph)).collect();
-        let ch = GAP + n as f32 * (ph + GAP);
+        let sizes: Vec<(f32, f32)> = (0..n).map(|i| ed.layout.page_size(&ed.doc, i)).collect();
+        let maxw = sizes.iter().map(|s| s.0).fold(0.0, f32::max) * k;
+        let cw = (maxw + 2.0 * GAP).max(self.vw);
+        let mut y = GAP;
+        let pages: Vec<(f32, f32, f32, f32)> = sizes
+            .iter()
+            .map(|&(w, h)| {
+                let (pw, ph) = (w * k, h * k);
+                let r = (((cw - pw) / 2.0).max(GAP), y, pw, ph);
+                y += ph + GAP;
+                r
+            })
+            .collect();
+        let ch = y;
         let changed = pages != self.pages;
         self.pages = pages;
         self.content_w = cw;
@@ -140,8 +148,9 @@ impl View {
                 continue;
             }
             let scale = self.k() * self.dpr;
-            let w = (ed.doc.page.width * scale).round().max(1.0) as u32;
-            let hh = (ed.doc.page.height * scale).round().max(1.0) as u32;
+            let (pw0, ph0) = ed.layout.page_size(&ed.doc, i);
+            let w = (pw0 * scale).round().max(1.0) as u32;
+            let hh = (ph0 * scale).round().max(1.0) as u32;
             let Some(mut pm) = tiny_skia::Pixmap::new(w.min(12000), hh.min(16000)) else { continue };
             let ops = paint::page_ops(&ed.doc, &ed.layout, i, &opts);
             self.raster.draw(&ed.doc, &ops, &mut pm, scale);

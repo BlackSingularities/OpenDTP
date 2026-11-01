@@ -100,6 +100,10 @@ pub struct PathGlyph {
 #[derive(Default)]
 pub struct PageInfo {
     pub lines: Vec<usize>,
+    /// Układ strony (sekcje mogą zmieniać kolumny i orientację).
+    pub setup: PageSetup,
+    /// Kreska nad przypisami: (y, x lewej krawędzi, szerokość).
+    pub note_rule: Option<(f32, f32, f32)>,
 }
 
 #[derive(Default)]
@@ -112,6 +116,20 @@ pub struct Layout {
     pub path_glyphs: HashMap<u64, Vec<PathGlyph>>,
     /// Strona każdego akapitu treści głównej (spis treści, nawigator).
     pub body_pages: Vec<usize>,
+}
+
+impl Layout {
+    /// Rozmiar strony w punktach.
+    pub fn page_size(&self, doc: &Document, page: usize) -> (f32, f32) {
+        match self.pages.get(page) {
+            Some(p) => (p.setup.width, p.setup.height),
+            None => (doc.page.width, doc.page.height),
+        }
+    }
+
+    pub fn setup<'a>(&'a self, doc: &'a Document, page: usize) -> &'a PageSetup {
+        self.pages.get(page).map(|p| &p.setup).unwrap_or(&doc.page)
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -336,12 +354,12 @@ fn page_excl(doc: &Document, page: usize, above: Option<usize>, skip: &[u64]) ->
     )
 }
 
-fn body_regions(doc: &Document, page: usize) -> Vec<Region> {
-    let ps = &doc.page;
+fn body_regions(doc: &Document, ps: &PageSetup, page: usize, reserve: f32) -> Vec<Region> {
     let excl = page_excl(doc, page, None, &[]);
+    let y1 = (ps.height - ps.margin_bottom - reserve).max(ps.margin_top + 36.0);
     ps.column_spans()
         .into_iter()
-        .map(|(x0, x1)| Region { page, x0, x1, y0: ps.margin_top, y1: ps.height - ps.margin_bottom, polys: None, pad: 0.0, excl: excl.clone(), obj: None })
+        .map(|(x0, x1)| Region { page, x0, x1, y0: ps.margin_top, y1, polys: None, pad: 0.0, excl: excl.clone(), obj: None })
         .collect()
 }
 
@@ -385,6 +403,11 @@ struct Flow<'a> {
     grid: f32,
     /// Kontrola wdów: przed tym wierszem akapitu (licząc od 0) przejdź do następnego regionu.
     force_break: Option<usize>,
+    /// Bieżący układ strony (sekcja) i układ każdej dotąd utworzonej strony.
+    setup: PageSetup,
+    setups: Vec<PageSetup>,
+    /// Miejsce zarezerwowane u dołu strony na przypisy.
+    reserve: Arc<HashMap<usize, f32>>,
 }
 
 impl<'a> Flow<'a> {
@@ -401,13 +424,63 @@ impl<'a> Flow<'a> {
             if page > 5000 {
                 return false;
             }
-            let more = body_regions(self.doc, page);
+            let r = self.reserve.get(&page).copied().unwrap_or(0.0);
+            let more = body_regions(self.doc, &self.setup, page, r);
+            if self.setups.len() <= page {
+                self.setups.resize(page + 1, self.setup.clone());
+            }
+            self.setups[page] = self.setup.clone();
             self.regions.extend(more);
         }
         self.ri += 1;
         self.y = self.regions[self.ri].y0;
         self.top = true;
         true
+    }
+
+    /// Początek sekcji: nowy układ od następnej strony albo (ciągła) od bieżącego miejsca.
+    fn section(&mut self, s: &Section) {
+        let ps = self.doc.page.with_section(s);
+        if ps == self.setup {
+            return;
+        }
+        let same_size = ps.width == self.setup.width && ps.height == self.setup.height;
+        let page = self.region().page;
+        let fresh = self.top && !self.lines.iter().any(|l| l.page == page);
+        self.setup = ps;
+        let r = self.reserve.get(&page).copied().unwrap_or(0.0);
+        if fresh {
+            self.regions.truncate(self.ri);
+            self.regions.extend(body_regions(self.doc, &self.setup, page, r));
+            if self.setups.len() <= page {
+                self.setups.resize(page + 1, self.setup.clone());
+            }
+            self.setups[page] = self.setup.clone();
+            self.y = self.regions[self.ri].y0;
+            self.top = true;
+            self.drop = None;
+            return;
+        }
+        if s.continuous && same_size {
+            let y = self.lines.iter().filter(|l| l.page == page).map(|l| l.bottom()).fold(self.setup.margin_top, f32::max) + 8.0;
+            let mut more = body_regions(self.doc, &self.setup, page, r);
+            if more.first().is_some_and(|m| m.y1 - y > 30.0) {
+                for m in more.iter_mut() {
+                    m.y0 = y;
+                }
+                self.regions.truncate(self.ri);
+                self.regions.extend(more);
+                self.y = y;
+                self.top = true;
+                self.drop = None;
+                return;
+            }
+        }
+        // Nowa strona – kolejne regiony powstaną już z nowym układem.
+        self.regions.truncate(self.ri + 1);
+        if !self.next_region() {
+            self.overflow = true;
+        }
     }
 
     fn next_page(&mut self) -> bool {
@@ -885,7 +958,7 @@ fn key(p: &Paragraph, base: &CharProps, fv: Option<&FieldValues>, orphans: bool)
     format!("{:?}{:?}{:?}", p.runs, base, orphans).hash(&mut h);
     if let Some(fv) = fv {
         if p.runs.iter().any(|r| r.field.is_some()) {
-            (fv.page, fv.pages, fv.title, fv.author, crate::util::today()).hash(&mut h);
+            (fv.page, fv.pages, fv.title, fv.author, crate::util::today(), fv.notes).hash(&mut h);
         }
     }
     h.finish()
@@ -952,8 +1025,42 @@ impl Engine {
         out
     }
 
+    /// Tekst przypisu: wcięty, z numerem w miejscu znacznika listy.
+    fn note_prep(&mut self, doc: &Document, story: &Story, num: &str, fv: &FieldValues) -> StoryPrep {
+        let mut np = self.prep(doc, story, fv);
+        for (i, pp) in np.props.iter_mut().enumerate() {
+            pp.indent_left += 14.0;
+            pp.first_line = 0.0;
+            pp.list = None;
+            pp.drop_cap = 0;
+            np.markers[i] = None;
+        }
+        if let Some(m) = np.markers.first_mut() {
+            *m = Some(num.to_string());
+        }
+        np
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn note_lines(&mut self, doc: &Document, id: u64, k: u32, page: usize, x0: f32, x1: f32, y0: f32, fv: &FieldValues) -> Vec<Line> {
+        let Some(n) = doc.notes.iter().find(|n| n.id == id) else { return Vec::new() };
+        let np = self.note_prep(doc, &n.story, &k.to_string(), fv);
+        let region = Region { page, x0, x1, y0, y1: INF, polys: None, pad: 0.0, excl: Arc::new(Vec::new()), obj: None };
+        let mut f = Flow { doc, story: StoryRef::Note(id), regions: vec![region], ri: 0, y: y0, top: true, grow: false, lines: Vec::new(), overflow: false, drop: None, grid: 0.0, force_break: None, setup: doc.page.clone(), setups: Vec::new(), reserve: Default::default() };
+        self.run(&mut f, &np);
+        f.lines
+    }
+
     fn run(&mut self, flow: &mut Flow, prep: &StoryPrep) {
         for i in 0..prep.shaped.len() {
+            if flow.story == StoryRef::Body && flow.grow {
+                if let Some(sec) = flow.doc.body.paras.get(i).and_then(|p| p.fmt.section.clone()) {
+                    flow.section(&sec);
+                    if flow.overflow {
+                        break;
+                    }
+                }
+            }
             let next_h = match prep.shaped.get(i + 1) {
                 Some(sp) => line_box(line_metrics(sp, &sp.glyphs[..sp.glyphs.len().min(24)]), prep.props[i + 1].line).0,
                 None => 0.0,
@@ -994,17 +1101,84 @@ impl Engine {
         let title = doc.meta.title.clone();
         let author = doc.meta.author.clone();
 
-        // Treść główna.
-        let fv = FieldValues { page: doc.page.first_number, pages: 0, title: &title, author: &author };
+        // Treść główna – kilka przebiegów, aż miejsce na przypisy dolne przestanie się zmieniać.
+        let notes = doc.note_numbers();
+        let fv = FieldValues { page: doc.page.first_number, pages: 0, title: &title, author: &author, notes: &notes };
         let prep = self.prep(doc, &doc.body, &fv);
-        let mut flow = Flow { doc, story: StoryRef::Body, regions: body_regions(doc, 0), ri: 0, y: doc.page.margin_top, top: true, grow: true, lines: Vec::new(), overflow: false, drop: None, grid: doc.settings.baseline_grid, force_break: None };
-        self.run(&mut flow, &prep);
+        let mut reserve: HashMap<usize, f32> = HashMap::new();
+        let mut heights: HashMap<(u64, u32), f32> = HashMap::new();
+        let mut pass = 0;
+        let (mut flow, foot) = loop {
+            let r0 = reserve.get(&0).copied().unwrap_or(0.0);
+            let mut flow = Flow { doc, story: StoryRef::Body, regions: body_regions(doc, &doc.page, 0, r0), ri: 0, y: doc.page.margin_top, top: true, grow: true, lines: Vec::new(), overflow: false, drop: None, grid: doc.settings.baseline_grid, force_break: None, setup: doc.page.clone(), setups: vec![doc.page.clone()], reserve: Arc::new(reserve.clone()) };
+            self.run(&mut flow, &prep);
+            // Przypisy końcowe – za treścią główną, w tym samym przepływie.
+            for &(id, k, end) in notes.iter() {
+                if !end {
+                    continue;
+                }
+                let Some(n) = doc.notes.iter().find(|n| n.id == id) else { continue };
+                let np = self.note_prep(doc, &n.story, &crate::text::roman(k), &fv);
+                flow.story = StoryRef::Note(id);
+                self.run(&mut flow, &np);
+                flow.story = StoryRef::Body;
+            }
+            // Przypisy dolne każdej strony.
+            let mut foot: Vec<(usize, Vec<(u64, u32)>)> = Vec::new();
+            for l in flow.lines.iter().filter(|l| l.story == StoryRef::Body) {
+                let Some(p) = doc.body.paras.get(l.para) else { continue };
+                let mut off = 0;
+                for r in &p.runs {
+                    if let Some(Field::Footnote(id)) = r.field {
+                        if off >= l.start && (off < l.end || (l.last && off <= l.end)) {
+                            if let Some(&(_, k, false)) = notes.iter().find(|n| n.0 == id) {
+                                match foot.last_mut() {
+                                    Some((pg, v)) if *pg == l.page => v.push((id, k)),
+                                    _ => foot.push((l.page, vec![(id, k)])),
+                                }
+                            }
+                        }
+                    }
+                    off += r.text.len();
+                }
+            }
+            let mut need: HashMap<usize, f32> = HashMap::new();
+            for (pg, ids) in &foot {
+                let ps = flow.setups.get(*pg).cloned().unwrap_or_else(|| doc.page.clone());
+                let w = ps.content_width();
+                let mut h = 10.0;
+                for &(id, k) in ids {
+                    let key = (id, (w * 10.0) as u32);
+                    let hh = match heights.get(&key) {
+                        Some(v) => *v,
+                        None => {
+                            let lines = self.note_lines(doc, id, k, *pg, ps.margin_left, ps.margin_left + w, 0.0, &fv);
+                            let v = lines.last().map(|l| l.bottom()).unwrap_or(0.0) + 2.0;
+                            heights.insert(key, v);
+                            v
+                        }
+                    };
+                    h += hh;
+                }
+                need.insert(*pg, h.min(ps.height * 0.6));
+            }
+            pass += 1;
+            if need == reserve || pass >= 4 {
+                break (flow, foot);
+            }
+            // Rezerwa tylko rośnie – unikamy przeskakiwania odsyłacza tam i z powrotem.
+            for (k, v) in need {
+                let e = reserve.entry(k).or_insert(0.0);
+                *e = e.max(v);
+            }
+        };
         let body_lines = std::mem::take(&mut flow.lines);
         let body_pages = body_lines.last().map(|l| l.page + 1).unwrap_or(1);
         let pages = body_pages.max(doc.page_count_hint());
-        out.pages = (0..pages).map(|_| PageInfo::default()).collect();
+        let last_setup = flow.setup.clone();
+        out.pages = (0..pages).map(|p| PageInfo { setup: flow.setups.get(p).cloned().unwrap_or_else(|| last_setup.clone()), ..Default::default() }).collect();
         out.body_pages = vec![0; doc.body.paras.len()];
-        for l in &body_lines {
+        for l in body_lines.iter().filter(|l| l.story == StoryRef::Body) {
             if l.first {
                 if let Some(p) = out.body_pages.get_mut(l.para) {
                     *p = l.page;
@@ -1023,11 +1197,28 @@ impl Engine {
         };
         push(&mut out, body_lines);
 
+        // Przypisy dolne: od dołu obszaru tekstu, pod krótką kreską.
+        for (pg, ids) in &foot {
+            if *pg >= out.pages.len() {
+                continue;
+            }
+            let ps = out.pages[*pg].setup.clone();
+            let w = ps.content_width();
+            let r = reserve.get(pg).copied().unwrap_or(0.0);
+            let mut y = ps.height - ps.margin_bottom - r + 10.0;
+            out.pages[*pg].note_rule = Some((y - 5.0, ps.margin_left, (w / 3.0).min(144.0)));
+            for &(id, k) in ids {
+                let lines = self.note_lines(doc, id, k, *pg, ps.margin_left, ps.margin_left + w, y, &fv);
+                y = lines.last().map(|l| l.bottom()).unwrap_or(y) + 2.0;
+                push(&mut out, lines);
+            }
+        }
+
         // Nagłówki i stopki – osobno na każdej stronie (pola numeru strony).
-        let ps = &doc.page;
         for page in 0..pages {
+            let ps = &out.pages[page].setup.clone();
             let first = page == 0 && ps.different_first;
-            let fvp = FieldValues { page: page as u32 + ps.first_number, pages: pages as u32 + ps.first_number - 1, title: &title, author: &author };
+            let fvp = FieldValues { page: page as u32 + ps.first_number, pages: pages as u32 + ps.first_number - 1, title: &title, author: &author, notes: &notes };
             let (hs, hr) = if first { (doc.header_first.as_ref(), StoryRef::HeaderFirst) } else { (doc.header.as_ref(), StoryRef::Header) };
             let (fs, fr) = if first { (doc.footer_first.as_ref(), StoryRef::FooterFirst) } else { (doc.footer.as_ref(), StoryRef::Footer) };
             for (story, sref, footer) in [(hs, hr, false), (fs, fr, true)] {
@@ -1044,7 +1235,7 @@ impl Engine {
                     excl: Arc::new(Vec::new()),
                     obj: None,
                 };
-                let mut f = Flow { doc, story: sref, regions: vec![region], ri: 0, y: 0.0, top: true, grow: false, lines: Vec::new(), overflow: false, drop: None, grid: 0.0, force_break: None };
+                let mut f = Flow { doc, story: sref, regions: vec![region], ri: 0, y: 0.0, top: true, grow: false, lines: Vec::new(), overflow: false, drop: None, grid: 0.0, force_break: None, setup: doc.page.clone(), setups: Vec::new(), reserve: Default::default() };
                 f.y = f.regions[0].y0;
                 self.run(&mut f, &prep);
                 let mut lines = f.lines;
@@ -1064,7 +1255,8 @@ impl Engine {
         }
 
         // Ramki tekstowe (łańcuchy) i tekst na ścieżce.
-        let fvo = FieldValues { page: 1, pages: pages as u32, title: &title, author: &author };
+        let ps = &doc.page;
+        let fvo = FieldValues { page: 1, pages: pages as u32, title: &title, author: &author, notes: &notes };
         let heads: Vec<u64> = doc.objects.iter().filter(|o| matches!(o.kind, ObjKind::Text { .. }) && doc.chain_head(o.id) == o.id).map(|o| o.id).collect();
         for head in heads {
             let chain = doc.chain(head);
@@ -1082,7 +1274,7 @@ impl Engine {
             let fvh = FieldValues { page: ho.page as u32 + ps.first_number, ..fvo };
             let prep = self.prep(doc, story, &fvh);
             let y0 = regions[0].y0;
-            let mut f = Flow { doc, story: StoryRef::Obj(head), regions, ri: 0, y: y0, top: true, grow: false, lines: Vec::new(), overflow: false, drop: None, grid: 0.0, force_break: None };
+            let mut f = Flow { doc, story: StoryRef::Obj(head), regions, ri: 0, y: y0, top: true, grow: false, lines: Vec::new(), overflow: false, drop: None, grid: 0.0, force_break: None, setup: doc.page.clone(), setups: Vec::new(), reserve: Default::default() };
             // Górny margines wewnętrzny ramki.
             f.y += f.regions[0].pad;
             self.run(&mut f, &prep);

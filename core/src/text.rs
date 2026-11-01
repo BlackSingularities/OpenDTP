@@ -58,6 +58,21 @@ pub struct FieldValues<'a> {
     pub pages: u32,
     pub title: &'a str,
     pub author: &'a str,
+    /// Numery przypisów: (id, numer, końcowy).
+    pub notes: &'a [(u64, u32, bool)],
+}
+
+/// Numeracja rzymska (małe litery) – przypisy końcowe.
+pub fn roman(mut n: u32) -> String {
+    const T: [(u32, &str); 13] = [(1000, "m"), (900, "cm"), (500, "d"), (400, "cd"), (100, "c"), (90, "xc"), (50, "l"), (40, "xl"), (10, "x"), (9, "ix"), (5, "v"), (4, "iv"), (1, "i")];
+    let mut s = String::new();
+    for (v, r) in T {
+        while n >= v {
+            s.push_str(r);
+            n -= v;
+        }
+    }
+    s
 }
 
 impl FieldValues<'_> {
@@ -70,6 +85,11 @@ impl FieldValues<'_> {
             Field::Title => self.title.to_string(),
             Field::Author => self.author.to_string(),
             Field::Anchor(_) => String::new(),
+            Field::Footnote(id) => match self.notes.iter().find(|n| n.0 == id) {
+                Some((_, k, true)) => roman(*k),
+                Some((_, k, false)) => k.to_string(),
+                None => "?".into(),
+            },
         }
     }
 }
@@ -326,7 +346,7 @@ fn shape_chunk(chars: &[DChar], font: FontId, fake_bold: bool, fake_italic: bool
 /// Szerokość tekstu w jednym stylu (znaczniki list, wykresy, etykiety).
 pub fn measure(text: &str, props: &CharProps) -> (Vec<SGlyph>, f32) {
     let p = Paragraph { style: String::new(), fmt: ParaFmt::default(), runs: vec![Run { text: text.into(), fmt: CharFmt::default(), field: None }] };
-    let fv = FieldValues { page: 1, pages: 1, title: "", author: "" };
+    let fv = FieldValues { page: 1, pages: 1, title: "", author: "", notes: &[] };
     let sp = shape(&p, props, &fv, false);
     let w = sp.glyphs.iter().map(|g| g.adv).sum();
     (sp.glyphs, w)

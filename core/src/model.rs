@@ -421,6 +421,9 @@ pub struct ParaFmt {
     pub tabs: Option<Vec<f32>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hyphenate: Option<bool>,
+    /// Ten akapit zaczyna nową sekcję (tylko treść główna).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub section: Option<Section>,
 }
 
 impl ParaFmt {
@@ -521,6 +524,34 @@ pub enum Field {
     Author,
     /// Kotwica obiektu: obiekt przesuwa się razem z akapitem, w którym stoi ten znak.
     Anchor(u64),
+    /// Odsyłacz do przypisu (dolnego albo końcowego) o tym identyfikatorze.
+    Footnote(u64),
+}
+
+/// Przypis: osobny tekst wyświetlany u dołu strony albo na końcu dokumentu.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Note {
+    pub id: u64,
+    /// Przypis końcowy (na końcu dokumentu) zamiast dolnego.
+    #[serde(default)]
+    pub end: bool,
+    pub story: Story,
+}
+
+/// Początek sekcji: od tego akapitu obowiązuje inny układ kolumn albo orientacja strony.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Section {
+    #[serde(default = "one")]
+    pub columns: u8,
+    #[serde(default = "default_gap")]
+    pub column_gap: f32,
+    #[serde(default)]
+    pub column_rule: bool,
+    #[serde(default)]
+    pub landscape: bool,
+    /// Ciągła – zaczyna się na tej samej stronie (tylko przy tej samej orientacji).
+    #[serde(default)]
+    pub continuous: bool,
 }
 
 /// Znak zastępujący pole w tekście akapitu (jedno miejsce kursora).
@@ -1134,6 +1165,23 @@ impl PageSetup {
     }
 
     /// Kolumny treści głównej: (x0, x1).
+    /// Układ strony z ustawieniami sekcji.
+    pub fn with_section(&self, s: &Section) -> PageSetup {
+        let mut p = self.clone();
+        p.columns = s.columns.clamp(1, 6);
+        p.column_gap = s.column_gap;
+        p.column_rule = s.column_rule;
+        if s.landscape != p.landscape() {
+            std::mem::swap(&mut p.width, &mut p.height);
+        }
+        p
+    }
+
+    /// Sekcja odpowiadająca temu układowi (do wstawienia nowego podziału).
+    pub fn section(&self, continuous: bool) -> Section {
+        Section { columns: self.columns, column_gap: self.column_gap, column_rule: self.column_rule, landscape: self.landscape(), continuous }
+    }
+
     pub fn column_spans(&self) -> Vec<(f32, f32)> {
         let n = self.columns.max(1) as f32;
         let cw = self.content_width();
@@ -1223,6 +1271,9 @@ pub struct Document {
     pub assets: BTreeMap<String, Asset>,
     #[serde(default = "one64")]
     pub next_id: u64,
+    /// Przypisy dolne i końcowe (odsyłacze to pola `Field::Footnote` w treści głównej).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub notes: Vec<Note>,
 }
 
 fn format_version() -> u32 {
@@ -1242,6 +1293,7 @@ pub enum StoryRef {
     HeaderFirst,
     FooterFirst,
     Obj(u64),
+    Note(u64),
 }
 
 impl Default for Document {
@@ -1267,6 +1319,7 @@ impl Document {
             min_pages: 0,
             assets: BTreeMap::new(),
             next_id: 1,
+            notes: Vec::new(),
         }
     }
 
@@ -1296,6 +1349,7 @@ impl Document {
             StoryRef::HeaderFirst => self.header_first.as_ref(),
             StoryRef::FooterFirst => self.footer_first.as_ref(),
             StoryRef::Obj(id) => self.object(id).and_then(|o| o.story()),
+            StoryRef::Note(id) => self.notes.iter().find(|n| n.id == id).map(|n| &n.story),
         }
     }
 
@@ -1307,6 +1361,7 @@ impl Document {
             StoryRef::HeaderFirst => self.header_first.as_mut(),
             StoryRef::FooterFirst => self.footer_first.as_mut(),
             StoryRef::Obj(id) => self.object_mut(id).and_then(|o| o.story_mut()),
+            StoryRef::Note(id) => self.notes.iter_mut().find(|n| n.id == id).map(|n| &mut n.story),
         }
     }
 
@@ -1375,6 +1430,44 @@ impl Document {
             cur = s.based_on.as_deref().and_then(|b| self.style(b));
         }
         None
+    }
+
+    /// Numery przypisów w kolejności odsyłaczy (dolne i końcowe liczone osobno).
+    pub fn note_numbers(&self) -> Vec<(u64, u32, bool)> {
+        let (mut foot, mut end) = (0, 0);
+        let mut out = Vec::new();
+        for p in &self.body.paras {
+            for r in &p.runs {
+                if let Some(Field::Footnote(id)) = r.field {
+                    let Some(n) = self.notes.iter().find(|n| n.id == id) else { continue };
+                    if out.iter().any(|(i, _, _)| *i == id) {
+                        continue;
+                    }
+                    let k = if n.end {
+                        end += 1;
+                        end
+                    } else {
+                        foot += 1;
+                        foot
+                    };
+                    out.push((id, k, n.end));
+                }
+            }
+        }
+        out
+    }
+
+    /// Akapit treści głównej, od którego zaczyna się sekcja zawierająca `para`.
+    pub fn section_start(&self, para: usize) -> Option<usize> {
+        (0..=para.min(self.body.paras.len().saturating_sub(1))).rev().find(|&i| self.body.paras[i].fmt.section.is_some())
+    }
+
+    /// Układ strony obowiązujący w akapicie treści głównej.
+    pub fn setup_at(&self, para: usize) -> PageSetup {
+        match self.section_start(para).and_then(|i| self.body.paras[i].fmt.section.as_ref()) {
+            Some(s) => self.page.with_section(s),
+            None => self.page.clone(),
+        }
     }
 
     pub fn page_count_hint(&self) -> usize {

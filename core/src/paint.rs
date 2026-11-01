@@ -165,7 +165,7 @@ fn obj_fill(o: &Object) -> Option<Paint> {
 /// Lista rysowania strony.
 pub fn page_ops(doc: &Document, layout: &Layout, page: usize, o: &PaintOpts) -> Vec<Op> {
     let mut ops = Vec::new();
-    let ps = &doc.page;
+    let ps = layout.setup(doc, page);
     ops.push(Op::Fill { path: Path::rect(Rect::new(0.0, 0.0, ps.width, ps.height)), paint: Paint::Solid(ps.color), opacity: 1.0 });
     if let Some(b) = &ps.border {
         if b.width > 0.0 {
@@ -201,6 +201,9 @@ pub fn page_ops(doc: &Document, layout: &Layout, page: usize, o: &PaintOpts) -> 
     }
     let free: Vec<&Line> = info.lines.iter().map(|&i| &layout.lines[i]).filter(|l| l.obj.is_none()).collect();
     lines_ops(doc, &free, o, &mut ops);
+    if let Some((y, x, w)) = info.note_rule {
+        ops.push(Op::Stroke { path: Path::line(x, y, x + w, y), color: Color::rgb(0x80, 0x80, 0x80), width: 0.6, dash: vec![], opacity: 1.0 });
+    }
     for ob in objs.iter().filter(|ob| ob.wrap.mode != WrapMode::Behind) {
         object_ops(doc, layout, ob, page, o, &mut ops);
     }
@@ -773,7 +776,7 @@ struct CellText {
 /// Tekst komórki (z wyróżnieniami **, *, ==) złamany do szerokości `w`.
 fn cell_text(text: &str, base: &CharProps, w: f32) -> CellText {
     let p = Paragraph { style: String::new(), fmt: ParaFmt::default(), runs: crate::io::plain::md_inline(text) };
-    let fv = crate::text::FieldValues { page: 1, pages: 1, title: "", author: "" };
+    let fv = crate::text::FieldValues { page: 1, pages: 1, title: "", author: "", notes: &[] };
     let sp = crate::text::shape(&p, base, &fv, true);
     let n = sp.glyphs.len();
     let mut starts = vec![0usize];

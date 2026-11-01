@@ -373,6 +373,13 @@ fn runs_xml(ctx: &mut Ctx, runs: &[Run], out: &mut String) {
             if matches!(f, Field::Anchor(_)) {
                 continue;
             }
+            if let Field::Footnote(id) = f {
+                if let Some(i) = ctx.doc.notes.iter().position(|n| n.id == id) {
+                    let tag = if ctx.doc.notes[i].end { "endnoteReference" } else { "footnoteReference" };
+                    let _ = write!(out, r#"<w:r><w:rPr><w:vertAlign w:val="superscript"/></w:rPr><w:{tag} w:id="{}"/></w:r>"#, i + 2);
+                }
+                continue;
+            }
             let instr = match f {
                 Field::PageNumber => "PAGE",
                 Field::PageCount => "NUMPAGES",
@@ -380,7 +387,7 @@ fn runs_xml(ctx: &mut Ctx, runs: &[Run], out: &mut String) {
                 Field::Time => r#"TIME \@ "HH:mm""#,
                 Field::Title => "TITLE",
                 Field::Author => "AUTHOR",
-                Field::Anchor(_) => "",
+                Field::Anchor(_) | Field::Footnote(_) => "",
             };
             let _ = write!(out, r#"<w:fldSimple w:instr="{}"><w:r>{rp}<w:t>1</w:t></w:r></w:fldSimple>"#, esc(instr));
             continue;
@@ -937,7 +944,19 @@ pub fn export(doc: &Document, layout: &Layout, opts: &DocxOpts) -> Result<Vec<u8
     }
     let mut body = String::new();
     let mut placed = vec![false; pages];
+    // Sekcje: znacznik w miejscu końca sekcji, zastępowany niżej właściwym w:sectPr.
+    let mut sections: Vec<(PageSetup, bool)> = Vec::new();
+    let mut cur = (doc.page.clone(), false);
     for (i, p) in doc.body.paras.iter().enumerate() {
+        if let Some(s) = &p.fmt.section {
+            if i == 0 {
+                cur = (doc.page.with_section(s), s.continuous);
+            } else {
+                let _ = write!(body, "<w:p><w:pPr>\u{1}{}\u{1}</w:pPr></w:p>", sections.len());
+                sections.push(cur.clone());
+                cur = (doc.page.with_section(s), s.continuous);
+            }
+        }
         let pg = layout.body_pages.get(i).copied().unwrap_or(0);
         let mut extra = String::new();
         if first_para_of_page.get(&pg) == Some(&i) && pg < pages && !placed[pg] {
@@ -977,13 +996,13 @@ pub fn export(doc: &Document, layout: &Layout, opts: &DocxOpts) -> Result<Vec<u8
         let rel = ctx.rel(&format!("http://schemas.openxmlformats.org/officeDocument/2006/relationships/{kind}"), &name, false);
         let _ = write!(sect_refs, r#"<w:{kind}Reference w:type="{typ}" r:id="{rel}"/>"#);
     }
-    let ps = &doc.page;
-    let sect = format!(
+    let sect_of = |ps: &PageSetup, continuous: bool, first: bool| format!(
         concat!(
-            r#"<w:sectPr>{refs}<w:pgSz w:w="{w}" w:h="{h}"{orient}/><w:pgMar w:top="{t}" w:right="{r}" w:bottom="{b}" w:left="{l}" w:header="{hd}" w:footer="{fd}" w:gutter="0"/>"#,
-            r#"{borders}<w:pgNumType w:start="{start}"/><w:cols w:num="{cols}" w:space="{gap}"{sep}/>{title}</w:sectPr>"#
+            r#"<w:sectPr>{refs}{ty}<w:pgSz w:w="{w}" w:h="{h}"{orient}/><w:pgMar w:top="{t}" w:right="{r}" w:bottom="{b}" w:left="{l}" w:header="{hd}" w:footer="{fd}" w:gutter="0"/>"#,
+            r#"{borders}{start}<w:cols w:num="{cols}" w:space="{gap}"{sep}/>{title}</w:sectPr>"#
         ),
         refs = sect_refs,
+        ty = if continuous { r#"<w:type w:val="continuous"/>"# } else { "" },
         w = tw(ps.width),
         h = tw(ps.height),
         orient = if ps.landscape() { r#" w:orient="landscape""# } else { "" },
@@ -993,7 +1012,7 @@ pub fn export(doc: &Document, layout: &Layout, opts: &DocxOpts) -> Result<Vec<u8
         l = tw(ps.margin_left),
         hd = tw(ps.header_dist),
         fd = tw(ps.footer_dist),
-        start = ps.first_number,
+        start = if first { format!(r#"<w:pgNumType w:start="{}"/>"#, ps.first_number) } else { String::new() },
         cols = ps.columns.max(1),
         gap = tw(ps.column_gap),
         sep = if ps.column_rule { r#" w:sep="1""# } else { "" },
@@ -1009,6 +1028,33 @@ pub fn export(doc: &Document, layout: &Layout, opts: &DocxOpts) -> Result<Vec<u8
             _ => String::new(),
         },
     );
+    let sect = sect_of(&cur.0, cur.1, sections.is_empty());
+    for (i, (sp, cont)) in sections.iter().enumerate() {
+        body = body.replace(&format!("\u{1}{i}\u{1}"), &sect_of(sp, *cont, i == 0));
+    }
+    let ps = &doc.page;
+
+    // Przypisy dolne i końcowe.
+    let mut notes_xml = [String::new(), String::new()];
+    for (i, n) in doc.notes.iter().enumerate() {
+        let (tag, rf) = if n.end { ("w:endnote", "endnoteRef") } else { ("w:footnote", "footnoteRef") };
+        let x = &mut notes_xml[n.end as usize];
+        let _ = write!(x, r#"<{tag} w:id="{}">"#, i + 2);
+        for (j, p) in n.story.paras.iter().enumerate() {
+            let extra = if j == 0 { format!(r#"<w:r><w:rPr><w:vertAlign w:val="superscript"/></w:rPr><w:{rf}/></w:r><w:r><w:t xml:space="preserve"> </w:t></w:r>"#) } else { String::new() };
+            para_xml(&mut ctx, p, &extra, x);
+        }
+        let _ = write!(x, "</{tag}>");
+    }
+    let mut note_parts: Vec<(&str, String)> = Vec::new();
+    if !doc.notes.is_empty() {
+        for (k, (name, tag)) in [("footnotes", "w:footnote"), ("endnotes", "w:endnote")].into_iter().enumerate() {
+            let root = if k == 0 { "w:footnotes" } else { "w:endnotes" };
+            let sep = format!(r#"<{tag} w:type="separator" w:id="0"><w:p><w:r><w:separator/></w:r></w:p></{tag}><{tag} w:type="continuationSeparator" w:id="1"><w:p><w:r><w:continuationSeparator/></w:r></w:p></{tag}>"#);
+            note_parts.push((name, format!(r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?><{root} {NS}>{sep}{}</{root}>"#, notes_xml[k])));
+            ctx.rel(&format!("http://schemas.openxmlformats.org/officeDocument/2006/relationships/{name}"), &format!("{name}.xml"), false);
+        }
+    }
     let bg = if ps.color != Color::WHITE { format!(r#"<w:background w:color="{}"/>"#, ps.color.hex6()) } else { String::new() };
     let document = format!(r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document {NS}>{bg}<w:body>{body}{sect}</w:body></w:document>"#);
 
@@ -1035,6 +1081,9 @@ pub fn export(doc: &Document, layout: &Layout, opts: &DocxOpts) -> Result<Vec<u8
         for (name, _) in &hf_parts {
             let kind = if name.starts_with("header") { "header" } else { "footer" };
             let _ = write!(ct, r#"<Override PartName="/word/{name}" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.{kind}+xml"/>"#);
+        }
+        for (name, _) in &note_parts {
+            let _ = write!(ct, r#"<Override PartName="/word/{name}.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.{name}+xml"/>"#);
         }
         ct.push_str("</Types>");
         put("[Content_Types].xml", ct.as_bytes())?;
@@ -1090,6 +1139,10 @@ pub fn export(doc: &Document, layout: &Layout, opts: &DocxOpts) -> Result<Vec<u8
         put("word/_rels/document.xml.rels", rels.as_bytes())?;
         for (name, _) in &hf_parts {
             put(&format!("word/_rels/{name}.rels"), rels.as_bytes())?;
+        }
+        for (name, xml) in &note_parts {
+            put(&format!("word/{name}.xml"), xml.as_bytes())?;
+            put(&format!("word/_rels/{name}.xml.rels"), rels.as_bytes())?;
         }
         for (name, data) in &ctx.media {
             z.start_file(format!("word/media/{name}"), zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored)).map_err(|e| e.to_string())?;

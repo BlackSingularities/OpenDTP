@@ -2450,3 +2450,240 @@ msgstr ""
 msgid "Każdy wiersz w osobnej linii, komórki oddzielone średnikiem (albo tabulatorem – można wkleić z Excela). Znak < scala komórkę z lewą. Dwuklik w komórkę na stronie – pisanie w niej (Tab – następna)."
 msgstr ""
 
+
+msgid "Tabulator – przeciągnij, aby przesunąć; w dół, aby usunąć"
+msgstr ""
+
+msgid "Wcięcie pierwszego wiersza"
+msgstr ""
+
+msgid "Nazwa kroju"
+msgstr ""
+
+msgid "Rozmiar (pt)"
+msgstr ""
+
+msgid "Kropki"
+msgstr ""
+
+msgid "Zwykły"
+msgstr ""
+
+msgid "Kolor tekstu (szesnastkowo)"
+msgstr ""
+
+msgid "wyróżnienie"
+msgstr ""
+
+msgid "Kolor wyróżnienia (pusto – brak)"
+msgstr ""
+
+msgid "Linia bazowa"
+msgstr ""
+
+msgid "Język tekstu (pisownia, dzielenie wyrazów)"
+msgstr ""
+
+msgid "FUNKCJE OPENTYPE (o ile czcionka je ma)"
+msgstr ""
+
+msgid "Kerning"
+msgstr ""
+
+msgid "Ligatury"
+msgstr ""
+
+msgid "Kapitaliki OT"
+msgstr ""
+
+msgid "Ułamki"
+msgstr ""
+
+msgid "Cyfry nautyczne"
+msgstr ""
+
+msgid "Cyfry równej wysokości"
+msgstr ""
+
+msgid "Cyfry tabelaryczne"
+msgstr ""
+
+msgid "Dodatkowe funkcje: zestawy stylistyczne ss01–ss20, swsh, salt…"
+msgstr ""
+
+msgid "Zastosuj"
+msgstr ""
+
+msgid "Wyrównanie"
+msgstr ""
+
+msgid "Do lewej"
+msgstr ""
+
+msgid "Do prawej"
+msgstr ""
+
+msgid "Ujemne – wysunięcie"
+msgstr ""
+
+msgid "Wielokrotna"
+msgstr ""
+
+msgid "Dokładnie"
+msgstr ""
+
+msgid "Co najmniej"
+msgstr ""
+
+msgid "Interlinia"
+msgstr ""
+
+msgid "Wartość interlinii (wielokrotność albo pt)"
+msgstr ""
+
+msgid "PRZEPŁYW TEKSTU"
+msgstr ""
+
+msgid "Razem z następnym"
+msgstr ""
+
+msgid "Wiersze razem"
+msgstr ""
+
+msgid "Wdowy i sieroty"
+msgstr ""
+
+msgid "Od nowej strony"
+msgstr ""
+
+msgid "Dzielenie wyrazów"
+msgstr ""
+
+msgid "Inicjał (wiersze)"
+msgstr ""
+
+msgid "TŁO I RAMKA"
+msgstr ""
+
+msgid "tło #rrggbb"
+msgstr ""
+
+msgid "Cieniowanie akapitu (pusto – brak)"
+msgstr ""
+
+msgid "Grubość ramki (pt, 0 – bez ramki)"
+msgstr ""
+
+msgid "ramka #rrggbb"
+msgstr ""
+
+msgid "Kolor ramki"
+msgstr ""
+
+msgid "Zaokrąglenie (pt)"
+msgstr ""
+
+msgid "Odstęp tekstu od ramki (pt)"
+msgstr ""
+
+msgid "Tabulatory"
+msgstr ""
+
+msgid "np. 36; 72; -1 (−1 – do prawej z kropkami)"
+msgstr ""
+
+msgid "Położenia tabulatorów w pt od lewej krawędzi tekstu"
+msgstr ""
+
+msgid "Czcionka – wszystkie ustawienia"
+msgstr ""
+
+msgid "Akapit – wszystkie ustawienia"
+msgstr ""
+
+msgid "Automatyczne przenoszenie wyrazów z dywizem (polski i angielski)"
+msgstr ""
+
+msgid "Sekcje"
+msgstr ""
+
+msgid "Nowa sekcja"
+msgstr ""
+
+msgid "Podział sekcji – dalsza treść od nowej strony, z własnymi kolumnami i orientacją"
+msgstr ""
+
+msgid "Ciągła"
+msgstr ""
+
+msgid "Podział sekcji na tej samej stronie – np. zmiana liczby kolumn"
+msgstr ""
+
+msgid "Usuń podział"
+msgstr ""
+
+msgid "Scal tę sekcję z poprzednią"
+msgstr ""
+
+msgid "Kolumny sekcji"
+msgstr ""
+
+msgid "Wypełnienie i obrys"
+msgstr ""
+
+msgid "Efekty"
+msgstr ""
+
+msgid "Miękki cień pod kształtem"
+msgstr ""
+
+msgid "Krycie"
+msgstr ""
+
+msgid "Przypisy"
+msgstr ""
+
+msgid "Przypis dolny"
+msgstr ""
+
+msgid "Wstaw przypis u dołu strony (numerowany automatycznie)"
+msgstr ""
+
+msgid "Przypis końcowy"
+msgstr ""
+
+msgid "Wstaw przypis zebrany na końcu dokumentu"
+msgstr ""
+
+msgid "Wróć do tekstu"
+msgstr ""
+
+msgid "Wróć do odsyłacza w treści (Esc)"
+msgstr ""
+
+msgid "Linijka"
+msgstr ""
+
+msgid "Linijka z suwakami wcięć i tabulatorami"
+msgstr ""
+
+msgid "Sekcje dotyczą treści głównej"
+msgstr ""
+
+msgid "Nowa sekcja – kolumny i orientacja ustawiasz teraz osobno dla niej"
+msgstr ""
+
+msgid "Przypis wstawisz w treści głównej"
+msgstr ""
+
+msgid "Wstaw przypis dolny"
+msgstr ""
+
+msgid "Wstaw przypis końcowy"
+msgstr ""
+
+msgid "Nowa sekcja od nowej strony"
+msgstr ""
+
+msgid "Nowa sekcja ciągła"
+msgstr ""

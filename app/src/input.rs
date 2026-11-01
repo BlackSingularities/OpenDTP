@@ -892,6 +892,8 @@ pub fn key(st: &mut State, text: &str, ctrl: bool, shift: bool, alt: bool) -> bo
         } else if st.ed.obj.is_some() {
             st.ed.obj = None;
             st.ed.multi.clear();
+        } else if matches!(st.ed.story, StoryRef::Note(_)) {
+            crate::actions::run(st, "note-back", "");
         } else if matches!(st.ed.story, StoryRef::Header | StoryRef::Footer | StoryRef::HeaderFirst | StoryRef::FooterFirst) {
             st.ed.set_caret(StoryRef::Body, At::new(0, 0), false);
         } else if a.get_right_panel() != "" {

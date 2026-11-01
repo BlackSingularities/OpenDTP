@@ -1284,8 +1284,19 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
         }
         "orientation" => {
             st.ed.begin(Kind::Other);
-            let p = &mut st.ed.doc.page;
-            std::mem::swap(&mut p.width, &mut p.height);
+            match section_of(st) {
+                Some(s) => s.landscape = !s.landscape,
+                None => {
+                    let p = &mut st.ed.doc.page;
+                    std::mem::swap(&mut p.width, &mut p.height);
+                    // Sekcje zachowują własną orientację względem nowego układu.
+                    for q in st.ed.doc.body.paras.iter_mut() {
+                        if let Some(s) = q.fmt.section.as_mut() {
+                            s.landscape = !s.landscape;
+                        }
+                    }
+                }
+            }
             st.ed.changed();
             st.view.invalidate();
         }
@@ -1333,14 +1344,86 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
         "columns" => {
             if let Ok(n) = arg.parse::<u8>() {
                 st.ed.begin(Kind::Other);
-                st.ed.doc.page.columns = n.clamp(1, 6);
+                match section_of(st) {
+                    Some(s) => s.columns = n.clamp(1, 6),
+                    None => st.ed.doc.page.columns = n.clamp(1, 6),
+                }
                 st.ed.changed();
             }
         }
         "col-rule" => {
             st.ed.begin(Kind::Other);
-            st.ed.doc.page.column_rule = !st.ed.doc.page.column_rule;
+            match section_of(st) {
+                Some(s) => s.column_rule = !s.column_rule,
+                None => st.ed.doc.page.column_rule = !st.ed.doc.page.column_rule,
+            }
             st.ed.changed();
+        }
+        "section-new" | "section-new-cont" => {
+            if st.ed.story != StoryRef::Body {
+                toast(st, tr("Sekcje dotyczą treści głównej"));
+                return;
+            }
+            let cont = arg == "cont" || id == "section-new-cont";
+            let sec = st.ed.doc.setup_at(st.ed.head.para).section(cont);
+            st.ed.begin(Kind::Other);
+            st.ed.enter();
+            let pi = st.ed.head.para;
+            if let Some(p) = st.ed.doc.body.paras.get_mut(pi) {
+                p.fmt.section = Some(sec);
+            }
+            st.ed.changed();
+            toast(st, tr("Nowa sekcja – kolumny i orientacja ustawiasz teraz osobno dla niej"));
+        }
+        "section-remove" => {
+            if let Some(i) = (st.ed.story == StoryRef::Body).then(|| st.ed.doc.section_start(st.ed.head.para)).flatten() {
+                st.ed.begin(Kind::Other);
+                st.ed.doc.body.paras[i].fmt.section = None;
+                st.ed.changed();
+            }
+        }
+        "footnote" | "endnote" => {
+            if st.ed.story != StoryRef::Body {
+                toast(st, tr("Przypis wstawisz w treści głównej"));
+                return;
+            }
+            st.ed.begin(Kind::Other);
+            let id = st.ed.doc.new_id();
+            let mut p = Paragraph::with_text("normal", "");
+            p.runs[0].fmt.size = Some(9.0);
+            p.fmt.space_after = Some(0.0);
+            st.ed.doc.notes.push(Note { id, end: base == "endnote", story: Story { paras: vec![p] } });
+            let mut fmt = st.ed.caret_fmt();
+            fmt.script = Some(Script::Super);
+            fmt.link = None;
+            let h = st.ed.head;
+            let end = opendtp_core::edit::insert_field(&mut st.ed.doc.body, h, Field::Footnote(id), &fmt);
+            st.ed.anchor = end;
+            st.ed.head = end;
+            st.ed.changed();
+            st.ed.story = StoryRef::Note(id);
+            st.ed.anchor = At::new(0, 0);
+            st.ed.head = At::new(0, 0);
+            scroll = true;
+        }
+        "note-back" => {
+            if let StoryRef::Note(id) = st.ed.story {
+                let pos = st.ed.doc.body.paras.iter().enumerate().find_map(|(pi, p)| {
+                    let mut off = 0;
+                    for r in &p.runs {
+                        off += r.text.len();
+                        if r.field == Some(Field::Footnote(id)) {
+                            return Some(At::new(pi, off));
+                        }
+                    }
+                    None
+                });
+                st.ed.story = StoryRef::Body;
+                let at = pos.unwrap_or(At::new(0, 0));
+                st.ed.anchor = at;
+                st.ed.head = at;
+                scroll = true;
+            }
         }
 
         // ---------------------------------------------------------- obiekty
@@ -2704,4 +2787,13 @@ fn later(f: impl FnOnce() + 'static) {
 #[allow(dead_code)]
 fn _unused(st: &State) -> String {
     len_str(0.0, st.prefs.unit)
+}
+
+/// Sekcja, w której stoi kursor (tylko treść główna).
+fn section_of(st: &mut State) -> Option<&mut Section> {
+    if st.ed.story != StoryRef::Body {
+        return None;
+    }
+    let i = st.ed.doc.section_start(st.ed.head.para)?;
+    st.ed.doc.body.paras[i].fmt.section.as_mut()
 }
