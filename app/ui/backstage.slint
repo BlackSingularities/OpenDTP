@@ -1,0 +1,1009 @@
+// Menu Plik (widok „za kulisami”): nowy dokument z szablonu, otwieranie, zapis, eksport, druk,
+// informacje o dokumencie, ustawienia i „O programie”.
+
+import { ScrollView, ListView } from "std-widgets.slint";
+import { Theme } from "theme.slint";
+import { Icons } from "icons.slint";
+import { App, RecentV, ItemV } from "state.slint";
+import { TipArea, IconButton, Field, Spin, Switch, MenuItem, MenuSep, Card, Segmented, Label, Dim, Button, Slider, Swatch } from "widgets.slint";
+import { MenuButton } from "ribbon.slint";
+
+component NavItem inherits Rectangle {
+    in property <string> label;
+    in property <image> icon;
+    in property <bool> active;
+    callback clicked();
+    height: 38px;
+    border-radius: Theme.r-small;
+    background: active ? Theme.accent-soft : ta.has-hover ? Theme.hover : transparent;
+    HorizontalLayout {
+        padding-left: 14px;
+        spacing: 12px;
+        Image {
+            source: root.icon;
+            width: 17px;
+            height: 17px;
+            y: (parent.height - self.height) / 2;
+            colorize: root.active ? Theme.accent : Theme.text-dim;
+        }
+        Text {
+            text: root.label;
+            font-family: Theme.font;
+            font-size: Theme.fs + 1px;
+            color: root.active ? Theme.text : Theme.text-dim;
+            vertical-alignment: center;
+        }
+    }
+    ta := TipArea {
+        clicked => {
+            root.clicked();
+        }
+    }
+}
+
+component H1 inherits Text {
+    font-family: Theme.font;
+    font-size: 26px;
+    font-weight: 300;
+    color: Theme.text;
+}
+
+component H2 inherits Text {
+    font-family: Theme.font;
+    font-size: Theme.fs-small;
+    font-weight: 600;
+    color: Theme.text-faint;
+    height: 26px;
+    vertical-alignment: bottom;
+}
+
+component Template inherits Rectangle {
+    in property <string> id;
+    in property <string> label;
+    in property <string> hint;
+    in property <image> icon;
+    width: 150px;
+    height: 196px;
+    border-radius: Theme.r;
+    background: ta.has-hover ? Theme.hover : transparent;
+    VerticalLayout {
+        padding: 8px;
+        spacing: 6px;
+        Rectangle {
+            height: 134px;
+            border-radius: 4px;
+            background: #ffffff;
+            border-width: ta.has-hover ? 2px : 1px;
+            border-color: ta.has-hover ? Theme.accent : Theme.line;
+            Image {
+                source: root.icon;
+                width: 38px;
+                height: 38px;
+                colorize: #2b2b2b;
+            }
+        }
+        Text {
+            text: root.label;
+            font-family: Theme.font;
+            font-size: Theme.fs;
+            color: Theme.text;
+            horizontal-alignment: center;
+        }
+        Text {
+            text: root.hint;
+            font-family: Theme.font;
+            font-size: 10px;
+            color: Theme.text-faint;
+            horizontal-alignment: center;
+            overflow: elide;
+        }
+    }
+    ta := TipArea {
+        tip: root.hint;
+        clicked => {
+            App.cmd("new", root.id);
+        }
+    }
+}
+
+component SettingRow inherits HorizontalLayout {
+    in property <string> label;
+    in property <string> hint;
+    spacing: 16px;
+    min-height: 34px;
+    VerticalLayout {
+        width: 250px;
+        alignment: center;
+        Label {
+            text: root.label;
+        }
+        if root.hint != "": Dim {
+            text: root.hint;
+            wrap: word-wrap;
+        }
+    }
+    HorizontalLayout {
+        alignment: start;
+        spacing: 8px;
+        @children
+    }
+}
+
+component AccentSwatches inherits HorizontalLayout {
+    spacing: 6px;
+    for c in [#5b8cff, #3ccf7a, #ff9f0a, #ff4d5a, #bf5af2, #64d2ff, #ffd60a, #ffffff, #8e8e93]: Swatch {
+        swatch: c;
+        size: 22px;
+        selected: Theme.accent == c;
+        clicked => {
+            App.cmd("accent", c == #5b8cff ? "#5b8cff" : c == #3ccf7a ? "#3ccf7a" : c == #ff9f0a ? "#ff9f0a" : c == #ff4d5a ? "#ff4d5a" : c == #bf5af2 ? "#bf5af2" : c == #64d2ff ? "#64d2ff" : c == #ffd60a ? "#ffd60a" : c == #ffffff ? "#ffffff" : "#8e8e93");
+        }
+    }
+}
+
+export component Backstage inherits Rectangle {
+    background: Theme.bg;
+    HorizontalLayout {
+        Rectangle {
+            width: 236px;
+            background: Theme.panel;
+            Rectangle {
+                x: parent.width - 1px;
+                width: 1px;
+                background: Theme.line;
+            }
+            VerticalLayout {
+                padding: 12px;
+                spacing: 2px;
+                Rectangle {
+                    height: 44px;
+                    HorizontalLayout {
+                        spacing: 10px;
+                        IconButton {
+                            icon: Icons.chevron-left;
+                            tip: @tr("Wróć do dokumentu (Esc)");
+                            y: (parent.height - self.height) / 2;
+                            clicked => {
+                                App.backstage = false;
+                            }
+                        }
+                        Text {
+                            text: "OpenDTP";
+                            font-family: Theme.font;
+                            font-size: 18px;
+                            font-weight: 600;
+                            color: Theme.text;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+                NavItem {
+                    label: @tr("Nowy");
+                    icon: Icons.file-plus;
+                    active: App.backstage-page == 0;
+                    clicked => {
+                        App.backstage-page = 0;
+                    }
+                }
+                NavItem {
+                    label: @tr("Otwórz");
+                    icon: Icons.folder-open;
+                    active: App.backstage-page == 1;
+                    clicked => {
+                        App.backstage-page = 1;
+                    }
+                }
+                NavItem {
+                    label: @tr("Zapisz");
+                    icon: Icons.save;
+                    clicked => {
+                        App.cmd("save", "");
+                    }
+                }
+                NavItem {
+                    label: @tr("Zapisz jako");
+                    icon: Icons.save-all;
+                    clicked => {
+                        App.cmd("save-as", "");
+                    }
+                }
+                NavItem {
+                    label: @tr("Eksportuj");
+                    icon: Icons.file-output;
+                    active: App.backstage-page == 3;
+                    clicked => {
+                        App.backstage-page = 3;
+                    }
+                }
+                NavItem {
+                    label: @tr("Drukuj");
+                    icon: Icons.printer;
+                    clicked => {
+                        App.cmd("print", "");
+                    }
+                }
+                NavItem {
+                    label: @tr("Informacje");
+                    icon: Icons.info;
+                    active: App.backstage-page == 5;
+                    clicked => {
+                        App.backstage-page = 5;
+                        App.cmd("doc-info", "");
+                    }
+                }
+                Rectangle {
+                    vertical-stretch: 1;
+                }
+                NavItem {
+                    label: @tr("Ustawienia");
+                    icon: Icons.settings;
+                    active: App.backstage-page == 6;
+                    clicked => {
+                        App.backstage-page = 6;
+                    }
+                }
+                NavItem {
+                    label: @tr("O programie");
+                    icon: Icons.badge-info;
+                    active: App.backstage-page == 7;
+                    clicked => {
+                        App.backstage-page = 7;
+                    }
+                }
+            }
+        }
+        Rectangle {
+            horizontal-stretch: 1;
+            if App.backstage-page == 0: ScrollView {
+                VerticalLayout {
+                    padding: 36px;
+                    spacing: 14px;
+                    alignment: start;
+                    H1 {
+                        text: @tr("Nowy dokument");
+                    }
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: start;
+                        Template {
+                            id: "blank";
+                            label: @tr("Pusty dokument");
+                            hint: @tr("Czysta strona A4");
+                            icon: Icons.file;
+                        }
+                        Template {
+                            id: "report";
+                            label: @tr("Raport");
+                            hint: @tr("Tytuł, spis treści, nagłówki, stopka");
+                            icon: Icons.file-text;
+                        }
+                        Template {
+                            id: "letter";
+                            label: @tr("List");
+                            hint: @tr("Pismo z nadawcą i adresatem");
+                            icon: Icons.sticky-note;
+                        }
+                        Template {
+                            id: "newsletter";
+                            label: @tr("Gazetka");
+                            hint: @tr("Trzy kolumny, obrazy, opływanie");
+                            icon: Icons.columns-3;
+                        }
+                        Template {
+                            id: "flyer";
+                            label: @tr("Ulotka");
+                            hint: @tr("Kształty tekstu i duża typografia");
+                            icon: Icons.star;
+                        }
+                        Template {
+                            id: "welcome";
+                            label: @tr("Przewodnik");
+                            hint: @tr("Pokaz możliwości OpenDTP");
+                            icon: Icons.sparkles;
+                        }
+                    }
+                    H2 {
+                        text: @tr("OSTATNIE DOKUMENTY");
+                    }
+                    for r in App.recent: Rectangle {
+                        height: 44px;
+                        border-radius: Theme.r-small;
+                        background: rta.has-hover ? Theme.hover : transparent;
+                        HorizontalLayout {
+                            padding-left: 12px;
+                            padding-right: 8px;
+                            spacing: 12px;
+                            Image {
+                                source: Icons.file-text;
+                                width: 18px;
+                                height: 18px;
+                                y: (parent.height - self.height) / 2;
+                                colorize: Theme.accent;
+                            }
+                            VerticalLayout {
+                                alignment: center;
+                                horizontal-stretch: 1;
+                                Label {
+                                    text: r.name;
+                                }
+                                Dim {
+                                    text: r.path;
+                                }
+                            }
+                            Dim {
+                                text: r.when;
+                            }
+                        }
+                        rta := TipArea {
+                            tip: r.path;
+                            clicked => {
+                                App.cmd("open-path", r.path);
+                            }
+                        }
+                    }
+                }
+            }
+            if App.backstage-page == 1: ScrollView {
+                VerticalLayout {
+                    padding: 36px;
+                    spacing: 12px;
+                    alignment: start;
+                    H1 {
+                        text: @tr("Otwórz");
+                    }
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: start;
+                        Button {
+                            label: @tr("Przeglądaj…");
+                            primary: true;
+                            icon: Icons.folder-open;
+                            tip: @tr("OpenDTP, Word (DOCX), tekst, Markdown (Ctrl+O)");
+                            clicked => {
+                                App.cmd("open", "");
+                            }
+                        }
+                    }
+                    H2 {
+                        text: @tr("OSTATNIE");
+                    }
+                    if App.recent.length == 0: Dim {
+                        text: @tr("Tu pojawią się ostatnio otwierane pliki.");
+                    }
+                    for r in App.recent: Rectangle {
+                        height: 44px;
+                        border-radius: Theme.r-small;
+                        background: ota.has-hover ? Theme.hover : transparent;
+                        HorizontalLayout {
+                            padding-left: 12px;
+                            padding-right: 8px;
+                            spacing: 12px;
+                            Image {
+                                source: Icons.file-text;
+                                width: 18px;
+                                height: 18px;
+                                y: (parent.height - self.height) / 2;
+                                colorize: Theme.accent;
+                            }
+                            VerticalLayout {
+                                alignment: center;
+                                horizontal-stretch: 1;
+                                Label {
+                                    text: r.name;
+                                }
+                                Dim {
+                                    text: r.path;
+                                }
+                            }
+                            Dim {
+                                text: r.when;
+                            }
+                            IconButton {
+                                icon: Icons.x;
+                                tip: @tr("Usuń z listy");
+                                y: (parent.height - self.height) / 2;
+                                clicked => {
+                                    App.cmd("recent-remove", r.path);
+                                }
+                            }
+                        }
+                        ota := TipArea {
+                            tip: r.path;
+                            clicked => {
+                                App.cmd("open-path", r.path);
+                            }
+                        }
+                    }
+                }
+            }
+            if App.backstage-page == 3: ScrollView {
+                VerticalLayout {
+                    padding: 36px;
+                    spacing: 12px;
+                    alignment: start;
+                    H1 {
+                        text: @tr("Eksportuj");
+                    }
+                    for e in [
+                        { id: "docx", label: @tr("Microsoft Word (.docx)"), hint: @tr("Edytowalny dokument Worda: style, listy, obrazy, kształty i opływanie w tych samych miejscach"), icon: Icons.file-type-2 },
+                        { id: "pdf", label: @tr("PDF (.pdf)"), hint: @tr("Dokładnie jak na ekranie, czcionki osadzone, tekst do zaznaczania"), icon: Icons.file-output },
+                        { id: "html", label: @tr("Strona internetowa (.html)"), hint: @tr("Tekst z formatowaniem, nagłówki i listy"), icon: Icons.globe },
+                        { id: "md", label: @tr("Markdown (.md)"), hint: @tr("Tekst z nagłówkami, listami i wyróżnieniami"), icon: Icons.hash },
+                        { id: "txt", label: @tr("Tekst (.txt)"), hint: @tr("Sam tekst bez formatowania"), icon: Icons.file-text },
+                        { id: "png", label: @tr("Obraz strony (.png)"), hint: @tr("Bieżąca strona w 300 dpi"), icon: Icons.image },
+                    ]: Rectangle {
+                        height: 58px;
+                        border-radius: Theme.r;
+                        background: eta.has-hover ? Theme.hover : Theme.raised;
+                        border-width: 1px;
+                        border-color: Theme.line;
+                        HorizontalLayout {
+                            padding-left: 16px;
+                            padding-right: 16px;
+                            spacing: 14px;
+                            Image {
+                                source: e.icon;
+                                width: 22px;
+                                height: 22px;
+                                y: (parent.height - self.height) / 2;
+                                colorize: Theme.accent;
+                            }
+                            VerticalLayout {
+                                alignment: center;
+                                Label {
+                                    text: e.label;
+                                }
+                                Dim {
+                                    text: e.hint;
+                                }
+                            }
+                        }
+                        eta := TipArea {
+                            tip: e.hint;
+                            clicked => {
+                                App.cmd("export", e.id);
+                            }
+                        }
+                    }
+                    H2 {
+                        text: @tr("KSZTAŁTY TEKSTU W DOCX");
+                    }
+                    Segmented {
+                        items: [@tr("Dokładne wiersze (wygląd 1:1)"), @tr("Edytowalne pole tekstowe")];
+                        current: App.exact-shapes ? 0 : 1;
+                        tip: @tr("Word nie wpisuje tekstu w dowolny kształt – wybierz wierność wyglądu albo łatwą edycję");
+                        picked(i) => {
+                            App.exact-shapes = i == 0;
+                        }
+                    }
+                    Dim {
+                        text: @tr("Dokładne wiersze: każdy wiersz kształtu to osobne pole w tym samym miejscu. Edytowalne pole: tekst w ramce kształtu, Word przełamie go po swojemu.");
+                        wrap: word-wrap;
+                        width: 560px;
+                    }
+                }
+            }
+            if App.backstage-page == 5: ScrollView {
+                VerticalLayout {
+                    padding: 36px;
+                    spacing: 10px;
+                    alignment: start;
+                    H1 {
+                        text: @tr("Informacje o dokumencie");
+                    }
+                    SettingRow {
+                        label: @tr("Tytuł");
+                        tf := Field {
+                            w: 360px;
+                            text: App.doc-name;
+                            accepted(t) => {
+                                App.cmd("meta-title", t);
+                            }
+                            edited(t) => {
+                                App.cmd("meta-title", t);
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Autor");
+                        Field {
+                            w: 360px;
+                            text: App.s-author;
+                            edited(t) => {
+                                App.cmd("meta-author", t);
+                            }
+                        }
+                    }
+                    H2 {
+                        text: @tr("STATYSTYKA");
+                    }
+                    Label {
+                        text: App.stats-text;
+                        wrap: word-wrap;
+                        height: 120px;
+                        vertical-alignment: top;
+                    }
+                }
+            }
+            if App.backstage-page == 6: ScrollView {
+                VerticalLayout {
+                    padding: 36px;
+                    spacing: 8px;
+                    alignment: start;
+                    H1 {
+                        text: @tr("Ustawienia");
+                    }
+                    H2 {
+                        text: @tr("WYGLĄD");
+                    }
+                    SettingRow {
+                        label: @tr("Język interfejsu");
+                        hint: @tr("Zmiana po ponownym uruchomieniu");
+                        Segmented {
+                            items: [@tr("Jak Windows"), "Polski", "English"];
+                            current: App.s-lang;
+                            picked(i) => {
+                                App.cmd("s-lang", i);
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Motyw");
+                        Segmented {
+                            items: ["AMOLED", @tr("Grafit"), @tr("Jasny")];
+                            current: Theme.mode;
+                            picked(i) => {
+                                App.cmd("theme", i);
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Kolor akcentu");
+                        AccentSwatches {}
+                        Field {
+                            w: 90px;
+                            text: App.accent-hex;
+                            placeholder: "#rrggbb";
+                            tip: @tr("Własny kolor akcentu");
+                            accepted(t) => {
+                                App.cmd("accent", t);
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Zaokrąglenia");
+                        Segmented {
+                            items: [@tr("Ostre"), @tr("Zwykłe"), @tr("Mocne")];
+                            current: Theme.corners;
+                            picked(i) => {
+                                App.cmd("corners", i);
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Wielkość interfejsu");
+                        Slider {
+                            width: 200px;
+                            value: (Theme.scale - 0.85) / 0.5;
+                            tip: @tr("Skala przycisków i tekstu interfejsu");
+                            moved(v) => {
+                                App.cmd("ui-scale", 0.85 + v * 0.5);
+                            }
+                        }
+                        Dim {
+                            text: round(Theme.scale * 100) + "%";
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Gęsty układ");
+                        Switch {
+                            on: Theme.dense;
+                            toggled => {
+                                App.cmd("dense", "");
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Jednostki");
+                        Segmented {
+                            items: ["mm", "cm", @tr("cale"), "pt"];
+                            current: App.s-unit;
+                            picked(i) => {
+                                App.cmd("s-unit", i);
+                            }
+                        }
+                    }
+                    H2 {
+                        text: @tr("PISANIE");
+                    }
+                    SettingRow {
+                        label: @tr("Sprawdzanie pisowni na bieżąco");
+                        Switch {
+                            on: App.spell-live;
+                            toggled => {
+                                App.cmd("spell-live", "");
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Inteligentne cudzysłowy");
+                        hint: @tr("„polskie” i ’apostrofy’");
+                        Switch {
+                            on: App.s-smart-quotes;
+                            toggled => {
+                                App.cmd("s-smart-quotes", "");
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Autokorekta");
+                        hint: @tr("-- → –, ... → …, (c) → ©, -> → →");
+                        Switch {
+                            on: App.s-autocorrect;
+                            toggled => {
+                                App.cmd("s-autocorrect", "");
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Wielka litera na początku zdania");
+                        Switch {
+                            on: App.s-capitalize;
+                            toggled => {
+                                App.cmd("s-capitalize", "");
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Automatyczne listy");
+                        hint: @tr("„- ” i „1. ” na początku akapitu");
+                        Switch {
+                            on: App.s-autolist;
+                            toggled => {
+                                App.cmd("s-autolist", "");
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Przyciąganie obiektów");
+                        hint: @tr("Do marginesów, środka strony i innych obiektów");
+                        Switch {
+                            on: App.s-snap;
+                            toggled => {
+                                App.cmd("s-snap", "");
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Czcionka nowych dokumentów");
+                        Field {
+                            w: 180px;
+                            text: App.s-default-font;
+                            accepted(t) => {
+                                App.cmd("s-default-font", t);
+                            }
+                        }
+                        Field {
+                            w: 50px;
+                            text: App.s-default-size;
+                            accepted(t) => {
+                                App.cmd("s-default-size", t);
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Autor dokumentów");
+                        Field {
+                            w: 240px;
+                            text: App.s-author;
+                            accepted(t) => {
+                                App.cmd("s-author", t);
+                            }
+                            edited(t) => {
+                                App.cmd("s-author", t);
+                            }
+                        }
+                    }
+                    H2 {
+                        text: @tr("PLIKI");
+                    }
+                    SettingRow {
+                        label: @tr("Autozapis kopii");
+                        hint: @tr("Kopia do odzyskania po awarii");
+                        Segmented {
+                            items: [@tr("Wył."), "1 min", "2 min", "5 min", "10 min"];
+                            current: App.s-autosave;
+                            picked(i) => {
+                                App.cmd("s-autosave", i);
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Przywracaj ostatni dokument");
+                        Switch {
+                            on: App.s-restore;
+                            toggled => {
+                                App.cmd("s-restore", "");
+                            }
+                        }
+                    }
+                    H2 {
+                        text: @tr("PASEK I WSTĄŻKA");
+                    }
+                    SettingRow {
+                        label: @tr("Pasek szybkiego dostępu");
+                        Button {
+                            label: @tr("Dostosuj…");
+                            clicked => {
+                                App.cmd("customize", "qat");
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Karta „Moja karta”");
+                        Button {
+                            label: @tr("Dostosuj…");
+                            clicked => {
+                                App.cmd("customize", "tab");
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Słownik użytkownika");
+                        Button {
+                            label: @tr("Pokaż…");
+                            clicked => {
+                                App.cmd("user-dict", "");
+                            }
+                        }
+                    }
+                    H2 {
+                        text: @tr("SZTUCZNA INTELIGENCJA");
+                    }
+                    SettingRow {
+                        label: @tr("Dostawca");
+                        hint: @tr("OpenRouter daje dostęp do setek modeli jednym kluczem");
+                        MenuButton {
+                            icon: Icons.sparkles;
+                            label: App.ai-providers[App.ai-provider].label;
+                            tip: @tr("Dostawca modeli językowych");
+                            items: App.ai-providers;
+                            menu-w: 260px;
+                            picked(id) => {
+                                App.cmd("ai-provider", id);
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Klucz API");
+                        hint: @tr("Zapisywany zaszyfrowany (Windows DPAPI), tylko na tym komputerze");
+                        Rectangle {
+                            width: 300px;
+                            height: 24px * Theme.scale;
+                            border-radius: Theme.r-small;
+                            background: Theme.raised;
+                            border-width: 1px;
+                            border-color: key-in.has-focus ? Theme.accent : Theme.line;
+                            key-in := TextInput {
+                                x: 7px;
+                                width: parent.width - 14px;
+                                height: parent.height;
+                                text <=> App.ai-key;
+                                input-type: password;
+                                font-size: Theme.fs;
+                                color: Theme.text;
+                                vertical-alignment: center;
+                                single-line: true;
+                                accepted => {
+                                    App.cmd("ai-key", self.text);
+                                }
+                                changed has-focus => {
+                                    if (!self.has-focus) {
+                                        App.cmd("ai-key", self.text);
+                                    }
+                                }
+                            }
+                            if App.ai-key == "" && !key-in.has-focus: Text {
+                                x: 7px;
+                                height: parent.height;
+                                text: App.ai-has-key ? @tr("•••• zapisany – wpisz nowy, aby zmienić") : @tr("Wklej klucz API");
+                                font-size: Theme.fs;
+                                color: Theme.text-faint;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                    if App.ai-needs-base: SettingRow {
+                        label: @tr("Adres API");
+                        hint: @tr("Serwer zgodny z OpenAI, np. http://localhost:11434/v1");
+                        Field {
+                            w: 300px;
+                            text: App.ai-base;
+                            placeholder: "https://…/v1";
+                            accepted(t) => {
+                                App.cmd("ai-base", t);
+                            }
+                            edited(t) => {
+                                App.cmd("ai-base", t);
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Model");
+                        MenuButton {
+                            icon: Icons.layers;
+                            label: App.ai-model != "" ? App.ai-model : @tr("Wybierz model");
+                            tip: @tr("Lista modeli pobrana od dostawcy");
+                            items: App.ai-models;
+                            current: App.ai-model;
+                            menu-w: 360px;
+                            picked(id) => {
+                                App.cmd("ai-model", id);
+                            }
+                        }
+                        Button {
+                            label: @tr("Pobierz listę");
+                            icon: Icons.refresh-cw;
+                            enabled: !App.ai-busy;
+                            tip: @tr("Pobierz modele dostępne dla tego klucza");
+                            clicked => {
+                                App.cmd("ai-models", "");
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Własny identyfikator modelu");
+                        hint: @tr("Gdy modelu nie ma na liście");
+                        Field {
+                            w: 300px;
+                            text: App.ai-model;
+                            placeholder: "np. anthropic/claude-sonnet-5.5";
+                            accepted(t) => {
+                                App.cmd("ai-model", t);
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Temperatura");
+                        hint: @tr("Niżej – rzeczowo i przewidywalnie, wyżej – swobodniej i kreatywniej");
+                        Slider {
+                            width: 200px;
+                            value: App.ai-temp / 2;
+                            tip: @tr("Temperatura modelu (0–2)");
+                            moved(v) => {
+                                App.cmd("ai-temp", round(v * 20) / 10);
+                            }
+                        }
+                        Dim {
+                            text: round(App.ai-temp * 10) / 10;
+                        }
+                    }
+                    SettingRow {
+                        label: App.ai-status;
+                        Button {
+                            label: @tr("Generuj dokument…");
+                            icon: Icons.wand-sparkles;
+                            primary: true;
+                            clicked => {
+                                App.cmd("ai", "");
+                            }
+                        }
+                    }
+                    H2 {
+                        text: @tr("AKTUALIZACJE");
+                    }
+                    SettingRow {
+                        label: @tr("Sprawdzaj w tle");
+                        hint: @tr("Nowe wersje z redzikowski.com");
+                        Switch {
+                            on: App.s-update-check;
+                            toggled => {
+                                App.cmd("s-update-check", "");
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: @tr("Instaluj bez pytania");
+                        Switch {
+                            on: App.s-update-auto;
+                            toggled => {
+                                App.cmd("s-update-auto", "");
+                            }
+                        }
+                    }
+                    SettingRow {
+                        label: App.update-status;
+                        Button {
+                            label: @tr("Sprawdź teraz");
+                            enabled: !App.update-busy;
+                            icon: Icons.refresh-cw;
+                            clicked => {
+                                App.cmd("check-update", "");
+                            }
+                        }
+                        if App.update-ready: Button {
+                            label: @tr("Zaktualizuj");
+                            primary: true;
+                            enabled: !App.update-busy;
+                            icon: Icons.cloud-download;
+                            clicked => {
+                                App.cmd("install-update", "");
+                            }
+                        }
+                    }
+                }
+            }
+            if App.backstage-page == 7: VerticalLayout {
+                padding: 48px;
+                spacing: 14px;
+                alignment: start;
+                HorizontalLayout {
+                    spacing: 18px;
+                    alignment: start;
+                    Image {
+                        source: @image-url("../icon.png");
+                        width: 72px;
+                        height: 72px;
+                    }
+                    VerticalLayout {
+                        alignment: center;
+                        Text {
+                            text: "OpenDTP";
+                            font-family: Theme.font;
+                            font-size: 30px;
+                            font-weight: 600;
+                            color: Theme.text;
+                        }
+                        Dim {
+                            text: @tr("Wersja {}", App.version) + (App.portable ? @tr(" · przenośna") : "");
+                        }
+                    }
+                }
+                Label {
+                    text: @tr("Edytor tekstu i skład dokumentów: kształty tekstu z węzłami, opływanie, kolumny, wykresy, eksport do Worda i PDF.");
+                    wrap: word-wrap;
+                    width: 560px;
+                    height: 40px;
+                }
+                Label {
+                    text: App.author-line;
+                    font-weight: 600;
+                }
+                HorizontalLayout {
+                    spacing: 8px;
+                    alignment: start;
+                    Button {
+                        label: "redzikowski.com";
+                        icon: Icons.globe;
+                        tip: @tr("Strona autora");
+                        clicked => {
+                            App.cmd("website", "");
+                        }
+                    }
+                    Button {
+                        label: @tr("Postaw kawę");
+                        icon: Icons.coffee;
+                        primary: true;
+                        tip: "buycoffee.to/adamredzikowski";
+                        clicked => {
+                            App.cmd("support", "");
+                        }
+                    }
+                    Button {
+                        label: @tr("Sprawdź aktualizacje");
+                        icon: Icons.refresh-cw;
+                        clicked => {
+                            App.cmd("check-update", "");
+                        }
+                    }
+                }
+                Dim {
+                    text: App.update-status;
+                }
+                Dim {
+                    text: @tr("Słowniki: SJP.PL (pl), SCOWL (en). Ikony: Lucide (ISC). Interfejs: Slint.");
+                }
+            }
+        }
+    }
+}

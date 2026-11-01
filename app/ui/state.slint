@@ -1,0 +1,288 @@
+// Stan interfejsu wymieniany z Rustem: strony i nakładki płótna, formatowanie w miejscu kursora,
+// właściwości obiektu, panele, ustawienia. Polecenia idą jednym wywołaniem `cmd(id, argument)`.
+
+export struct PageV {
+    x: length,
+    y: length,
+    w: length,
+    h: length,
+    img: image,
+    n: int,
+}
+
+export struct BoxV {
+    x: length,
+    y: length,
+    w: length,
+    h: length,
+}
+
+// kind: 0 – węzeł narożny, 1 – węzeł gładki, 2 – uchwyt krzywej.
+export struct NodeV {
+    x: length,
+    y: length,
+    kind: int,
+    sel: bool,
+    id: string,
+}
+
+export struct ItemV {
+    id: string,
+    label: string,
+    hint: string,
+    icon: image,
+    checked: bool,
+    font: string,
+}
+
+export struct StyleV {
+    id: string,
+    name: string,
+    font: string,
+    size: length,
+    bold: bool,
+    italic: bool,
+    color: color,
+    shade: color,
+}
+
+export struct NavV {
+    label: string,
+    level: int,
+    para: int,
+    page: int,
+    current: bool,
+}
+
+export struct RecentV {
+    name: string,
+    path: string,
+    when: string,
+    pinned: bool,
+}
+
+export global App {
+    in-out property <string> title: "OpenDTP";
+    in-out property <string> doc-name: @tr("Dokument bez tytułu");
+    in-out property <bool> dirty;
+    in-out property <string> version;
+    in-out property <string> author-line: "Pomysł i wykonanie: Adam Rędzikowski · redzikowski.com";
+
+    // Płótno: strony (położenia w pikselach logicznych), przewijanie, nakładki.
+    in-out property <[PageV]> pages;
+    in-out property <length> content-w: 800px;
+    in-out property <length> content-h: 1200px;
+    in-out property <length> view-x;
+    in-out property <length> view-y;
+    in-out property <BoxV> caret;
+    in-out property <bool> caret-on;
+    in-out property <bool> caret-blink: true;
+    in-out property <[BoxV]> sel-rects;
+    in-out property <[BoxV]> find-rects;
+    in-out property <bool> obj-sel;
+    in-out property <BoxV> obj-box;
+    in-out property <bool> obj-locked;
+    in-out property <string> obj-kind;
+    in-out property <string> obj-path;
+    in-out property <[BoxV]> multi-boxes;
+    in-out property <bool> node-mode;
+    in-out property <[NodeV]> nodes;
+    in-out property <string> node-lines;
+    in-out property <string> preview-path;
+    in-out property <BoxV> drag-box;
+    in-out property <bool> drag-box-on;
+    // Pomocnicze linie przyciągania podczas przesuwania obiektu.
+    in-out property <string> snap-lines;
+    // 0 – zaznaczanie i tekst, 1 – ramka tekstowa, 2 – kształt, 3 – pióro (węzły), 4 – tekst na ścieżce, 5 – wskazanie ramki do połączenia, 6 – malarz formatów.
+    in-out property <int> tool;
+    in-out property <string> cursor: "text";
+    in-out property <int> focus-serial;
+
+    // Wstążka.
+    in-out property <int> tab;
+    in-out property <bool> ribbon-collapsed;
+    in-out property <bool> ribbon-peek;
+    in-out property <bool> in-frame;
+    in-out property <string> font: "Calibri";
+    in-out property <string> size: "11";
+    in-out property <bool> bold;
+    in-out property <bool> italic;
+    in-out property <bool> underline;
+    in-out property <bool> strike;
+    in-out property <bool> sup;
+    in-out property <bool> sub;
+    in-out property <int> caps;
+    in-out property <color> color: #000000;
+    in-out property <color> highlight: #ffff00;
+    in-out property <color> last-color: #c00000;
+    in-out property <color> last-highlight: #ffe066;
+    in-out property <int> align;
+    in-out property <string> list-kind;
+    in-out property <string> line-spacing: "1,15";
+    in-out property <string> style-id: "normal";
+    in-out property <string> indent-left: "0";
+    in-out property <string> indent-right: "0";
+    in-out property <string> first-line: "0";
+    in-out property <string> space-before: "0";
+    in-out property <string> space-after: "8";
+    in-out property <string> tracking: "0";
+    in-out property <string> unit: "mm";
+    in-out property <bool> drop-cap;
+    in-out property <color> shading: #00000000;
+
+    // Strona.
+    in-out property <string> page-size: "A4";
+    in-out property <bool> landscape;
+    in-out property <int> columns: 1;
+    in-out property <string> col-gap: "12,5";
+    in-out property <bool> col-rule;
+    in-out property <string> m-top: "25";
+    in-out property <string> m-bottom: "25";
+    in-out property <string> m-left: "25";
+    in-out property <string> m-right: "25";
+    in-out property <color> page-color: #ffffff;
+    in-out property <bool> has-header;
+    in-out property <bool> has-footer;
+    in-out property <bool> diff-first;
+    in-out property <bool> orphans: true;
+    in-out property <bool> baseline-grid;
+    in-out property <string> doc-theme: "classic";
+
+    // Obiekt.
+    in-out property <int> wrap-mode;
+    in-out property <string> wrap-dist: "9";
+    in-out property <bool> wrap-contour: true;
+    in-out property <bool> has-fill;
+    in-out property <color> fill: #ffffff;
+    in-out property <int> fill-kind;
+    in-out property <color> fill2: #cccccc;
+    in-out property <bool> has-stroke;
+    in-out property <color> stroke: #000000;
+    in-out property <string> stroke-w: "1";
+    in-out property <bool> dashed;
+    in-out property <bool> shadow;
+    in-out property <float> opacity: 1;
+    in-out property <string> padding: "4";
+    in-out property <int> frame-cols: 1;
+    in-out property <int> valign;
+    in-out property <string> obj-x;
+    in-out property <string> obj-y;
+    in-out property <string> obj-w;
+    in-out property <string> obj-h;
+    in-out property <string> corner: "0";
+    in-out property <bool> linked;
+    in-out property <bool> image-fit-cover: true;
+    in-out property <string> chart-data;
+    in-out property <string> chart-title;
+    in-out property <int> chart-kind;
+    in-out property <bool> chart-legend: true;
+    in-out property <bool> chart-values: true;
+    in-out property <string> path-text;
+    in-out property <float> path-offset;
+    in-out property <string> obj-name;
+    in-out property <int> multi-count;
+
+    // Widok.
+    in-out property <int> zoom: 100;
+    in-out property <bool> marks;
+    in-out property <bool> guides: true;
+    in-out property <bool> spell-live: true;
+    in-out property <bool> fullscreen;
+
+    // Modele.
+    in-out property <[ItemV]> fonts;
+    in-out property <[ItemV]> recent-fonts;
+    in-out property <[StyleV]> styles;
+    in-out property <[NavV]> nav;
+    in-out property <[ItemV]> qat;
+    in-out property <[ItemV]> palette-items;
+    in-out property <[ItemV]> custom-tab;
+    in-out property <[ItemV]> all-commands;
+    in-out property <[RecentV]> recent;
+    in-out property <[ItemV]> doc-themes;
+    in-out property <[ItemV]> langs;
+    in-out property <[string]> user-words;
+
+    // Stan i panele.
+    in-out property <string> page-info;
+    in-out property <string> words;
+    in-out property <string> status;
+    in-out property <string> spell-state;
+    in-out property <string> left-panel;
+    in-out property <string> right-panel;
+    in-out property <bool> backstage;
+    in-out property <int> backstage-page;
+    in-out property <bool> palette-open;
+    in-out property <string> dialog;
+    in-out property <string> toast;
+    in-out property <int> toast-serial;
+
+    // Znajdź i zamień.
+    in-out property <string> find-text;
+    in-out property <string> replace-text;
+    in-out property <bool> find-case;
+    in-out property <bool> find-whole;
+    in-out property <string> find-info;
+
+    // Menu kontekstowe.
+    in-out property <bool> ctx-open;
+    in-out property <length> ctx-x;
+    in-out property <length> ctx-y;
+    in-out property <[ItemV]> ctx-items;
+
+    // Okna dialogowe.
+    in-out property <string> link-url;
+    in-out property <string> stats-text;
+    in-out property <string> confirm-text;
+    in-out property <string> confirm-id;
+    in-out property <bool> exact-shapes: true;
+
+    // Ustawienia.
+    in-out property <int> s-lang;
+    in-out property <int> s-autosave: 2;
+    in-out property <bool> s-update-check: true;
+    in-out property <bool> s-update-auto;
+    in-out property <bool> s-smart-quotes: true;
+    in-out property <bool> s-autocorrect: true;
+    in-out property <bool> s-capitalize: true;
+    in-out property <bool> s-autolist: true;
+    in-out property <bool> s-restore: true;
+    in-out property <bool> s-snap: true;
+    in-out property <int> s-unit;
+    in-out property <string> s-author;
+    in-out property <string> s-default-font: "Calibri";
+    in-out property <string> s-default-size: "11";
+    in-out property <int> s-page;
+    in-out property <string> accent-hex: "#5b8cff";
+    in-out property <string> update-status;
+    in-out property <bool> update-ready;
+    in-out property <bool> update-busy;
+    in-out property <float> update-progress;
+    in-out property <bool> portable;
+
+    // Sztuczna inteligencja.
+    in-out property <[ItemV]> ai-providers;
+    in-out property <int> ai-provider;
+    in-out property <string> ai-key;
+    in-out property <bool> ai-has-key;
+    in-out property <string> ai-model;
+    in-out property <[ItemV]> ai-models;
+    in-out property <float> ai-temp: 0.7;
+    in-out property <string> ai-base;
+    in-out property <bool> ai-needs-base;
+    in-out property <string> ai-status;
+    in-out property <bool> ai-busy;
+    in-out property <string> ai-prompt;
+    in-out property <int> ai-length: 1;
+    in-out property <bool> ai-insert;
+
+    callback cmd(string, string);
+    // Wskaźnik na płótnie: rodzaj (0 – naciśnięcie, 1 – ruch, 2 – puszczenie), x, y, przycisk (0 – lewy, 1 – prawy), Shift, Ctrl, Alt.
+    callback pointer(int, length, length, int, bool, bool, bool);
+    callback hover(length, length);
+    callback key(string, bool, bool, bool) -> bool;
+    callback wheel-zoom(float, length, length);
+    callback viewport(length, length, length, length);
+    callback palette-query(string);
+    callback font-query(string);
+}

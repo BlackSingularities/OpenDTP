@@ -1,0 +1,2205 @@
+//! Polecenia wstążki, menu, palety i skrótów: `run(id, argument)`.
+
+use slint::ComponentHandle;
+use std::time::Duration;
+
+use opendtp_core::edit::At;
+use opendtp_core::geom::{self, BoolOp};
+use opendtp_core::model::*;
+use opendtp_core::{io, styles};
+use slint::{ModelRc, VecModel};
+
+use crate::editor::Kind;
+use crate::input::set_tool;
+use crate::{commands, files, len_str, num, parse_num, refresh, refresh_scroll, sync_lists, toast, tr, unit_k, App, ItemV, State};
+
+pub const PAGE_SIZES: [(&str, f32, f32); 9] = [
+    ("A4", 210.0, 297.0),
+    ("A5", 148.0, 210.0),
+    ("A3", 297.0, 420.0),
+    ("B5", 176.0, 250.0),
+    ("Letter", 215.9, 279.4),
+    ("Legal", 215.9, 355.6),
+    ("A6", 105.0, 148.0),
+    ("DL", 99.0, 210.0),
+    ("Square", 210.0, 210.0),
+];
+
+fn ui_app(st: &State) -> Option<crate::AppWindow> {
+    st.ui.upgrade()
+}
+
+pub fn kind_label(o: &Object) -> String {
+    match &o.kind {
+        ObjKind::Text { .. } if o.shape.is_rect() => tr("Ramka tekstowa").into(),
+        ObjKind::Text { .. } => tr("Kształt tekstu").into(),
+        ObjKind::Image { .. } => tr("Obraz").into(),
+        ObjKind::Shape => tr("Kształt").into(),
+        ObjKind::Chart { .. } => tr("Wykres").into(),
+        ObjKind::PathText { .. } => tr("Tekst na ścieżce").into(),
+    }
+}
+
+fn color_of(c: slint::Color) -> Color {
+    Color { r: c.red(), g: c.green(), b: c.blue(), a: c.alpha() }
+}
+
+fn list_kind(id: &str) -> Option<ListKind> {
+    Some(match id {
+        "bullet" => ListKind::Bullet,
+        "dash" => ListKind::Dash,
+        "check" => ListKind::Check,
+        "arrow" => ListKind::Arrow,
+        "number" => ListKind::Number,
+        "number-paren" => ListKind::NumberParen,
+        "lower-letter" => ListKind::LowerLetter,
+        "upper-letter" => ListKind::UpperLetter,
+        "lower-roman" => ListKind::LowerRoman,
+        "upper-roman" => ListKind::UpperRoman,
+        _ => return None,
+    })
+}
+
+fn wrap_mode(i: i32) -> WrapMode {
+    match i {
+        1 => WrapMode::Both,
+        2 => WrapMode::Left,
+        3 => WrapMode::Right,
+        4 => WrapMode::Largest,
+        5 => WrapMode::TopBottom,
+        6 => WrapMode::Behind,
+        _ => WrapMode::None,
+    }
+}
+
+/// Wartość z pola liczbowego: liczba albo krok (+/−) od bieżącej.
+fn value_or_step(arg: &str, cur: f32, step: f32, is_step: bool) -> Option<f32> {
+    if is_step {
+        let d: f32 = arg.parse().unwrap_or(0.0);
+        Some(cur + d * step)
+    } else {
+        parse_num(arg)
+    }
+}
+
+pub fn run(st: &mut State, id: &str, arg: &str) {
+    // Polecenia z palety i paska szybkiego dostępu: „id:arg”.
+    if arg.is_empty() {
+        if let Some((a, b)) = id.split_once(':') {
+            if !id.starts_with("spell-") {
+                let (a, b) = (a.to_string(), b.to_string());
+                return run(st, &a, &b);
+            }
+        }
+        if let Some(rest) = id.strip_prefix("text-shape-") {
+            let rest = rest.to_string();
+            return run(st, "text-shape", &rest);
+        }
+        if let Some(rest) = id.strip_prefix("shape-") {
+            let rest = rest.to_string();
+            return run(st, "shape", &rest);
+        }
+        if let Some(rest) = id.strip_prefix("chart-").filter(|r| !matches!(*r, "data" | "title" | "kind" | "legend" | "values")) {
+            let rest = rest.to_string();
+            return run(st, "chart", &rest);
+        }
+        if let Some(rest) = id.strip_prefix("columns-") {
+            let rest = rest.to_string();
+            return run(st, "columns", &rest);
+        }
+        if let Some(rest) = id.strip_prefix("export-") {
+            let rest = rest.to_string();
+            return run(st, "export", &rest);
+        }
+        if let Some(rest) = id.strip_prefix("bool-") {
+            let rest = rest.to_string();
+            return run(st, "bool", &rest);
+        }
+        if id == "field-page" {
+            return run(st, "field", "page-number");
+        }
+        if id == "field-date" {
+            return run(st, "field", "date");
+        }
+    }
+    let Some(ui) = ui_app(st) else { return };
+    let app = ui.global::<App>();
+    let unit = st.prefs.unit;
+    let uk = unit_k(unit);
+    let is_step = id.ends_with("-step");
+    let base = id.trim_end_matches("-step");
+    let mut scroll = false;
+    match base {
+        // ---------------------------------------------------------- plik
+        "backstage" => {
+            app.set_backstage_page(0);
+            app.set_backstage(true);
+            let (w, ns, c, p, pg) = st.ed.stats();
+            app.set_stats_text(opendtp_core::trf!("Strony: {pg}\nAkapity: {p}\nWyrazy: {w}\nZnaki (bez spacji): {ns}\nZnaki (ze spacjami): {c}").into());
+            return;
+        }
+        "new" => {
+            let t = if arg.is_empty() { "blank" } else { arg };
+            if !files::may_replace(st, &format!("new:{t}")) {
+                return;
+            }
+            let doc = if t == "blank" { files::blank(&st.prefs) } else { opendtp_core::sample::template(t) };
+            files::set_doc(st, doc, None);
+            return;
+        }
+        "open" => {
+            if !files::may_replace(st, "open") {
+                return;
+            }
+            files::open_dialog(st);
+            return;
+        }
+        "open-path" => {
+            if !files::may_replace(st, &format!("open-path:{arg}")) {
+                return;
+            }
+            files::open_path(st, arg);
+            return;
+        }
+        "recent-remove" => {
+            st.prefs.recent.retain(|(p, _)| p != arg);
+            st.prefs.save();
+            sync_lists(st);
+            return;
+        }
+        "save" => {
+            files::save(st, false);
+            app.set_backstage(false);
+            return;
+        }
+        "save-as" => {
+            files::save(st, true);
+            app.set_backstage(false);
+            return;
+        }
+        "export" => {
+            files::export(st, arg);
+            return;
+        }
+        "print" => {
+            files::print(st);
+            return;
+        }
+        "doc-info" => {
+            let (w, ns, c, p, pg) = st.ed.stats();
+            app.set_stats_text(opendtp_core::trf!("Strony: {pg}\nAkapity: {p}\nWyrazy: {w}\nZnaki (bez spacji): {ns}\nZnaki (ze spacjami): {c}").into());
+            return;
+        }
+        "meta-title" => {
+            st.ed.doc.meta.title = arg.to_string();
+            st.ed.dirty = true;
+        }
+        "meta-author" => {
+            st.ed.doc.meta.author = arg.to_string();
+            st.ed.dirty = true;
+        }
+        "confirm-save" | "confirm-discard" => {
+            if base == "confirm-save" && !files::save(st, false) {
+                return;
+            }
+            st.ed.dirty = false;
+            let then = arg.to_string();
+            if then == "exit" {
+                st.pending_close = true;
+                files::quit(st);
+                return;
+            }
+            let (a, b) = then.split_once(':').unwrap_or((then.as_str(), ""));
+            let (a, b) = (a.to_string(), b.to_string());
+            return run(st, &a, &b);
+        }
+        "settings" => {
+            app.set_backstage_page(6);
+            app.set_backstage(true);
+            return;
+        }
+        "about" => {
+            app.set_backstage_page(7);
+            app.set_backstage(true);
+            return;
+        }
+        "website" => {
+            let _ = open::that(opendtp_core::AUTHOR_URL);
+            return;
+        }
+        "support" => {
+            let _ = open::that(opendtp_core::SUPPORT_URL);
+            return;
+        }
+        "check-update" => {
+            check_update(true);
+            return;
+        }
+        "install-update" => {
+            install_update(st);
+            return;
+        }
+
+        // ---------------------------------------------------------- edycja
+        "undo" => {
+            if !st.ed.undo() {
+                toast(st, tr("Nie ma czego cofnąć"));
+            }
+            st.view.invalidate();
+            scroll = true;
+        }
+        "redo" => {
+            st.ed.redo();
+            st.view.invalidate();
+            scroll = true;
+        }
+        "copy" | "cut" => {
+            if st.ed.has_sel() {
+                let frag = st.ed.fragment();
+                let text = opendtp_core::edit::fragment_text(&frag);
+                if let Ok(mut cb) = arboard::Clipboard::new() {
+                    let _ = cb.set_text(text.clone());
+                }
+                st.clip = Some((text, frag));
+                if base == "cut" {
+                    st.ed.delete_sel();
+                }
+            } else if let Some(o) = st.ed.object().cloned() {
+                // Obiekt w schowku wewnętrznym (wklejanie duplikuje).
+                st.clip = Some((format!("\u{1}obj{}", o.id), Vec::new()));
+                OBJ_CLIP.with(|c| *c.borrow_mut() = Some(o));
+                if base == "cut" {
+                    st.ed.delete_object();
+                }
+            }
+        }
+        "paste" | "paste-plain" => {
+            let sys = arboard::Clipboard::new().ok().and_then(|mut c| c.get_text().ok());
+            let obj = OBJ_CLIP.with(|c| c.borrow().clone());
+            if let (Some((t, _)), Some(o)) = (&st.clip, obj) {
+                if t.starts_with("\u{1}obj") && sys.as_deref().is_none_or(|s| s.is_empty() || s == t.as_str()) {
+                    let mut c = o;
+                    c.x += 12.0;
+                    c.y += 12.0;
+                    c.page = st.ed.caret_page().map(|p| p.0).unwrap_or(c.page);
+                    if let ObjKind::Text { next, .. } = &mut c.kind {
+                        *next = None;
+                    }
+                    st.ed.add_object(c);
+                    refresh(st);
+                    return;
+                }
+            }
+            if base == "paste" {
+                if let Some((t, frag)) = &st.clip {
+                    if sys.as_deref() == Some(t.as_str()) && !frag.is_empty() {
+                        let f = frag.clone();
+                        st.ed.paste(&f);
+                        refresh_scroll(st);
+                        return;
+                    }
+                }
+                // Obraz ze schowka.
+                if sys.as_deref().is_none_or(|s| s.is_empty()) {
+                    if let Some(img) = arboard::Clipboard::new().ok().and_then(|mut c| c.get_image().ok()) {
+                        let mut png = Vec::new();
+                        if let Some(buf) = image::RgbaImage::from_raw(img.width as u32, img.height as u32, img.bytes.into_owned()) {
+                            let _ = image::DynamicImage::ImageRgba8(buf).write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png);
+                            insert_image_bytes(st, png);
+                        }
+                        return;
+                    }
+                }
+            }
+            if let Some(t) = sys {
+                if !t.is_empty() {
+                    st.ed.paste_text(&t);
+                    scroll = true;
+                }
+            }
+        }
+        "select-all" => {
+            st.ed.select_all();
+        }
+        "format-painter" | "copy-format" => {
+            let (cp, _, style) = st.ed.caret_props();
+            let _ = cp;
+            let f = st.ed.caret_fmt();
+            let p = st.ed.story_ref().paras[st.ed.range().0.para].fmt.clone();
+            st.ed.painter = Some((f, Some((style, p))));
+            if base == "format-painter" {
+                set_tool(st, 6);
+                toast(st, tr("Zaznacz tekst, który ma dostać to formatowanie"));
+            } else {
+                toast(st, tr("Skopiowano formatowanie (Ctrl+Shift+V wkleja)"));
+            }
+            return;
+        }
+        "find" | "replace" => {
+            app.set_right_panel("find".into());
+            if st.ed.has_sel() {
+                let f = st.ed.fragment();
+                let t = opendtp_core::edit::fragment_text(&f);
+                if !t.contains('\n') && t.len() < 100 {
+                    app.set_find_text(t.clone().into());
+                    st.ed.find_run(&t, app.get_find_case(), app.get_find_whole());
+                }
+            }
+            find_info(st);
+        }
+        "find-run" => {
+            st.ed.find_run(arg, app.get_find_case(), app.get_find_whole());
+            find_info(st);
+        }
+        "find-next" | "find-prev" => {
+            if st.ed.find.is_empty() {
+                let t = app.get_find_text().to_string();
+                st.ed.find_run(&t, app.get_find_case(), app.get_find_whole());
+                st.ed.find_i = st.ed.find_i.wrapping_sub(1);
+            }
+            if st.ed.story != StoryRef::Body {
+                st.ed.set_caret(StoryRef::Body, At::new(0, 0), false);
+            }
+            st.ed.find_select(if base == "find-next" { 1 } else { -1 });
+            find_info(st);
+            scroll = true;
+        }
+        "find-close" => {
+            st.ed.find.clear();
+        }
+        "replace-one" => {
+            let with = app.get_replace_text().to_string();
+            if st.ed.has_sel() {
+                st.ed.insert(&with);
+            }
+            let t = app.get_find_text().to_string();
+            st.ed.find_run(&t, app.get_find_case(), app.get_find_whole());
+            st.ed.find_select(0);
+            find_info(st);
+            scroll = true;
+        }
+        "replace-all" => {
+            let n = st.ed.replace_all(&app.get_find_text(), &app.get_replace_text(), app.get_find_case(), app.get_find_whole());
+            toast(st, &opendtp_core::trf!("Zamieniono: {}", n));
+            st.ed.find.clear();
+            find_info(st);
+        }
+
+        // ---------------------------------------------------------- znaki
+        "bold" => st.ed.toggle(|c| c.bold, |f, v| f.bold = Some(v)),
+        "italic" => st.ed.toggle(|c| c.italic, |f, v| f.italic = Some(v)),
+        "underline" => st.ed.toggle(|c| c.underline != Underline::None, |f, v| f.underline = Some(if v { Underline::Single } else { Underline::None })),
+        "underline-kind" => {
+            let u = match arg {
+                "double" => Underline::Double,
+                "dotted" => Underline::Dotted,
+                "wave" => Underline::Wave,
+                "none" => Underline::None,
+                _ => Underline::Single,
+            };
+            st.ed.format(&move |f| f.underline = Some(u));
+        }
+        "strike" => st.ed.toggle(|c| c.strike, |f, v| f.strike = Some(v)),
+        "sup" => st.ed.toggle(|c| c.script == Script::Super, |f, v| f.script = Some(if v { Script::Super } else { Script::Normal })),
+        "sub" => st.ed.toggle(|c| c.script == Script::Sub, |f, v| f.script = Some(if v { Script::Sub } else { Script::Normal })),
+        "caps" => match arg {
+            "0" | "1" | "2" => {
+                let c = match arg {
+                    "1" => Caps::All,
+                    "2" => Caps::Small,
+                    _ => Caps::None,
+                };
+                st.ed.format(&move |f| f.caps = Some(c));
+            }
+            how => change_case(st, how),
+        },
+        "font" => {
+            let f = arg.to_string();
+            st.prefs.add_recent_font(&f);
+            sync_lists(st);
+            st.ed.format(&move |x| x.font = Some(f.clone()));
+            app.set_focus_serial(app.get_focus_serial() + 1);
+        }
+        "size" => {
+            if let Some(v) = parse_num(arg) {
+                let v = v.clamp(1.0, 1600.0);
+                st.ed.format(&move |f| f.size = Some(v));
+            }
+            app.set_focus_serial(app.get_focus_serial() + 1);
+        }
+        "grow" | "shrink" => {
+            let (cp, _, _) = st.ed.caret_props();
+            let steps = [6.0, 7.0, 8.0, 9.0, 10.0, 10.5, 11.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 28.0, 32.0, 36.0, 40.0, 48.0, 54.0, 60.0, 72.0, 96.0, 120.0, 144.0];
+            let cur = cp.size;
+            let v = if base == "grow" { steps.iter().copied().find(|s| *s > cur + 0.01).unwrap_or(cur + 12.0) } else { steps.iter().rev().copied().find(|s| *s < cur - 0.01).unwrap_or((cur - 1.0).max(1.0)) };
+            st.ed.format(&move |f| f.size = Some(v));
+        }
+        "clear-format" => st.ed.clear_format(),
+        "color" => {
+            let c = color_of(app.get_last_color());
+            st.ed.format(&move |f| f.color = Some(c));
+        }
+        "highlight" => {
+            let c = color_of(app.get_last_highlight());
+            st.ed.format(&move |f| f.highlight = Some(c));
+        }
+        "pick-hex" | "color-hex-check" => {
+            if let Some(c) = Color::parse(arg) {
+                app.set_last_color(slint::Color::from_rgb_u8(c.r, c.g, c.b));
+                st.ed.format(&move |f| f.color = Some(c));
+            } else {
+                toast(st, tr("Nieprawidłowy kolor – wpisz np. #1f4e79"));
+                return;
+            }
+        }
+        "tracking" => {
+            let (cp, _, _) = st.ed.caret_props();
+            if let Some(v) = value_or_step(arg, cp.tracking, 0.5, is_step) {
+                st.ed.format(&move |f| f.tracking = Some(v));
+            }
+        }
+        "lang" => {
+            let l = arg.to_string();
+            st.ed.format(&move |f| f.lang = Some(l.clone()));
+            st.view.invalidate();
+        }
+        "link" => {
+            let f = st.ed.caret_fmt();
+            app.set_link_url(f.link.unwrap_or_default().into());
+            app.set_dialog("link".into());
+            return;
+        }
+        "link-apply" => {
+            app.set_dialog("".into());
+            let url = arg.trim().to_string();
+            if url.is_empty() {
+                st.ed.format(&|f| {
+                    f.link = Some(String::new());
+                    f.underline = None;
+                    f.color = None;
+                });
+            } else {
+                let url = if url.contains("://") || url.starts_with("mailto:") { url } else { format!("https://{url}") };
+                if !st.ed.has_sel() {
+                    st.ed.insert(&url);
+                    let h = st.ed.head;
+                    st.ed.anchor = At::new(h.para, h.off - url.len());
+                }
+                st.ed.format(&move |f| {
+                    f.link = Some(url.clone());
+                    f.underline = Some(Underline::Single);
+                    f.color = Some(Color::rgb(0x05, 0x63, 0xc1));
+                });
+            }
+        }
+
+        // ---------------------------------------------------------- akapit
+        "align" => {
+            let a = match arg {
+                "1" => Align::Center,
+                "2" => Align::Right,
+                "3" => Align::Justify,
+                _ => Align::Left,
+            };
+            st.ed.format_paras(&move |p| p.fmt.align = Some(a));
+        }
+        "list" => match arg {
+            "restart" => st.ed.restart_numbering(),
+            k => st.ed.set_list(list_kind(k)),
+        },
+        "indent" => st.ed.indent(1),
+        "outdent" => st.ed.indent(-1),
+        "line-spacing" => match arg {
+            "exact" => {
+                let (cp, _, _) = st.ed.caret_props();
+                let v = cp.size * 1.2;
+                st.ed.format_paras(&move |p| p.fmt.line = Some(LineSpacing::Exact(v)));
+            }
+            "before+" => st.ed.format_paras(&|p| p.fmt.space_before = Some(12.0)),
+            "after0" => st.ed.format_paras(&|p| p.fmt.space_after = Some(0.0)),
+            v => {
+                if let Some(k) = parse_num(v) {
+                    st.ed.format_paras(&move |p| p.fmt.line = Some(LineSpacing::Multiple(k)));
+                }
+            }
+        },
+        "shading" => {
+            let c = color_of(app.get_shading());
+            st.ed.format_paras(&move |p| p.fmt.shading = Some(c));
+        }
+        "indent-left" | "indent-right" | "first-line" | "space-before" | "space-after" => {
+            let (_, pp, _) = st.ed.caret_props();
+            let (cur, k, step) = match base {
+                "indent-left" => (pp.indent_left / uk, uk, 1.0),
+                "indent-right" => (pp.indent_right / uk, uk, 1.0),
+                "first-line" => (pp.first_line / uk, uk, 1.0),
+                "space-before" => (pp.space_before, 1.0, 2.0),
+                _ => (pp.space_after, 1.0, 2.0),
+            };
+            let step = if k > 1.0 && unit == 0 { 2.5 } else if k > 1.0 && unit == 2 { 0.1 } else { step };
+            if let Some(v) = value_or_step(arg, cur, step, is_step) {
+                let v = v * k;
+                let b = base.to_string();
+                st.ed.format_paras(&move |p| match b.as_str() {
+                    "indent-left" => p.fmt.indent_left = Some(v.max(0.0)),
+                    "indent-right" => p.fmt.indent_right = Some(v.max(0.0)),
+                    "first-line" => p.fmt.first_line = Some(v),
+                    "space-before" => p.fmt.space_before = Some(v.max(0.0)),
+                    _ => p.fmt.space_after = Some(v.max(0.0)),
+                });
+            }
+        }
+        "drop-cap" => {
+            let (_, pp, _) = st.ed.caret_props();
+            let on = pp.drop_cap == 0;
+            st.ed.format_paras(&move |p| p.fmt.drop_cap = Some(if on { 3 } else { 0 }));
+        }
+        "style" => {
+            st.ed.set_style(arg);
+        }
+        "style-update" => {
+            let sid = if arg.is_empty() { st.ed.caret_props().2 } else { arg.to_string() };
+            let f = st.ed.caret_fmt();
+            st.ed.begin(Kind::Other);
+            if let Some(s) = st.ed.doc.styles.iter_mut().find(|s| s.id == sid) {
+                s.chars.merge(&f);
+            }
+            st.ed.changed();
+            toast(st, tr("Styl zaktualizowany według zaznaczenia"));
+        }
+        "style-new" => {
+            let f = st.ed.caret_fmt();
+            let (_, _, cur) = st.ed.caret_props();
+            let n = st.ed.doc.styles.len();
+            let id = format!("custom{}", st.ed.doc.new_id());
+            let name = opendtp_core::trf!("Mój styl {}", n - 14);
+            st.ed.begin(Kind::Other);
+            st.ed.doc.styles.push(Style { id: id.clone(), name, based_on: Some(cur), next: None, para: ParaFmt::default(), chars: f, outline: None, gallery: true });
+            st.ed.changed();
+            st.ed.set_style(&id);
+            app.set_left_panel("styles".into());
+        }
+
+        // ---------------------------------------------------------- wstawianie
+        "page-break" => {
+            st.ed.page_break(false);
+            scroll = true;
+        }
+        "column-break" => {
+            st.ed.page_break(true);
+            scroll = true;
+        }
+        "page-blank" => {
+            st.ed.begin(Kind::Other);
+            let n = st.ed.layout.pages.len();
+            st.ed.doc.min_pages = st.ed.doc.min_pages.max(n + 1);
+            st.ed.changed();
+            toast(st, tr("Dodano pustą stronę – wstaw na nią obrazy, kształty i ramki"));
+        }
+        "image" => {
+            let Some(p) = rfd::FileDialog::new().set_title(tr("Wstaw obraz")).add_filter(tr("Obrazy"), &["png", "jpg", "jpeg", "webp", "gif", "bmp"]).pick_file() else { return };
+            match std::fs::read(&p) {
+                Ok(b) => insert_image_bytes(st, b),
+                Err(e) => toast(st, &e.to_string()),
+            }
+            return;
+        }
+        "replace-image" => {
+            let Some(p) = rfd::FileDialog::new().set_title(tr("Zmień obraz")).add_filter(tr("Obrazy"), &["png", "jpg", "jpeg", "webp", "gif", "bmp"]).pick_file() else { return };
+            let Some(asset) = std::fs::read(&p).ok().and_then(io::odtp::asset_from) else {
+                toast(st, tr("Nieobsługiwany format obrazu"));
+                return;
+            };
+            let key = format!("img{}", st.ed.doc.new_id());
+            st.ed.doc.assets.insert(key.clone(), asset);
+            st.ed.edit_obj(&move |o| {
+                if let ObjKind::Image { asset, contour, .. } = &mut o.kind {
+                    *asset = key.clone();
+                    *contour = None;
+                }
+            });
+        }
+        "shape" | "text-shape" => {
+            if arg == "pen" {
+                return run(st, "draw-shape", "");
+            }
+            st.shape_preset = if arg.is_empty() { "rect".into() } else { arg.to_string() };
+            st.text_shape = base == "text-shape";
+            set_tool(st, 2);
+            toast(st, tr("Przeciągnij na stronie, aby narysować (kliknięcie – rozmiar domyślny)"));
+            return;
+        }
+        "text-frame" => {
+            st.shape_preset = "rect".into();
+            st.text_shape = true;
+            set_tool(st, 1);
+            toast(st, tr("Przeciągnij na stronie, aby narysować ramkę tekstową"));
+            return;
+        }
+        "draw-shape" => {
+            st.pen.clear();
+            set_tool(st, 3);
+            toast(st, tr("Klikaj, aby stawiać węzły (przeciągnij – krzywa). Kliknij pierwszy węzeł albo Enter, aby zamknąć."));
+            return;
+        }
+        "path-text" => {
+            set_tool(st, 4);
+            toast(st, tr("Przeciągnij na stronie – powstanie łuk z tekstem"));
+            return;
+        }
+        "chart" => {
+            let kind = match arg {
+                "bar" => ChartKind::Bar,
+                "line" => ChartKind::Line,
+                "area" => ChartKind::Area,
+                "pie" => ChartKind::Pie,
+                "doughnut" => ChartKind::Doughnut,
+                _ => ChartKind::Column,
+            };
+            let page = st.ed.caret_page().map(|c| c.0).unwrap_or(0);
+            let ps = st.ed.doc.page.clone();
+            let mut ch = Chart { kind, title: tr("Tytuł wykresu").into(), ..Chart::default() };
+            if matches!(kind, ChartKind::Pie | ChartKind::Doughnut) {
+                ch.labels = vec![tr("Produkt A").into(), tr("Produkt B").into(), tr("Produkt C").into(), tr("Inne").into()];
+                ch.series = vec![Series { name: tr("Udział").into(), values: vec![42.0, 28.0, 18.0, 12.0], color: None }];
+            }
+            let w = (ps.content_width() * 0.6).min(320.0);
+            let y = st.ed.caret_page().map(|c| c.2).unwrap_or(ps.margin_top);
+            let o = new_obj(page, ps.margin_left, y, w, w * 0.65, Shape::rect(), ObjKind::Chart { chart: ch }, WrapMode::Both);
+            st.ed.add_object(o);
+            object_selected(st);
+            app.set_right_panel("props".into());
+        }
+        "symbol" => {
+            st.ed.insert(arg);
+            scroll = true;
+        }
+        "field" => {
+            let f = match arg {
+                "page-number" => Some(Field::PageNumber),
+                "page-count" => Some(Field::PageCount),
+                "date" => Some(Field::Date),
+                "time" => Some(Field::Time),
+                "title" => Some(Field::Title),
+                "author" => Some(Field::Author),
+                _ => None,
+            };
+            match f {
+                Some(f) => {
+                    st.ed.begin(Kind::Other);
+                    let fmt = st.ed.caret_fmt();
+                    let h = st.ed.head;
+                    let story = st.ed.story;
+                    if let Some(s) = st.ed.doc.story_mut(story) {
+                        let end = opendtp_core::edit::insert_field(s, h, f, &fmt);
+                        st.ed.anchor = end;
+                        st.ed.head = end;
+                    }
+                    st.ed.changed();
+                }
+                None => st.ed.insert(&opendtp_core::util::today()),
+            }
+        }
+        "header-edit" | "footer-edit" => {
+            let header = base == "header-edit";
+            st.ed.begin(Kind::Other);
+            let style = if header { "header" } else { "footer" };
+            let slot = if header { &mut st.ed.doc.header } else { &mut st.ed.doc.footer };
+            if slot.is_none() {
+                let mut p = Paragraph::with_text(style, "");
+                if !header {
+                    p.runs = vec![Run { text: FIELD_CHAR.to_string(), field: Some(Field::PageNumber), ..Default::default() }];
+                }
+                *slot = Some(Story { paras: vec![p] });
+            }
+            st.ed.changed();
+            let r = if header { StoryRef::Header } else { StoryRef::Footer };
+            let len = st.ed.doc.story(r).map(|s| s.paras[0].len()).unwrap_or(0);
+            st.ed.obj = None;
+            st.ed.set_caret(r, At::new(0, len), false);
+            let page = st.ed.caret_page().map(|c| c.0).unwrap_or(0);
+            let _ = page;
+            scroll = true;
+            toast(st, tr("Edytujesz nagłówek/stopkę – Esc wraca do treści"));
+        }
+        "header-remove" | "footer-remove" => {
+            st.ed.begin(Kind::Other);
+            if base == "header-remove" {
+                st.ed.doc.header = None;
+                st.ed.doc.header_first = None;
+            } else {
+                st.ed.doc.footer = None;
+                st.ed.doc.footer_first = None;
+            }
+            if st.ed.story != StoryRef::Body && !matches!(st.ed.story, StoryRef::Obj(_)) {
+                st.ed.story = StoryRef::Body;
+            }
+            st.ed.changed();
+        }
+        "diff-first" => {
+            st.ed.begin(Kind::Other);
+            st.ed.doc.page.different_first = !st.ed.doc.page.different_first;
+            if st.ed.doc.page.different_first {
+                if st.ed.doc.header.is_some() && st.ed.doc.header_first.is_none() {
+                    st.ed.doc.header_first = Some(Story { paras: vec![Paragraph::with_text("header", "")] });
+                }
+                if st.ed.doc.footer.is_some() && st.ed.doc.footer_first.is_none() {
+                    st.ed.doc.footer_first = Some(Story { paras: vec![Paragraph::with_text("footer", "")] });
+                }
+            }
+            st.ed.changed();
+        }
+        "toc" | "toc-update" => {
+            let paras = opendtp_core::layout::toc(&st.ed.doc, &st.ed.layout);
+            if paras.is_empty() {
+                toast(st, tr("Brak nagłówków – nadaj akapitom style „Nagłówek 1–3”"));
+                return;
+            }
+            if base == "toc-update" {
+                // Zastępujemy istniejące akapity spisu.
+                let body = &st.ed.doc.body.paras;
+                let first = body.iter().position(|p| p.style.starts_with("toc"));
+                if let Some(f) = first {
+                    st.ed.begin(Kind::Other);
+                    let mut last = f;
+                    while last + 1 < st.ed.doc.body.paras.len() && st.ed.doc.body.paras[last + 1].style.starts_with("toc") {
+                        last += 1;
+                    }
+                    st.ed.doc.body.paras.splice(f..=last, paras);
+                    st.ed.changed();
+                    // Druga runda: numery stron po zmianie długości spisu.
+                    let again = opendtp_core::layout::toc(&st.ed.doc, &st.ed.layout);
+                    let n = again.len();
+                    st.ed.doc.body.paras.splice(f..f + n, again);
+                    st.ed.changed();
+                    toast(st, tr("Spis treści zaktualizowany"));
+                } else {
+                    toast(st, tr("W dokumencie nie ma spisu treści"));
+                }
+            } else {
+                if st.ed.story != StoryRef::Body {
+                    st.ed.set_caret(StoryRef::Body, st.ed.head, false);
+                }
+                st.ed.insert_paragraphs_at_caret(paras);
+            }
+        }
+        "caption" => {
+            let n = st.ed.doc.body.paras.iter().filter(|p| p.style == "caption").count() + 1;
+            st.ed.enter();
+            st.ed.set_style("caption");
+            st.ed.insert(&opendtp_core::trf!("Rysunek {}. ", n));
+            scroll = true;
+        }
+
+        // ---------------------------------------------------------- projekt i strona
+        "doc-theme" => {
+            if let Some(t) = styles::THEMES.iter().find(|t| t.id == arg) {
+                st.ed.begin(Kind::Other);
+                styles::apply_theme(&mut st.ed.doc, t);
+                st.doc_theme = t.id.into();
+                st.ed.changed();
+            }
+        }
+        "page-color" => {
+            let c = color_of(app.get_page_color());
+            st.ed.begin(Kind::Other);
+            st.ed.doc.page.color = c;
+            st.ed.changed();
+        }
+        "orphans" => {
+            st.ed.begin(Kind::Other);
+            st.ed.doc.settings.orphans = !st.ed.doc.settings.orphans;
+            st.ed.changed();
+        }
+        "baseline-grid" => {
+            st.ed.begin(Kind::Other);
+            let g = st.ed.doc.settings.baseline_grid;
+            st.ed.doc.settings.baseline_grid = if g > 0.0 { 0.0 } else { 14.0 };
+            st.ed.changed();
+        }
+        "page-size" => {
+            if let Some((_, w, h)) = PAGE_SIZES.iter().find(|p| p.0 == arg) {
+                st.ed.begin(Kind::Other);
+                let land = st.ed.doc.page.landscape();
+                let (w, h) = (w * MM, h * MM);
+                st.ed.doc.page.width = if land { h.max(w) } else { w.min(h) };
+                st.ed.doc.page.height = if land { w.min(h) } else { h.max(w) };
+                st.ed.changed();
+                st.view.invalidate();
+            }
+        }
+        "orientation" => {
+            st.ed.begin(Kind::Other);
+            let p = &mut st.ed.doc.page;
+            std::mem::swap(&mut p.width, &mut p.height);
+            st.ed.changed();
+            st.view.invalidate();
+        }
+        "margins" => {
+            let (t, b, l, r) = match arg {
+                "narrow" => (12.7, 12.7, 12.7, 12.7),
+                "moderate" => (25.4, 25.4, 19.1, 19.1),
+                "wide" => (25.4, 25.4, 38.0, 38.0),
+                "book" => (20.0, 25.0, 30.0, 20.0),
+                "none" => (0.0, 0.0, 0.0, 0.0),
+                _ => (25.0, 25.0, 25.0, 25.0),
+            };
+            st.ed.begin(Kind::Other);
+            let p = &mut st.ed.doc.page;
+            p.margin_top = t * MM;
+            p.margin_bottom = b * MM;
+            p.margin_left = l * MM;
+            p.margin_right = r * MM;
+            st.ed.changed();
+        }
+        "m-top" | "m-bottom" | "m-left" | "m-right" | "col-gap" => {
+            let p = st.ed.doc.page.clone();
+            let cur = match base {
+                "m-top" => p.margin_top,
+                "m-bottom" => p.margin_bottom,
+                "m-left" => p.margin_left,
+                "m-right" => p.margin_right,
+                _ => p.column_gap,
+            } / uk;
+            let step = if unit == 0 { 1.0 } else if unit == 2 { 0.1 } else if unit == 1 { 0.1 } else { 2.0 };
+            if let Some(v) = value_or_step(arg, cur, step, is_step) {
+                let v = (v * uk).clamp(0.0, p.width / 2.0 - 20.0);
+                st.ed.begin(Kind::Other);
+                let pg = &mut st.ed.doc.page;
+                match base {
+                    "m-top" => pg.margin_top = v,
+                    "m-bottom" => pg.margin_bottom = v,
+                    "m-left" => pg.margin_left = v,
+                    "m-right" => pg.margin_right = v,
+                    _ => pg.column_gap = v,
+                }
+                st.ed.changed();
+            }
+        }
+        "columns" => {
+            if let Ok(n) = arg.parse::<u8>() {
+                st.ed.begin(Kind::Other);
+                st.ed.doc.page.columns = n.clamp(1, 6);
+                st.ed.changed();
+            }
+        }
+        "col-rule" => {
+            st.ed.begin(Kind::Other);
+            st.ed.doc.page.column_rule = !st.ed.doc.page.column_rule;
+            st.ed.changed();
+        }
+
+        // ---------------------------------------------------------- obiekty
+        "wrap" => {
+            let m = wrap_mode(arg.parse().unwrap_or(0));
+            if st.ed.obj.is_none() {
+                toast(st, tr("Najpierw zaznacz obiekt"));
+                return;
+            }
+            st.ed.edit_obj(&move |o| o.wrap.mode = m);
+        }
+        "wrap-dist" => {
+            let cur = st.ed.object().map(|o| o.wrap.dist).unwrap_or(9.0);
+            if let Some(v) = value_or_step(arg, cur, 2.0, is_step) {
+                st.ed.edit_obj(&move |o| o.wrap.dist = v.max(0.0));
+            }
+        }
+        "wrap-contour" => st.ed.edit_obj(&|o| o.wrap.contour = !o.wrap.contour),
+        "detect-contour" => {
+            let Some(o) = st.ed.object().cloned() else { return };
+            let ObjKind::Image { asset, .. } = &o.kind else {
+                toast(st, tr("Kontur wykrywamy dla obrazów"));
+                return;
+            };
+            let Some(a) = st.ed.doc.assets.get(asset) else { return };
+            let found = image::load_from_memory(&a.data).ok().map(|i| i.to_rgba8()).and_then(|img| {
+                let (w, h) = img.dimensions();
+                geom::image_contour(img.as_raw(), w, h)
+            });
+            match found {
+                Some(c) => {
+                    st.ed.edit_obj(&move |o| {
+                        if let ObjKind::Image { contour, .. } = &mut o.kind {
+                            *contour = Some(c.clone());
+                        }
+                        o.wrap.contour = true;
+                        if !o.wrap.mode.excludes() {
+                            o.wrap.mode = WrapMode::Both;
+                        }
+                    });
+                    toast(st, tr("Wykryto kontur – tekst opływa kształt obrazu"));
+                }
+                None => toast(st, tr("Nie znaleziono konturu (obraz bez przezroczystości i jednolitego tła)")),
+            }
+        }
+        "z-front" => st.ed.z_order("front"),
+        "z-back" => st.ed.z_order("back"),
+        "z-forward" => st.ed.z_order("forward"),
+        "z-backward" => st.ed.z_order("backward"),
+        "align-obj" => st.ed.align_obj(arg),
+        "duplicate" => {
+            if st.ed.obj.is_some() {
+                st.ed.duplicate();
+            }
+        }
+        "delete-obj" => st.ed.delete_object(),
+        "lock" => st.ed.edit_obj(&|o| o.locked = !o.locked),
+        "flip-h" => st.ed.flip(false),
+        "flip-v" => st.ed.flip(true),
+        "obj-x" | "obj-y" | "obj-w" | "obj-h" => {
+            let Some(o) = st.ed.object().cloned() else { return };
+            let cur = match base {
+                "obj-x" => o.x,
+                "obj-y" => o.y,
+                "obj-w" => o.w,
+                _ => o.h,
+            } / uk;
+            let step = if unit == 0 { 1.0 } else if unit == 3 { 2.0 } else { 0.1 };
+            if let Some(v) = value_or_step(arg, cur, step, is_step) {
+                let v = v * uk;
+                let b = base.to_string();
+                st.ed.edit_obj(&move |o| match b.as_str() {
+                    "obj-x" => o.x = v,
+                    "obj-y" => o.y = v,
+                    "obj-w" => o.w = v.max(2.0),
+                    _ => o.h = v.max(2.0),
+                });
+            }
+        }
+        "obj-name" => {
+            let n = arg.to_string();
+            st.ed.edit_obj(&move |o| o.name = n.clone());
+        }
+        "fill" => {
+            let c = color_of(app.get_fill());
+            let kind = app.get_fill_kind();
+            let c2 = color_of(app.get_fill2());
+            st.ed.edit_obj(&move |o| {
+                o.fill = if c.is_none() {
+                    None
+                } else {
+                    Some(match kind {
+                        1 => Fill::Linear { from: c, to: c2, angle: 90.0 },
+                        2 => Fill::Radial { from: c, to: c2 },
+                        _ => Fill::Solid { color: c },
+                    })
+                }
+            });
+        }
+        "fill-kind" => {
+            let k: i32 = arg.parse().unwrap_or(0);
+            st.ed.edit_obj(&move |o| {
+                let base_c = match &o.fill {
+                    Some(Fill::Solid { color }) => *color,
+                    Some(Fill::Linear { from, .. }) | Some(Fill::Radial { from, .. }) => *from,
+                    None => Color::rgb(0x5b, 0x8c, 0xff),
+                };
+                let second = Color::rgb((base_c.r as u16 * 6 / 10) as u8, (base_c.g as u16 * 6 / 10) as u8, (base_c.b as u16 * 6 / 10) as u8);
+                o.fill = Some(match k {
+                    1 => Fill::Linear { from: base_c, to: second, angle: 90.0 },
+                    2 => Fill::Radial { from: Color::WHITE, to: base_c },
+                    _ => Fill::Solid { color: base_c },
+                });
+            });
+        }
+        "stroke" => {
+            let c = color_of(app.get_stroke());
+            st.ed.edit_obj(&move |o| {
+                if c.is_none() {
+                    o.stroke = None;
+                } else {
+                    let w = o.stroke.as_ref().map(|s| s.width).filter(|w| *w > 0.0).unwrap_or(1.0);
+                    let dash = o.stroke.as_ref().map(|s| s.dash.clone()).unwrap_or_default();
+                    o.stroke = Some(StrokeStyle { color: c, width: w, dash });
+                }
+            });
+        }
+        "stroke-w" => {
+            let cur = st.ed.object().and_then(|o| o.stroke.as_ref().map(|s| s.width)).unwrap_or(0.0);
+            if let Some(v) = value_or_step(arg, cur, 0.5, is_step) {
+                let v = v.max(0.0);
+                st.ed.edit_obj(&move |o| match &mut o.stroke {
+                    Some(s) => s.width = v,
+                    None if v > 0.0 => o.stroke = Some(StrokeStyle { color: Color::BLACK, width: v, dash: vec![] }),
+                    None => {}
+                });
+            }
+        }
+        "dashed" => st.ed.edit_obj(&|o| {
+            if let Some(s) = &mut o.stroke {
+                s.dash = if s.dash.len() >= 2 { vec![] } else { vec![s.width * 3.0, s.width * 2.0] };
+            } else {
+                o.stroke = Some(StrokeStyle { color: Color::BLACK, width: 1.0, dash: vec![3.0, 2.0] });
+            }
+        }),
+        "shadow" => st.ed.edit_obj(&|o| o.shadow = !o.shadow),
+        "opacity" => {
+            let v: f32 = arg.parse().unwrap_or(1.0);
+            let id = st.ed.obj;
+            if let Some(id) = id {
+                if !matches!(st.drag, crate::input::Drag::None) {
+                    return;
+                }
+                st.ed.begin(Kind::Typing);
+                st.ed.drag_obj(id, &move |o| o.opacity = v.clamp(0.05, 1.0));
+                st.ed.changed();
+            }
+        }
+        "corner" => {
+            let cur = st.ed.object().map(|o| o.corner).unwrap_or(0.0);
+            if let Some(v) = value_or_step(arg, cur, 2.0, is_step) {
+                st.ed.edit_obj(&move |o| o.corner = v.max(0.0));
+            }
+        }
+        "padding" => {
+            let cur = match st.ed.object().map(|o| &o.kind) {
+                Some(ObjKind::Text { padding, .. }) => *padding,
+                _ => 4.0,
+            };
+            if let Some(v) = value_or_step(arg, cur, 1.0, is_step) {
+                st.ed.edit_obj(&move |o| {
+                    if let ObjKind::Text { padding, .. } = &mut o.kind {
+                        *padding = v.max(0.0);
+                    }
+                });
+            }
+        }
+        "frame-cols" => {
+            let cur = match st.ed.object().map(|o| &o.kind) {
+                Some(ObjKind::Text { columns, .. }) => *columns as f32,
+                _ => 1.0,
+            };
+            if let Some(v) = value_or_step(arg, cur, 1.0, is_step) {
+                st.ed.edit_obj(&move |o| {
+                    if let ObjKind::Text { columns, .. } = &mut o.kind {
+                        *columns = v.round().clamp(1.0, 8.0) as u8;
+                    }
+                });
+            }
+        }
+        "valign" => {
+            let v = match arg {
+                "1" => VAlign::Center,
+                "2" => VAlign::Bottom,
+                _ => VAlign::Top,
+            };
+            st.ed.edit_obj(&move |o| {
+                if let ObjKind::Text { valign, .. } = &mut o.kind {
+                    *valign = v;
+                }
+            });
+        }
+        "image-fit" => {
+            let cover = arg == "0";
+            st.ed.edit_obj(&move |o| {
+                if let ObjKind::Image { fit, .. } = &mut o.kind {
+                    *fit = if cover { ImageFit::Cover } else { ImageFit::Contain };
+                }
+            });
+        }
+        "link-frame" => {
+            if !matches!(st.ed.object().map(|o| &o.kind), Some(ObjKind::Text { .. })) {
+                toast(st, tr("Zaznacz ramkę tekstową"));
+                return;
+            }
+            set_tool(st, 5);
+            toast(st, tr("Kliknij ramkę, do której ma popłynąć dalszy tekst"));
+            return;
+        }
+        "unlink-frame" => {
+            let Some(id) = st.ed.obj else { return };
+            st.ed.begin(Kind::Other);
+            let head = st.ed.doc.chain_head(id);
+            let chain = st.ed.doc.chain(head);
+            for c in chain {
+                if let Some(ObjKind::Text { next, .. }) = st.ed.doc.object_mut(c).map(|o| &mut o.kind) {
+                    *next = None;
+                }
+            }
+            st.ed.changed();
+        }
+        "bool" => {
+            let op = match arg {
+                "difference" => BoolOp::Difference,
+                "intersect" => BoolOp::Intersect,
+                "xor" => BoolOp::Xor,
+                _ => BoolOp::Union,
+            };
+            if !st.ed.boolean(op) {
+                toast(st, tr("Zaznacz dwa kształty na tej samej stronie (drugi z Shift)"));
+            }
+        }
+        "node-mode" => {
+            if st.ed.obj.is_some() {
+                st.ed.node_mode = !st.ed.node_mode;
+                st.ed.sel_node = None;
+                if let StoryRef::Obj(_) = st.ed.story {
+                    st.ed.story = StoryRef::Body;
+                    st.ed.fix_selection();
+                }
+            }
+        }
+        "node-add" => st.ed.shape_edit(&|s, sel| {
+            let (ci, ni) = sel.unwrap_or((0, 0));
+            if s.contours.get(ci).is_some_and(|c| c.nodes.len() >= 2) {
+                geom::insert_node(s, ci, ni, 0.5);
+                Some((ci, ni + 1))
+            } else {
+                sel
+            }
+        }),
+        "node-delete" => st.ed.shape_edit(&|s, sel| {
+            if let Some((ci, ni)) = sel {
+                if let Some(c) = s.contours.get_mut(ci) {
+                    if c.nodes.len() > if c.closed { 3 } else { 2 } {
+                        c.nodes.remove(ni);
+                        return Some((ci, ni.min(c.nodes.len() - 1)));
+                    }
+                }
+            }
+            sel
+        }),
+        "node-smooth" => st.ed.shape_edit(&|s, sel| {
+            if let Some((ci, ni)) = sel {
+                geom::toggle_smooth(s, ci, ni);
+            }
+            sel
+        }),
+        "seg-line" | "seg-curve" => {
+            let curve = base == "seg-curve";
+            st.ed.shape_edit(&move |s, sel| {
+                let Some((ci, ni)) = sel else { return sel };
+                let Some(c) = s.contours.get_mut(ci) else { return sel };
+                let n = c.nodes.len();
+                let j = (ni + 1) % n;
+                let (a, b) = (c.nodes[ni], c.nodes[j]);
+                if curve {
+                    let (dx, dy) = (b.x - a.x, b.y - a.y);
+                    c.nodes[ni].cout = Some((a.x + dx / 3.0 - dy * 0.25, a.y + dy / 3.0 + dx * 0.25));
+                    c.nodes[j].cin = Some((a.x + dx * 2.0 / 3.0 - dy * 0.25, a.y + dy * 2.0 / 3.0 + dx * 0.25));
+                } else {
+                    c.nodes[ni].cout = None;
+                    c.nodes[j].cin = None;
+                }
+                sel
+            });
+            if let Some(id) = st.ed.obj {
+                st.ed.normalize_shape(id);
+                st.ed.relayout();
+            }
+        }
+        "chart-kind" => {
+            let k = match arg {
+                "1" => ChartKind::Bar,
+                "2" => ChartKind::Line,
+                "3" => ChartKind::Area,
+                "4" => ChartKind::Pie,
+                "5" => ChartKind::Doughnut,
+                _ => ChartKind::Column,
+            };
+            st.ed.edit_obj(&move |o| {
+                if let ObjKind::Chart { chart } = &mut o.kind {
+                    chart.kind = k;
+                }
+            });
+        }
+        "chart-title" => {
+            let t = arg.to_string();
+            st.ed.edit_obj(&move |o| {
+                if let ObjKind::Chart { chart } = &mut o.kind {
+                    chart.title = t.clone();
+                }
+            });
+        }
+        "chart-legend" => st.ed.edit_obj(&|o| {
+            if let ObjKind::Chart { chart } = &mut o.kind {
+                chart.legend = !chart.legend;
+            }
+        }),
+        "chart-values" => st.ed.edit_obj(&|o| {
+            if let ObjKind::Chart { chart } = &mut o.kind {
+                chart.values = !chart.values;
+            }
+        }),
+        "chart-data" => {
+            let (labels, series) = parse_chart(arg);
+            if labels.is_empty() {
+                toast(st, tr("Nie rozpoznano danych wykresu"));
+                return;
+            }
+            st.ed.edit_obj(&move |o| {
+                if let ObjKind::Chart { chart } = &mut o.kind {
+                    chart.labels = labels.clone();
+                    chart.series = series.clone();
+                }
+            });
+            toast(st, tr("Dane wykresu zastosowane"));
+        }
+        "path-text-set" => {
+            let t = arg.to_string();
+            let Some(id) = st.ed.obj else { return };
+            st.ed.begin(Kind::Typing);
+            st.ed.drag_obj(id, &move |o| {
+                if let ObjKind::PathText { story, .. } = &mut o.kind {
+                    let p = &mut story.paras[0];
+                    let fmt = p.runs.first().map(|r| r.fmt.clone()).unwrap_or_default();
+                    p.runs = vec![Run { text: t.clone(), fmt, field: None }];
+                }
+            });
+            st.ed.changed();
+        }
+        "path-offset" => {
+            let v: f32 = arg.parse().unwrap_or(0.0);
+            let Some(id) = st.ed.obj else { return };
+            st.ed.begin(Kind::Typing);
+            st.ed.drag_obj(id, &move |o| {
+                if let ObjKind::PathText { offset, .. } = &mut o.kind {
+                    *offset = v - 0.5;
+                }
+            });
+            st.ed.changed();
+        }
+
+        // ---------------------------------------------------------- recenzja
+        "spell-next" => {
+            if !opendtp_core::spell::ready() {
+                toast(st, tr("Słowniki jeszcze się wczytują…"));
+                return;
+            }
+            if spell_next(st) {
+                scroll = true;
+            } else {
+                toast(st, tr("Nie znaleziono błędów pisowni"));
+            }
+        }
+        "spell-live" => {
+            st.view.spell = !st.view.spell;
+            st.prefs.spell_live = st.view.spell;
+            st.prefs.save();
+            st.view.invalidate();
+        }
+        "stats" => {
+            let (w, ns, c, p, pg) = st.ed.stats();
+            app.set_stats_text(opendtp_core::trf!("Strony: {pg}\nAkapity: {p}\nWyrazy: {w}\nZnaki (bez spacji): {ns}\nZnaki (ze spacjami): {c}").into());
+            app.set_dialog("stats".into());
+            return;
+        }
+        "user-dict" => {
+            let words: Vec<slint::SharedString> = opendtp_core::spell::user_words().into_iter().map(Into::into).collect();
+            app.set_user_words(ModelRc::new(VecModel::from(words)));
+            app.set_left_panel("dict".into());
+            app.set_backstage(false);
+            return;
+        }
+        "dict-remove" => {
+            opendtp_core::spell::remove_user_word(arg);
+            st.view.invalidate();
+            return run(st, "user-dict", "");
+        }
+
+        // ---------------------------------------------------------- widok
+        "zoom" => {
+            let z = match arg {
+                "width" => st.view.fit_width(&st.ed),
+                "page" => st.view.fit_page(&st.ed),
+                v => parse_num(v).map(|p| p / 100.0).unwrap_or(1.0),
+            };
+            set_zoom(st, z, None);
+            return;
+        }
+        "zoom-in" => {
+            let z = st.view.zoom * 1.15;
+            set_zoom(st, z, None);
+            return;
+        }
+        "zoom-out" => {
+            let z = st.view.zoom / 1.15;
+            set_zoom(st, z, None);
+            return;
+        }
+        "marks" => {
+            st.view.marks = !st.view.marks;
+            st.view.invalidate();
+        }
+        "guides" => {
+            st.view.guides = !st.view.guides;
+            st.view.invalidate();
+        }
+        "panel" => {
+            let right = arg == "props";
+            if right {
+                let cur = app.get_right_panel();
+                app.set_right_panel(if cur == "props" { "".into() } else { "props".into() });
+                if let Some(o) = st.ed.object() {
+                    if let ObjKind::Chart { chart } = &o.kind {
+                        app.set_chart_data(chart_text(chart).into());
+                        app.set_chart_title(chart.title.clone().into());
+                    }
+                }
+            } else {
+                let cur = app.get_left_panel();
+                app.set_left_panel(if cur == arg { "".into() } else { arg.into() });
+            }
+        }
+        "goto-para" => {
+            let p: usize = arg.parse().unwrap_or(0);
+            st.ed.obj = None;
+            st.ed.set_caret(StoryRef::Body, At::new(p, 0), false);
+            // Nagłówek u góry widoku.
+            if let Some((page, _, top, _)) = st.ed.caret_page() {
+                let (_, cy) = st.view.to_canvas(page, 0.0, top);
+                let vy = (cy - 40.0).max(0.0);
+                app.set_view_y(-vy);
+                st.view.vy = vy;
+            }
+        }
+        "theme" => {
+            st.prefs.theme = arg.parse().unwrap_or(0);
+            st.prefs.save();
+            crate::apply_theme_prefs(st, &ui);
+            return;
+        }
+        "accent" => {
+            if Color::parse(arg).is_some() {
+                st.prefs.accent = arg.to_string();
+                st.prefs.save();
+                crate::apply_theme_prefs(st, &ui);
+            } else {
+                toast(st, tr("Nieprawidłowy kolor – wpisz np. #5b8cff"));
+            }
+            return;
+        }
+        "corners" => {
+            st.prefs.corners = arg.parse().unwrap_or(1);
+            st.prefs.save();
+            crate::apply_theme_prefs(st, &ui);
+            return;
+        }
+        "ui-scale" => {
+            st.prefs.scale = arg.parse::<f32>().unwrap_or(1.0).clamp(0.85, 1.35);
+            st.prefs.save();
+            crate::apply_theme_prefs(st, &ui);
+            return;
+        }
+        "dense" => {
+            st.prefs.dense = !st.prefs.dense;
+            st.prefs.save();
+            crate::apply_theme_prefs(st, &ui);
+            return;
+        }
+        "ribbon-collapse" => {
+            st.prefs.ribbon_collapsed = !st.prefs.ribbon_collapsed;
+            app.set_ribbon_collapsed(st.prefs.ribbon_collapsed);
+            app.set_ribbon_peek(false);
+            st.prefs.save();
+            return;
+        }
+        "fullscreen" => {
+            let on = !app.get_fullscreen();
+            app.set_fullscreen(on);
+            crate::win::fullscreen(&ui, on);
+            return;
+        }
+        "palette" => {
+            palette_query(st, "");
+            app.set_palette_open(true);
+            return;
+        }
+        "customize" => {
+            customize_list(st, arg);
+            app.set_dialog(if arg == "qat" { "customize-qat".into() } else { "customize-tab".into() });
+            app.set_backstage(false);
+            return;
+        }
+        "qat-toggle" | "tab-toggle" => {
+            let list = if base == "qat-toggle" { &mut st.prefs.qat } else { &mut st.prefs.custom_tab };
+            if let Some(i) = list.iter().position(|x| x == arg) {
+                list.remove(i);
+            } else {
+                list.push(arg.to_string());
+            }
+            st.prefs.save();
+            sync_lists(st);
+            customize_list(st, if base == "qat-toggle" { "qat" } else { "tab" });
+            return;
+        }
+        "qat-reset" | "tab-reset" => {
+            if base == "qat-reset" {
+                st.prefs.qat = crate::settings::default_qat();
+            } else {
+                st.prefs.custom_tab = crate::settings::default_tab();
+            }
+            st.prefs.save();
+            sync_lists(st);
+            customize_list(st, if base == "qat-reset" { "qat" } else { "tab" });
+            return;
+        }
+
+        // ---------------------------------------------------------- ustawienia
+        "s-lang" => {
+            st.prefs.lang = match arg {
+                "1" => "pl".into(),
+                "2" => "en".into(),
+                _ => String::new(),
+            };
+            st.prefs.save();
+            app.set_s_lang(arg.parse().unwrap_or(0));
+            toast(st, tr("Język zmieni się po ponownym uruchomieniu"));
+            return;
+        }
+        "s-unit" => {
+            st.prefs.unit = arg.parse().unwrap_or(0);
+            st.prefs.save();
+            app.set_s_unit(st.prefs.unit);
+        }
+        "s-autosave" => {
+            st.prefs.autosave = arg.parse().unwrap_or(2);
+            st.prefs.save();
+            app.set_s_autosave(st.prefs.autosave);
+            return;
+        }
+        "s-update-check" | "s-update-auto" | "s-smart-quotes" | "s-autocorrect" | "s-capitalize" | "s-autolist" | "s-restore" | "s-snap" => {
+            let p = &mut st.prefs;
+            let v = match base {
+                "s-update-check" => &mut p.update_check,
+                "s-update-auto" => &mut p.update_auto,
+                "s-smart-quotes" => &mut p.smart_quotes,
+                "s-autocorrect" => &mut p.autocorrect,
+                "s-capitalize" => &mut p.capitalize,
+                "s-autolist" => &mut p.autolist,
+                "s-restore" => &mut p.restore,
+                _ => &mut p.snap,
+            };
+            *v = !*v;
+            st.prefs.save();
+            crate::apply_theme_prefs(st, &ui);
+            return;
+        }
+        "s-author" => {
+            st.prefs.author = arg.to_string();
+            st.ed.doc.meta.author = arg.to_string();
+            st.prefs.save();
+            return;
+        }
+        "s-default-font" => {
+            st.prefs.default_font = arg.to_string();
+            st.prefs.save();
+            return;
+        }
+        "s-default-size" => {
+            if let Some(v) = parse_num(arg) {
+                st.prefs.default_size = v.clamp(4.0, 96.0);
+                st.prefs.save();
+            }
+            return;
+        }
+
+        // ---------------------------------------------------------- sztuczna inteligencja
+        "ai" => {
+            if st.prefs.ai_model.is_empty() || (opendtp_core::ai::provider(&st.prefs.ai_provider).needs_key && st.prefs.ai_key.is_empty()) {
+                app.set_ai_status(tr("Najpierw ustaw dostawcę, klucz API i model").into());
+            }
+            app.set_backstage(false);
+            app.set_dialog("ai".into());
+            return;
+        }
+        "ai-provider" => {
+            st.prefs.ai_provider = arg.to_string();
+            st.prefs.ai_base = String::new();
+            st.prefs.ai_model = String::new();
+            st.prefs.save();
+            app.set_ai_models(ModelRc::new(VecModel::from(Vec::<ItemV>::new())));
+            app.set_ai_status("".into());
+            crate::sync_ai(st, &ui);
+            return;
+        }
+        "ai-key" => {
+            if !arg.trim().is_empty() {
+                st.prefs.ai_key = crate::settings::protect(arg.trim());
+                st.prefs.save();
+                app.set_ai_key("".into());
+                app.set_ai_has_key(true);
+                toast(st, tr("Klucz API zapisany (zaszyfrowany)"));
+            }
+            return;
+        }
+        "ai-base" => {
+            st.prefs.ai_base = arg.trim().to_string();
+            st.prefs.save();
+            return;
+        }
+        "ai-model" => {
+            st.prefs.ai_model = arg.trim().to_string();
+            st.prefs.save();
+            app.set_ai_model(st.prefs.ai_model.clone().into());
+            app.set_ai_status(opendtp_core::trf!("Model: {}", st.prefs.ai_model).into());
+            return;
+        }
+        "ai-temp" => {
+            st.prefs.ai_temp = arg.parse::<f32>().unwrap_or(0.7).clamp(0.0, 2.0);
+            st.prefs.save();
+            app.set_ai_temp(st.prefs.ai_temp);
+            return;
+        }
+        "ai-models" => {
+            let cfg = ai_config(st);
+            app.set_ai_busy(true);
+            app.set_ai_status(tr("Pobieranie listy modeli…").into());
+            std::thread::spawn(move || {
+                let res = opendtp_core::ai::list_models(&cfg);
+                let _ = slint::invoke_from_event_loop(move || {
+                    let Some(sh) = crate::shared() else { return };
+                    let st = sh.borrow();
+                    let Some(ui) = st.ui.upgrade() else { return };
+                    let app = ui.global::<App>();
+                    app.set_ai_busy(false);
+                    match res {
+                        Ok(list) => {
+                            let n = list.len();
+                            let items: Vec<ItemV> = list.into_iter().map(|m| ItemV { id: m.clone().into(), label: m.into(), ..Default::default() }).collect();
+                            app.set_ai_models(ModelRc::new(VecModel::from(items)));
+                            app.set_ai_status(opendtp_core::trf!("Dostępne modele: {}", n).into());
+                        }
+                        Err(e) => app.set_ai_status(opendtp_core::trf!("Nie udało się pobrać modeli: {}", e).into()),
+                    }
+                });
+            });
+            return;
+        }
+        "ai-generate" => {
+            let insert = app.get_ai_insert();
+            if !insert && !files::may_replace(st, "ai-generate") {
+                app.set_dialog("ai".into());
+                return;
+            }
+            let prompt = opendtp_core::ai::prompt(&app.get_ai_prompt(), app.get_ai_length());
+            let cfg = ai_config(st);
+            let template = files::blank(&st.prefs);
+            app.set_dialog("ai".into());
+            app.set_ai_busy(true);
+            std::thread::spawn(move || {
+                let res = opendtp_core::ai::complete(&cfg, &prompt).map(|answer| opendtp_core::ai::build(&answer, &template));
+                let _ = slint::invoke_from_event_loop(move || {
+                    let Some(sh) = crate::shared() else { return };
+                    let mut st = sh.borrow_mut();
+                    let Some(ui) = st.ui.upgrade() else { return };
+                    let app = ui.global::<App>();
+                    app.set_ai_busy(false);
+                    match res {
+                        Ok(doc) => {
+                            app.set_dialog("".into());
+                            if insert {
+                                let paras = doc.body.paras.clone();
+                                st.ed.insert_paragraphs_at_caret(paras);
+                                refresh_scroll(&mut st);
+                            } else {
+                                files::set_doc(&mut st, doc, None);
+                                st.ed.dirty = true;
+                                refresh(&mut st);
+                            }
+                            toast(&st, tr("Dokument wygenerowany – możesz go dowolnie edytować"));
+                        }
+                        Err(e) => app.set_ai_status(opendtp_core::trf!("Błąd: {}", e).into()),
+                    }
+                });
+            });
+            return;
+        }
+
+        // ---------------------------------------------------------- pisownia z menu
+        _ if id.starts_with("spell-fix:") => {
+            let rest = &id["spell-fix:".len()..];
+            let mut it = rest.splitn(3, ':');
+            let a: usize = it.next().and_then(|v| v.parse().ok()).unwrap_or(0);
+            let b: usize = it.next().and_then(|v| v.parse().ok()).unwrap_or(0);
+            let word = it.next().unwrap_or("").to_string();
+            let p = st.ed.head.para;
+            st.ed.anchor = At::new(p, a);
+            st.ed.head = At::new(p, b);
+            st.ed.insert(&word);
+        }
+        _ if id.starts_with("spell-add:") => {
+            opendtp_core::spell::add_to_user(&id["spell-add:".len()..]);
+            st.view.invalidate();
+        }
+        _ if id.starts_with("spell-ignore:") => {
+            opendtp_core::spell::ignore_word(&id["spell-ignore:".len()..]);
+            st.view.invalidate();
+        }
+        _ => {
+            crate::set_status(st, &opendtp_core::trf!("Nieznane polecenie: {}", id));
+            return;
+        }
+    }
+    if scroll {
+        refresh_scroll(st);
+    } else {
+        refresh(st);
+    }
+}
+
+fn ai_config(st: &State) -> opendtp_core::ai::Config {
+    opendtp_core::ai::Config {
+        provider: st.prefs.ai_provider.clone(),
+        key: crate::settings::unprotect(&st.prefs.ai_key),
+        model: st.prefs.ai_model.clone(),
+        temperature: st.prefs.ai_temp,
+        base: st.prefs.ai_base.clone(),
+    }
+}
+
+thread_local! {
+    static OBJ_CLIP: std::cell::RefCell<Option<Object>> = const { std::cell::RefCell::new(None) };
+}
+
+fn find_info(st: &State) {
+    if let Some(ui) = st.ui.upgrade() {
+        let app = ui.global::<App>();
+        let n = st.ed.find.len();
+        let txt = if app.get_find_text().is_empty() {
+            String::new()
+        } else if n == 0 {
+            tr("Brak wyników").to_string()
+        } else {
+            opendtp_core::trf!("Wynik {} z {}", (st.ed.find_i % n) + 1, n)
+        };
+        app.set_find_info(txt.into());
+    }
+}
+
+fn change_case(st: &mut State, how: &str) {
+    if !st.ed.has_sel() {
+        let t = st.ed.para_text(st.ed.head.para);
+        let (a, b) = opendtp_core::edit::word_at(&t, st.ed.head.off);
+        let p = st.ed.head.para;
+        st.ed.anchor = At::new(p, a);
+        st.ed.head = At::new(p, b);
+    }
+    let frag = st.ed.fragment();
+    let conv = |s: &str| -> String {
+        match how {
+            "upper" => s.to_uppercase(),
+            "lower" => s.to_lowercase(),
+            "title" => s.split(' ').map(|w| {
+                let mut c = w.chars();
+                match c.next() {
+                    Some(f) => f.to_uppercase().collect::<String>() + &c.as_str().to_lowercase(),
+                    None => String::new(),
+                }
+            }).collect::<Vec<_>>().join(" "),
+            _ => {
+                let lower = s.to_lowercase();
+                let mut c = lower.chars();
+                match c.next() {
+                    Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+                    None => String::new(),
+                }
+            }
+        }
+    };
+    let new: Vec<Paragraph> = frag.into_iter().map(|mut p| {
+        for r in p.runs.iter_mut() {
+            if r.field.is_none() {
+                r.text = conv(&r.text);
+            }
+        }
+        p
+    }).collect();
+    let (a, _) = st.ed.range();
+    st.ed.paste(&new);
+    let end = st.ed.head;
+    st.ed.anchor = a;
+    st.ed.head = end;
+}
+
+fn spell_next(st: &mut State) -> bool {
+    use unicode_segmentation::UnicodeSegmentation;
+    let start = st.ed.range().1;
+    let story = st.ed.story;
+    let paras: Vec<(usize, String, String)> = st.ed.story_ref().paras.iter().enumerate().map(|(i, p)| (i, p.text(), st.ed.doc.resolve_para(p).1.lang)).collect();
+    let n = paras.len();
+    for k in 0..=n {
+        let (pi, text, lang) = &paras[(start.para + k) % n];
+        for (i, w) in text.split_word_bound_indices() {
+            if k == 0 && i < start.off {
+                continue;
+            }
+            if w.chars().any(|c| c.is_alphabetic()) && opendtp_core::spell::misspelled(w, lang) {
+                st.ed.set_caret(story, At::new(*pi, i), false);
+                st.ed.head = At::new(*pi, i + w.len());
+                return true;
+            }
+        }
+    }
+    false
+}
+
+pub fn set_zoom(st: &mut State, z: f32, anchor: Option<(f32, f32)>) {
+    let z = z.clamp(0.25, 4.0);
+    let old = st.view.zoom;
+    if (z - old).abs() < 1e-4 {
+        return;
+    }
+    // Punkt pod wskaźnikiem (albo środek widoku) zostaje w miejscu.
+    let (ax, ay) = anchor.unwrap_or((st.view.vx + st.view.vw / 2.0, st.view.vy + st.view.vh / 2.0));
+    let (page, px, py) = st.view.to_page(ax, ay);
+    let (sx, sy) = (ax - st.view.vx, ay - st.view.vy);
+    st.view.zoom = z;
+    st.view.place(&st.ed);
+    let (nx, ny) = st.view.to_canvas(page, px, py);
+    let vx = (nx - sx).max(0.0);
+    let vy = (ny - sy).max(0.0);
+    st.view.vx = vx;
+    st.view.vy = vy;
+    if let Some(ui) = st.ui.upgrade() {
+        let app = ui.global::<App>();
+        app.set_content_w(st.view.content_w);
+        app.set_content_h(st.view.content_h);
+        app.set_view_x(-vx);
+        app.set_view_y(-vy);
+    }
+    st.prefs.zoom = (z * 100.0).round() as i32;
+    refresh(st);
+}
+
+pub fn palette_query(st: &State, q: &str) {
+    let Some(ui) = st.ui.upgrade() else { return };
+    let items: Vec<ItemV> = commands::ALL
+        .iter()
+        .filter(|c| q.trim().is_empty() || commands::matches(c, q))
+        .take(60)
+        .map(|c| ItemV { id: c.id.into(), label: commands::label(c).into(), hint: c.key.into(), icon: commands::icon(c.icon), checked: false, font: "".into() })
+        .collect();
+    ui.global::<App>().set_palette_items(ModelRc::new(VecModel::from(items)));
+}
+
+pub fn font_query(st: &State, q: &str) {
+    let Some(ui) = st.ui.upgrade() else { return };
+    let ql = q.to_lowercase();
+    let items: Vec<ItemV> = st.fonts.iter().filter(|f| ql.is_empty() || f.to_lowercase().contains(&ql)).take(800).map(|f| ItemV { id: f.clone().into(), label: f.clone().into(), ..Default::default() }).collect();
+    ui.global::<App>().set_fonts(ModelRc::new(VecModel::from(items)));
+}
+
+fn customize_list(st: &State, which: &str) {
+    let Some(ui) = st.ui.upgrade() else { return };
+    let list = if which == "qat" { &st.prefs.qat } else { &st.prefs.custom_tab };
+    let items: Vec<ItemV> = commands::ALL.iter().map(|c| ItemV { id: c.id.into(), label: commands::label(c).into(), hint: c.key.into(), icon: Default::default(), checked: list.iter().any(|x| x == c.id), font: "".into() }).collect();
+    ui.global::<App>().set_all_commands(ModelRc::new(VecModel::from(items)));
+}
+
+pub fn object_selected(st: &mut State) {
+    let Some(ui) = st.ui.upgrade() else { return };
+    let app = ui.global::<App>();
+    if let Some(o) = st.ed.object() {
+        if let ObjKind::Chart { chart } = &o.kind {
+            app.set_chart_data(chart_text(chart).into());
+            app.set_chart_title(chart.title.clone().into());
+        }
+        if let ObjKind::PathText { story, .. } = &o.kind {
+            app.set_path_text(story.text().into());
+        }
+    }
+}
+
+fn chart_text(ch: &Chart) -> String {
+    let mut s = String::from(";");
+    s.push_str(&ch.series.iter().map(|x| x.name.clone()).collect::<Vec<_>>().join(";"));
+    for (i, l) in ch.labels.iter().enumerate() {
+        s.push('\n');
+        s.push_str(l);
+        for se in &ch.series {
+            s.push(';');
+            s.push_str(&se.values.get(i).map(|v| num(*v)).unwrap_or_default());
+        }
+    }
+    s
+}
+
+fn parse_chart(t: &str) -> (Vec<String>, Vec<Series>) {
+    let rows: Vec<Vec<String>> = t.lines().filter(|l| !l.trim().is_empty()).map(|l| l.split([';', '\t']).map(|c| c.trim().to_string()).collect()).collect();
+    if rows.len() < 2 {
+        return (Vec::new(), Vec::new());
+    }
+    let names: Vec<String> = rows[0].iter().skip(1).cloned().collect();
+    let mut series: Vec<Series> = names.iter().map(|n| Series { name: n.clone(), values: Vec::new(), color: None }).collect();
+    let mut labels = Vec::new();
+    for r in &rows[1..] {
+        labels.push(r.first().cloned().unwrap_or_default());
+        for (i, s) in series.iter_mut().enumerate() {
+            s.values.push(r.get(i + 1).and_then(|v| parse_num(v)).unwrap_or(0.0));
+        }
+    }
+    (labels, series)
+}
+
+fn new_obj(page: usize, x: f32, y: f32, w: f32, h: f32, shape: Shape, kind: ObjKind, wrap: WrapMode) -> Object {
+    Object {
+        id: 0,
+        name: String::new(),
+        kind,
+        page,
+        x,
+        y,
+        w,
+        h,
+        shape,
+        wrap: Wrap { mode: wrap, dist: 9.0, contour: true },
+        fill: None,
+        stroke: None,
+        opacity: 1.0,
+        corner: 0.0,
+        shadow: false,
+        locked: false,
+    }
+}
+
+pub fn insert_image_bytes(st: &mut State, bytes: Vec<u8>) {
+    let Some(asset) = io::odtp::asset_from(bytes) else {
+        toast(st, tr("Nieobsługiwany format obrazu"));
+        return;
+    };
+    let ps = st.ed.doc.page.clone();
+    let key = format!("img{}", st.ed.doc.new_id());
+    let (iw, ih) = (asset.width.max(1) as f32 * 0.75, asset.height.max(1) as f32 * 0.75);
+    let maxw = ps.content_width() * 0.6;
+    let k = (maxw / iw).min(1.0).min(ps.height * 0.5 / ih);
+    let (w, h) = (iw * k, ih * k);
+    st.ed.doc.assets.insert(key.clone(), asset);
+    let (page, y) = st.ed.caret_page().map(|c| (c.0, c.2)).unwrap_or((0, ps.margin_top));
+    let x = ps.width - ps.margin_right - w;
+    let o = new_obj(page, x, y, w, h, Shape::rect(), ObjKind::Image { asset: key, fit: ImageFit::Cover, contour: None }, WrapMode::Both);
+    st.ed.add_object(o);
+    // Obraz z przezroczystością – od razu opływanie konturem.
+    let id = st.ed.obj;
+    if let Some(id) = id {
+        let cont = st.ed.doc.object(id).and_then(|o| match &o.kind {
+            ObjKind::Image { asset, .. } => st.ed.doc.assets.get(asset).cloned(),
+            _ => None,
+        });
+        if let Some(a) = cont {
+            if a.mime == "image/png" || a.mime == "image/webp" || a.mime == "image/gif" {
+                if let Some(c) = image::load_from_memory(&a.data).ok().map(|i| i.to_rgba8()).and_then(|img| {
+                    let (w, h) = img.dimensions();
+                    let has_alpha = img.pixels().any(|p| p[3] < 250);
+                    if has_alpha {
+                        geom::image_contour(img.as_raw(), w, h)
+                    } else {
+                        None
+                    }
+                }) {
+                    if let Some(ObjKind::Image { contour, .. }) = st.ed.doc.object_mut(id).map(|o| &mut o.kind) {
+                        *contour = Some(c);
+                    }
+                    st.ed.relayout();
+                }
+            }
+        }
+    }
+    refresh(st);
+}
+
+/// Koniec przeciągania narzędziem: ramka, kształt albo tekst na ścieżce.
+pub fn create_from_drag(st: &mut State, page: usize, x: f32, y: f32, w: f32, h: f32) {
+    let tool = st.ui.upgrade().map(|u| u.global::<App>().get_tool()).unwrap_or(0);
+    let small = w < 8.0 && h < 8.0;
+    let preset = st.shape_preset.clone();
+    let shape = geom::preset(&preset).unwrap_or_else(Shape::rect);
+    let open = shape.contours.iter().all(|c| !c.closed);
+    let (w, h) = if small {
+        match tool {
+            1 => (220.0, 90.0),
+            4 => (220.0, 90.0),
+            _ if open => (160.0, 40.0),
+            _ => (160.0, 160.0),
+        }
+    } else {
+        (w.max(10.0), h.max(if open { 4.0 } else { 10.0 }))
+    };
+    let accent = Color::rgb(0x5b, 0x8c, 0xff);
+    let o = match tool {
+        1 => {
+            let mut o = new_obj(page, x, y, w, h, Shape::rect(), ObjKind::Text { story: Story::default(), padding: 6.0, columns: 1, gap: 12.0, valign: VAlign::Top, next: None }, WrapMode::Both);
+            o.wrap.dist = 8.0;
+            o
+        }
+        4 => {
+            let mut sp = Paragraph::with_text("normal", &tr("Tekst na ścieżce"));
+            sp.fmt.align = Some(Align::Center);
+            sp.runs[0].fmt.size = Some(18.0);
+            new_obj(page, x, y, w, h, geom::arc_path(), ObjKind::PathText { story: Story { paras: vec![sp] }, offset: 0.0 }, WrapMode::None)
+        }
+        _ if st.text_shape && !open => {
+            let mut sp = Paragraph::with_text("normal", "");
+            sp.fmt.align = Some(Align::Center);
+            let mut o = new_obj(page, x, y, w, h, shape, ObjKind::Text { story: Story { paras: vec![sp] }, padding: 8.0, columns: 1, gap: 12.0, valign: VAlign::Top, next: None }, WrapMode::Both);
+            o.fill = Some(Fill::Solid { color: Color::rgb(0xee, 0xf3, 0xfc) });
+            o.stroke = Some(StrokeStyle { color: accent, width: 1.0, dash: vec![] });
+            o
+        }
+        _ => {
+            let mut o = new_obj(page, x, y, w, h, shape, ObjKind::Shape, WrapMode::None);
+            if open {
+                o.stroke = Some(StrokeStyle { color: Color::rgb(0x30, 0x30, 0x30), width: 2.0, dash: vec![] });
+            } else {
+                o.fill = Some(Fill::Solid { color: accent });
+            }
+            o
+        }
+    };
+    let is_text = matches!(o.kind, ObjKind::Text { .. });
+    let id = st.ed.add_object(o);
+    set_tool(st, 0);
+    if is_text {
+        st.ed.set_caret(StoryRef::Obj(id), At::new(0, 0), false);
+        st.ed.obj = Some(id);
+    }
+    object_selected(st);
+    refresh(st);
+}
+
+/// Zakończenie rysowania piórem: zamknięty kształt staje się kształtem tekstu.
+pub fn finish_pen(st: &mut State, close: bool) {
+    let pts = std::mem::take(&mut st.pen);
+    if let Some(ui) = st.ui.upgrade() {
+        ui.global::<App>().set_preview_path("".into());
+    }
+    set_tool(st, 0);
+    if pts.len() < 2 || (close && pts.len() < 3) {
+        refresh(st);
+        return;
+    }
+    // Ramka: obwiednia węzłów i uchwytów.
+    let mut x0 = f32::MAX;
+    let mut y0 = f32::MAX;
+    let mut x1 = f32::MIN;
+    let mut y1 = f32::MIN;
+    for &(x, y, h) in &pts {
+        for (a, b) in [Some((x, y)), h, h.map(|(hx, hy)| (2.0 * x - hx, 2.0 * y - hy))].into_iter().flatten() {
+            x0 = x0.min(a);
+            y0 = y0.min(b);
+            x1 = x1.max(a);
+            y1 = y1.max(b);
+        }
+    }
+    let (w, h) = ((x1 - x0).max(4.0), (y1 - y0).max(4.0));
+    let nrm = |(a, b): (f32, f32)| ((a - x0) / w, (b - y0) / h);
+    let nodes: Vec<Node> = pts
+        .iter()
+        .map(|&(x, y, hd)| {
+            let (nx, ny) = nrm((x, y));
+            Node { x: nx, y: ny, cout: hd.map(nrm), cin: hd.map(|(hx, hy)| nrm((2.0 * x - hx, 2.0 * y - hy))), smooth: hd.is_some() }
+        })
+        .collect();
+    let shape = Shape { contours: vec![Contour { nodes, closed: close }] };
+    let page = st.pen_page;
+    let o = if close {
+        let mut sp = Paragraph::with_text("normal", "");
+        sp.fmt.align = Some(Align::Justify);
+        let mut o = new_obj(page, x0, y0, w, h, shape, ObjKind::Text { story: Story { paras: vec![sp] }, padding: 6.0, columns: 1, gap: 12.0, valign: VAlign::Top, next: None }, WrapMode::Both);
+        o.stroke = Some(StrokeStyle { color: Color::rgb(0x5b, 0x8c, 0xff), width: 0.75, dash: vec![] });
+        o.fill = Some(Fill::Solid { color: Color::rgb(0xf4, 0xf7, 0xfd) });
+        o
+    } else {
+        let mut sp = Paragraph::with_text("normal", &tr("Tekst na ścieżce"));
+        sp.runs[0].fmt.size = Some(16.0);
+        new_obj(page, x0, y0, w, h, shape, ObjKind::PathText { story: Story { paras: vec![sp] }, offset: 0.0 }, WrapMode::None)
+    };
+    let text = matches!(o.kind, ObjKind::Text { .. });
+    let id = st.ed.add_object(o);
+    if text {
+        st.ed.set_caret(StoryRef::Obj(id), At::new(0, 0), false);
+        st.ed.obj = Some(id);
+        toast(st, tr("Kształt tekstu gotowy – pisz albo wklej tekst; dwuklik na krawędzi edytuje węzły"));
+    }
+    object_selected(st);
+    refresh(st);
+}
+
+pub fn link_frames(st: &mut State, target: u64) {
+    let Some(src) = st.ed.obj else { return };
+    if src == target {
+        return;
+    }
+    let ok_target = matches!(st.ed.doc.object(target).map(|o| &o.kind), Some(ObjKind::Text { .. }));
+    if !ok_target {
+        toast(st, tr("Wskaż ramkę tekstową"));
+        return;
+    }
+    let head = st.ed.doc.chain_head(src);
+    let chain = st.ed.doc.chain(head);
+    if chain.contains(&target) || st.ed.doc.chain_head(target) != target || st.ed.doc.chain(target).len() > 1 {
+        toast(st, tr("Ta ramka należy już do łańcucha"));
+        return;
+    }
+    let last = *chain.last().unwrap();
+    st.ed.begin(Kind::Other);
+    // Tekst wskazanej ramki dołącza na koniec łańcucha.
+    let extra = st.ed.doc.object(target).and_then(|o| o.story().cloned()).filter(|s| !s.text().trim().is_empty());
+    if let Some(ObjKind::Text { next, .. }) = st.ed.doc.object_mut(last).map(|o| &mut o.kind) {
+        *next = Some(target);
+    }
+    if let Some(extra) = extra {
+        if let Some(ObjKind::Text { story, .. }) = st.ed.doc.object_mut(head).map(|o| &mut o.kind) {
+            story.paras.extend(extra.paras);
+        }
+    }
+    if let Some(ObjKind::Text { story, .. }) = st.ed.doc.object_mut(target).map(|o| &mut o.kind) {
+        *story = Story::default();
+    }
+    st.ed.changed();
+    toast(st, tr("Ramki połączone – tekst płynie dalej"));
+}
+
+pub fn apply_painter(st: &mut State) {
+    let Some((f, para)) = st.ed.painter.clone() else { return };
+    if st.ed.has_sel() {
+        st.ed.format(&move |x| *x = f.clone());
+    }
+    if let Some((style, pf)) = para {
+        st.ed.format_paras(&move |p| {
+            p.style = style.clone();
+            p.fmt = pf.clone();
+        });
+    }
+    if st.ui.upgrade().is_some_and(|u| u.global::<App>().get_tool() == 6) {
+        set_tool(st, 0);
+        st.ed.painter = None;
+    }
+    refresh(st);
+}
+
+// ---------------------------------------------------------------- aktualizacje
+
+fn set_update(text: &str, ready: bool, busy: bool) {
+    let Some(sh) = crate::shared() else { return };
+    let Ok(st) = sh.try_borrow() else { return };
+    if let Some(ui) = st.ui.upgrade() {
+        let app = ui.global::<App>();
+        app.set_update_status(text.into());
+        app.set_update_ready(ready);
+        app.set_update_busy(busy);
+    }
+}
+
+pub fn check_update(manual: bool) {
+    let Some(sh) = crate::shared() else { return };
+    {
+        let Ok(st) = sh.try_borrow() else { return };
+        if !manual && !st.prefs.update_check {
+            return;
+        }
+        if st.update_busy {
+            return;
+        }
+    }
+    set_update(tr("Sprawdzanie aktualizacji…"), false, true);
+    std::thread::spawn(move || {
+        let res = opendtp_core::update::check();
+        let _ = slint::invoke_from_event_loop(move || {
+            let Some(sh) = crate::shared() else { return };
+            let when = opendtp_core::util::now_time();
+            match res {
+                Ok(Some(rel)) => {
+                    let v = rel.version.clone();
+                    let auto = sh.borrow().prefs.update_auto;
+                    sh.borrow_mut().update = Some(rel);
+                    set_update(&opendtp_core::trf!("Dostępna wersja {v} (masz {}) · sprawdzono o {when}", opendtp_core::version()), true, false);
+                    if auto {
+                        let mut st = sh.borrow_mut();
+                        download_update(&mut st, false);
+                    } else {
+                        let st = sh.borrow();
+                        toast(&st, &opendtp_core::trf!("Jest nowa wersja OpenDTP {v} – Plik → Ustawienia → Zaktualizuj"));
+                    }
+                }
+                Ok(None) => {
+                    set_update(&opendtp_core::trf!("Masz najnowszą wersję {} · sprawdzono o {when}", opendtp_core::version()), false, false);
+                    if manual {
+                        toast(&sh.borrow(), tr("Masz najnowszą wersję"));
+                    }
+                }
+                Err(e) => {
+                    set_update(&opendtp_core::trf!("Nie udało się sprawdzić ({}) · {when}", e), false, false);
+                    if manual {
+                        toast(&sh.borrow(), tr("Nie udało się sprawdzić aktualizacji"));
+                    }
+                }
+            }
+        });
+    });
+}
+
+/// „Zaktualizuj”: pobranie (jeśli trzeba) i instalacja od razu, z ponownym uruchomieniem programu.
+pub fn install_update(st: &mut State) {
+    if let Some(p) = st.pending_setup.clone() {
+        run_setup(st, &p, true);
+        return;
+    }
+    download_update(st, true);
+}
+
+fn run_setup(st: &mut State, path: &std::path::Path, now: bool) {
+    if now && st.ed.dirty {
+        let _ = files::save(st, false);
+        if st.ed.dirty {
+            toast(st, tr("Zapisz dokument przed aktualizacją"));
+            return;
+        }
+    }
+    let applied = if opendtp_core::update::installed() { opendtp_core::update::apply(path, now) } else { opendtp_core::update::apply_portable(path) };
+    match applied {
+        Ok(()) => {
+            if now {
+                st.pending_close = true;
+                files::quit(st);
+            }
+        }
+        Err(e) => set_update(&opendtp_core::trf!("Instalacja nie powiodła się: {}", e), true, false),
+    }
+}
+
+/// Pobiera wydanie w tle. `now` – zainstaluj od razu; inaczej przy zamknięciu programu.
+fn download_update(st: &mut State, now: bool) {
+    let Some(rel) = st.update.clone() else {
+        check_update(true);
+        return;
+    };
+    if st.update_busy {
+        return;
+    }
+    st.update_busy = true;
+    set_update(tr("Pobieranie aktualizacji…"), true, true);
+    std::thread::spawn(move || {
+        let res = opendtp_core::update::download(&rel, |done, total| {
+            let pct = if total > 0 { done * 100 / total } else { 0 };
+            let _ = slint::invoke_from_event_loop(move || set_update(&opendtp_core::trf!("Pobieranie aktualizacji… {}%", pct), true, true));
+        });
+        let _ = slint::invoke_from_event_loop(move || {
+            let Some(sh) = crate::shared() else { return };
+            sh.borrow_mut().update_busy = false;
+            match res {
+                Ok(path) => {
+                    let mut st = sh.borrow_mut();
+                    st.pending_setup = Some(path.clone());
+                    if now {
+                        run_setup(&mut st, &path, true);
+                    } else {
+                        set_update(&opendtp_core::trf!("Wersja {} pobrana – zainstaluje się przy zamknięciu programu", rel.version), true, false);
+                        toast(&st, tr("Aktualizacja pobrana – zainstaluje się po zamknięciu OpenDTP"));
+                    }
+                }
+                Err(e) => set_update(&e, true, false),
+            }
+        });
+    });
+}
+
+#[allow(dead_code)]
+fn later(f: impl FnOnce() + 'static) {
+    slint::Timer::single_shot(Duration::ZERO, f);
+}
+
+#[allow(dead_code)]
+fn _unused(st: &State) -> String {
+    len_str(0.0, st.prefs.unit)
+}

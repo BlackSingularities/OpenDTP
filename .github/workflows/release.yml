@@ -1,0 +1,103 @@
+name: Build & Release
+
+# Wydanie wyłącznie po wypchnięciu tagu wersji (np. v1.2.3).
+# Ręczne uruchomienie (workflow_dispatch) tylko kompiluje i testuje – bez wydania.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Wersja
+        id: ver
+        shell: pwsh
+        run: |
+          if ("${{ github.ref_type }}" -eq "tag") {
+            $v = "${{ github.ref_name }}".TrimStart('v')
+          } else {
+            $v = (Select-String -Path app/Cargo.toml -Pattern '^version = "([^"]+)"').Matches[0].Groups[1].Value
+          }
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Testy rdzenia
+        run: cargo test --release -p opendtp-core
+
+      - name: Budowanie OpenDTP
+        env:
+          OPENDTP_VERSION: ${{ steps.ver.outputs.version }}
+        run: cargo build --release -p opendtp
+
+      - name: Pliki programu
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory dist, out | Out-Null
+          Copy-Item target/release/OpenDTP.exe dist/
+
+      - name: Podpis cyfrowy
+        shell: pwsh
+        env:
+          WIN_CERT: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WIN_CERT_PASS: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          # Tylko gdy w sekretach jest certyfikat: WINDOWS_CERTIFICATE (.pfx w base64) i WINDOWS_CERTIFICATE_PASSWORD.
+          if (-not $env:WIN_CERT) { exit 0 }
+          $pfx = Join-Path $env:RUNNER_TEMP "cert.pfx"
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WIN_CERT))
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" | Sort-Object FullName | Select-Object -Last 1
+          & $signtool.FullName sign /f $pfx /p $env:WIN_CERT_PASS /fd sha256 /tr http://timestamp.digicert.com /td sha256 /d "OpenDTP" dist/OpenDTP.exe
+          if ($LASTEXITCODE -ne 0) { throw "Podpisywanie nie powiodło się" }
+          Remove-Item $pfx
+
+      # Dokładnie dwa pliki do pobrania: instalator i wersja przenośna.
+      - name: Instalator i wersja przenośna
+        shell: pwsh
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          $iscc = Get-Command iscc -ErrorAction SilentlyContinue
+          if (-not $iscc) {
+            if (-not (Test-Path "C:\Program Files (x86)\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress | Out-Null }
+            $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          } else { $iscc = $iscc.Source }
+          & $iscc "/DAppVersion=$v" installer/OpenDTP.iss
+          if ($LASTEXITCODE -ne 0) { throw "Instalator nie powstał" }
+          # Plik portable.ini obok programu = ustawienia w folderze „data” obok .exe.
+          "OpenDTP – wersja przenośna. Ustawienia i kopie zapisywane są w folderze data obok programu." | Set-Content dist/portable.ini -Encoding utf8
+          Compress-Archive -Path dist/OpenDTP.exe, dist/portable.ini -DestinationPath "out/OpenDTP-$v-portable.zip"
+          Get-FileHash out/* -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $(Split-Path $_.Path -Leaf)" } | Set-Content out/SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenDTP-${{ steps.ver.outputs.version }}
+          path: out/*
+
+      - name: Publikacja wydania
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          $notes = ""
+          if (Test-Path CHANGELOG.md) {
+            $text = Get-Content CHANGELOG.md -Raw -Encoding utf8
+            $m = [regex]::Match($text, "(?ms)^## \[?$([regex]::Escape($v))\]?[^\n]*\n(.*?)(?=^## |\z)")
+            if ($m.Success) { $notes = $m.Groups[1].Value.Trim() }
+          }
+          $notes += "`n`n**OpenDTP-Setup-$v.exe** – instalator (Program Files, wymaga uprawnień administratora); kolejne wersje program pobiera i instaluje sam.`n**OpenDTP-$v-portable.zip** – wersja przenośna.`n`nPomysł i wykonanie: Adam Rędzikowski · [redzikowski.com](https://redzikowski.com) · [Postaw kawę](https://buycoffee.to/adamredzikowski)"
+          gh release create "${{ github.ref_name }}" out/* --title "OpenDTP $v" --notes $notes

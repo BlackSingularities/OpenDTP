@@ -1,0 +1,2259 @@
+// Wstążka: karty z grupami poleceń. Każde polecenie to `App.cmd(id, argument)`; stan przycisków
+// (pogrubienie, wyrównanie, opływanie…) pochodzi z formatowania w miejscu kursora.
+
+import { ListView, ScrollView } from "std-widgets.slint";
+import { Theme } from "theme.slint";
+import { Icons } from "icons.slint";
+import { App, ItemV, StyleV } from "state.slint";
+import { TipArea, IconButton, BigButton, RowButton, Group, Col, Row, Field, Spin, Switch, Swatch, MenuItem, MenuSep, Card, Segmented, Slider, Label, Dim } from "widgets.slint";
+
+// ---------------------------------------------------------------- próbnik kolorów
+
+export global Colors {
+    out property <[color]> theme: [
+        #ffffff, #000000, #e7e6e6, #44546a, #4472c4, #ed7d31, #a5a5a5, #ffc000, #5b9bd5, #70ad47,
+        #f2f2f2, #7f7f7f, #d0cece, #d6dce4, #d9e2f3, #fbe5d5, #ededed, #fff2cc, #deebf6, #e2efd9,
+        #d8d8d8, #595959, #aeabab, #adb9ca, #b4c6e7, #f7cbac, #dbdbdb, #fee599, #bdd7ee, #c5e0b3,
+        #bfbfbf, #3f3f3f, #757070, #8496b0, #8eaadb, #f4b183, #c9c9c9, #ffd965, #9cc3e5, #a8d08d,
+        #a5a5a5, #262626, #3a3838, #323f4f, #2f5496, #c55a11, #7b7b7b, #bf8f00, #2e75b5, #538135,
+        #c00000, #ff0000, #ffc000, #ffff00, #92d050, #00b050, #00b0f0, #0070c0, #002060, #7030a0,
+    ];
+}
+
+export component ColorPick inherits Rectangle {
+    in property <image> icon;
+    in property <color> current;
+    in property <string> tip;
+    in property <bool> allow-none: true;
+    in property <bool> big;
+    callback picked(color);
+    callback apply();
+    width: root.big ? 52px : 40px;
+    height: root.big ? 66px : 26px;
+    border-radius: Theme.r-small;
+    background: ta.has-hover || tb.has-hover ? Theme.hover : transparent;
+    HorizontalLayout {
+        Rectangle {
+            Image {
+                y: root.big ? 10px : 3px;
+                source: root.icon;
+                width: root.big ? 24px : 15px;
+                height: root.big ? 24px : 15px;
+                colorize: Theme.text;
+            }
+            Rectangle {
+                y: root.big ? 38px : 19px;
+                width: root.big ? 28px : 16px;
+                height: 3px;
+                background: root.current;
+                border-width: root.current.alpha == 0 ? 1px : 0;
+                border-color: Theme.line-strong;
+            }
+            ta := TipArea {
+                tip: root.tip;
+                clicked => {
+                    root.apply();
+                }
+            }
+        }
+        Rectangle {
+            width: 12px;
+            Text {
+                text: "▾";
+                font-size: 9px;
+                color: Theme.text-dim;
+            }
+            tb := TipArea {
+                tip: root.tip;
+                clicked => {
+                    pop.show();
+                }
+            }
+        }
+    }
+    pop := PopupWindow {
+        x: 0;
+        y: root.height + 2px;
+        close-policy: close-on-click-outside;
+        Card {
+            width: 10 * 22px + 24px;
+            height: vl.preferred-height;
+            vl := VerticalLayout {
+                padding: 10px;
+                spacing: 8px;
+                Dim {
+                    text: @tr("Kolory motywu i podstawowe");
+                }
+                for rowi in 6: HorizontalLayout {
+                    spacing: 4px;
+                    for coli in 10: Swatch {
+                        swatch: Colors.theme[rowi * 10 + coli];
+                        tip: "";
+                        clicked => {
+                            root.picked(self.swatch);
+                            pop.close();
+                        }
+                    }
+                }
+                HorizontalLayout {
+                    spacing: 6px;
+                    if root.allow-none: Rectangle {
+                        width: none-t.preferred-width + 16px;
+                        height: 24px;
+                        border-radius: Theme.r-small;
+                        background: nta.has-hover ? Theme.hover : Theme.raised;
+                        none-t := Text {
+                            text: @tr("Brak");
+                            font-size: Theme.fs-small;
+                            color: Theme.text;
+                        }
+                        nta := TipArea {
+                            tip: @tr("Bez koloru");
+                            clicked => {
+                                root.picked(#00000000);
+                                pop.close();
+                            }
+                        }
+                    }
+                    hex := Field {
+                        w: 90px;
+                        placeholder: "#rrggbb";
+                        tip: @tr("Własny kolor szesnastkowo");
+                        accepted(t) => {
+                            App.cmd("color-hex-check", t);
+                        }
+                    }
+                    Rectangle {
+                        width: ok-t.preferred-width + 16px;
+                        height: 24px;
+                        border-radius: Theme.r-small;
+                        background: Theme.accent;
+                        ok-t := Text {
+                            text: @tr("Użyj");
+                            font-size: Theme.fs-small;
+                            color: Theme.accent-text;
+                        }
+                        TipArea {
+                            tip: @tr("Użyj wpisanego koloru");
+                            clicked => {
+                                if (hex.text != "") {
+                                    App.cmd("pick-hex", hex.text);
+                                    pop.close();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------- listy rozwijane
+
+/// Przycisk otwierający menu z listą pozycji (id, podpis).
+export component MenuButton inherits Rectangle {
+    in property <image> icon;
+    in property <string> label;
+    in property <string> tip;
+    in property <[ItemV]> items;
+    in property <bool> active;
+    in property <string> current;
+    in property <length> menu-w: 220px;
+    callback picked(string);
+    min-width: rb.min-width;
+    height: 24px * Theme.scale;
+    rb := RowButton {
+        width: parent.width;
+        icon: root.icon;
+        label: root.label;
+        tip: root.tip;
+        menu: true;
+        active: root.active;
+        clicked => {
+            pop.show();
+        }
+    }
+    pop := PopupWindow {
+        x: 0;
+        y: root.height + 2px;
+        Card {
+            width: root.menu-w;
+            height: min(vl.preferred-height, 460px);
+            ScrollView {
+                vl := VerticalLayout {
+                    padding: 5px;
+                    for it in root.items: Rectangle {
+                        height: it.id == "-" ? 9px : 28px * Theme.scale;
+                        if it.id == "-": MenuSep {
+                            width: parent.width;
+                        }
+                        if it.id != "-": MenuItem {
+                            width: parent.width;
+                            label: it.label;
+                            hint: it.hint;
+                            icon: it.icon;
+                            checked: it.checked || (root.current != "" && it.id == root.current);
+                            font-family: it.font != "" ? it.font : Theme.font;
+                            font-size: it.font != "" ? 14px : Theme.fs;
+                            clicked => {
+                                root.picked(it.id);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Duży przycisk wstążki z menu.
+export component BigMenuButton inherits Rectangle {
+    in property <image> icon;
+    in property <string> label;
+    in property <string> tip;
+    in property <[ItemV]> items;
+    in property <bool> active;
+    in property <string> current;
+    in property <length> menu-w: 220px;
+    callback picked(string);
+    min-width: bb.min-width;
+    height: 66px * Theme.scale;
+    bb := BigButton {
+        width: parent.width;
+        icon: root.icon;
+        label: root.label;
+        tip: root.tip;
+        menu: true;
+        active: root.active;
+        clicked => {
+            pop.show();
+        }
+    }
+    pop := PopupWindow {
+        x: 0;
+        y: root.height + 2px;
+        Card {
+            width: root.menu-w;
+            height: min(vl.preferred-height, 460px);
+            ScrollView {
+                vl := VerticalLayout {
+                    padding: 5px;
+                    for it in root.items: Rectangle {
+                        height: it.id == "-" ? 9px : 28px * Theme.scale;
+                        if it.id == "-": MenuSep {
+                            width: parent.width;
+                        }
+                        if it.id != "-": MenuItem {
+                            width: parent.width;
+                            label: it.label;
+                            hint: it.hint;
+                            icon: it.icon;
+                            checked: it.checked || (root.current != "" && it.id == root.current);
+                            font-family: it.font != "" ? it.font : Theme.font;
+                            font-size: it.font != "" ? 14px : Theme.fs;
+                            clicked => {
+                                root.picked(it.id);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Wybór czcionki: pole z nazwą i lista rodzin pisana ich własnym krojem.
+export component FontBox inherits Rectangle {
+    width: 170px * Theme.scale;
+    height: 24px * Theme.scale;
+    border-radius: Theme.r-small;
+    background: Theme.raised;
+    border-width: 1px;
+    border-color: fta.has-hover ? Theme.line-strong : Theme.line;
+    Text {
+        x: 8px;
+        width: parent.width - 26px;
+        text: App.font;
+        font-family: App.font;
+        font-size: Theme.fs;
+        color: Theme.text;
+        vertical-alignment: center;
+        overflow: elide;
+        height: parent.height;
+    }
+    Text {
+        x: parent.width - 16px;
+        text: "▾";
+        font-size: 9px;
+        color: Theme.text-dim;
+        vertical-alignment: center;
+        height: parent.height;
+    }
+    fta := TipArea {
+        tip: @tr("Czcionka – lista krojów zainstalowanych w systemie");
+        clicked => {
+            App.font-query("");
+            pop.show();
+        }
+    }
+    pop := PopupWindow {
+        x: 0;
+        y: root.height + 2px;
+        close-policy: close-on-click-outside;
+        Card {
+            width: 300px;
+            height: 440px;
+            VerticalLayout {
+                padding: 8px;
+                spacing: 6px;
+                search := Field {
+                    init => {
+                        self.focus-input();
+                    }
+                    w: 284px;
+                    placeholder: @tr("Szukaj czcionki…");
+                    edited(t) => {
+                        App.font-query(t);
+                    }
+                    accepted(t) => {
+                        if (App.fonts.length > 0) {
+                            App.cmd("font", App.fonts[0].id);
+                            pop.close();
+                        }
+                    }
+                }
+                if App.recent-fonts.length > 0: VerticalLayout {
+                    Dim {
+                        text: @tr("Ostatnio używane");
+                    }
+                    for f in App.recent-fonts: MenuItem {
+                        label: f.label;
+                        font-family: f.id;
+                        font-size: 14px;
+                        checked: f.id == App.font;
+                        clicked => {
+                            App.cmd("font", f.id);
+                            pop.close();
+                        }
+                    }
+                    MenuSep {}
+                }
+                ListView {
+                    for f in App.fonts: MenuItem {
+                        label: f.label;
+                        font-family: f.id;
+                        font-size: 14px;
+                        checked: f.id == App.font;
+                        clicked => {
+                            App.cmd("font", f.id);
+                            pop.close();
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+export component SizeBox inherits Rectangle {
+    width: 58px * Theme.scale;
+    height: 24px * Theme.scale;
+    border-radius: Theme.r-small;
+    background: Theme.raised;
+    border-width: 1px;
+    border-color: inp.has-focus ? Theme.accent : Theme.line;
+    inp := TextInput {
+        x: 6px;
+        width: parent.width - 22px;
+        text: App.size;
+        font-family: Theme.font;
+        font-size: Theme.fs;
+        color: Theme.text;
+        vertical-alignment: center;
+        single-line: true;
+        accepted => {
+            App.cmd("size", self.text);
+        }
+    }
+    Rectangle {
+        x: parent.width - 16px;
+        width: 16px;
+        Text {
+            text: "▾";
+            font-size: 9px;
+            color: Theme.text-dim;
+        }
+        TipArea {
+            tip: @tr("Rozmiar czcionki (pt)");
+            clicked => {
+                pop.show();
+            }
+        }
+    }
+    pop := PopupWindow {
+        x: 0;
+        y: root.height + 2px;
+        Card {
+            width: 80px;
+            height: 360px;
+            ListView {
+                for s in ["8", "9", "10", "10,5", "11", "12", "14", "16", "18", "20", "22", "24", "28", "32", "36", "40", "48", "54", "60", "72", "96"]: MenuItem {
+                    label: s;
+                    checked: App.size == s;
+                    clicked => {
+                        App.cmd("size", s);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Galeria stylów akapitu (próbki pisane stylem).
+export component StyleGallery inherits Rectangle {
+    width: 3 * 101px * Theme.scale + 24px;
+    height: 66px * Theme.scale;
+    property <length> item: 101px * Theme.scale;
+    HorizontalLayout {
+        spacing: 3px;
+        fl := Flickable {
+            width: 3 * root.item;
+            content-width: App.styles.length * root.item;
+            interactive: false;
+            for s[i] in App.styles: Rectangle {
+                x: i * root.item;
+                width: root.item - 3px;
+                height: parent.height;
+                border-radius: Theme.r-small;
+                background: s.id == App.style-id ? Theme.accent-soft : sta.has-hover ? Theme.hover : Theme.raised;
+                border-width: 1px;
+                border-color: s.id == App.style-id ? Theme.accent : Theme.line;
+                Rectangle {
+                    x: 4px;
+                    y: 4px;
+                    width: parent.width - 8px;
+                    height: parent.height - 22px;
+                    border-radius: 3px;
+                    background: s.shade.alpha > 0 ? s.shade : #ffffff;
+                    Text {
+                        x: 5px;
+                        width: parent.width - 10px;
+                        text: "AaBbĆć";
+                        font-family: s.font;
+                        font-size: min(s.size, 20px);
+                        font-weight: s.bold ? 700 : 400;
+                        font-italic: s.italic;
+                        color: s.color;
+                        overflow: elide;
+                        vertical-alignment: center;
+                    }
+                }
+                Text {
+                    y: parent.height - 17px;
+                    x: 6px;
+                    width: parent.width - 12px;
+                    text: s.name;
+                    font-family: Theme.font;
+                    font-size: 10px * Theme.scale;
+                    color: Theme.text-dim;
+                    overflow: elide;
+                    horizontal-alignment: center;
+                }
+                sta := TipArea {
+                    tip: @tr("Styl: {}", s.name);
+                    clicked => {
+                        App.cmd("style", s.id);
+                    }
+                }
+            }
+        }
+        VerticalLayout {
+            width: 20px;
+            spacing: 2px;
+            IconButton {
+                size: 20px;
+                icon-size: 12px;
+                icon: Icons.chevron-up;
+                tip: @tr("Poprzednie style");
+                enabled: fl.content-x < 0;
+                clicked => {
+                    fl.content-x = min(0px, fl.content-x + 3 * root.item);
+                }
+            }
+            IconButton {
+                size: 20px;
+                icon-size: 12px;
+                icon: Icons.chevron-down;
+                tip: @tr("Kolejne style");
+                enabled: -fl.content-x + 3 * root.item < App.styles.length * root.item;
+                clicked => {
+                    fl.content-x = max(-(App.styles.length * root.item - 3 * root.item), fl.content-x - 3 * root.item);
+                }
+            }
+            IconButton {
+                size: 20px;
+                icon-size: 12px;
+                icon: Icons.panel-right;
+                tip: @tr("Panel stylów");
+                clicked => {
+                    App.cmd("panel", "styles");
+                }
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------- dane menu
+
+export global Menus {
+    out property <[ItemV]> lists: [
+        { id: "", label: @tr("Bez listy") },
+        { id: "-" },
+        { id: "bullet", label: @tr("• Punktor"), icon: Icons.list },
+        { id: "dash", label: @tr("– Myślnik") },
+        { id: "check", label: @tr("✓ Znacznik") },
+        { id: "arrow", label: @tr("➔ Strzałka") },
+        { id: "-" },
+        { id: "number", label: @tr("1. Numeracja"), icon: Icons.list-ordered },
+        { id: "number-paren", label: @tr("1) Numeracja z nawiasem") },
+        { id: "lower-letter", label: @tr("a) Litery małe") },
+        { id: "upper-letter", label: @tr("A. Litery wielkie") },
+        { id: "lower-roman", label: @tr("i. Rzymskie małe") },
+        { id: "upper-roman", label: @tr("I. Rzymskie wielkie") },
+        { id: "-" },
+        { id: "restart", label: @tr("Zacznij numerację od 1") },
+    ];
+    out property <[ItemV]> spacing: [
+        { id: "1", label: "1,0" },
+        { id: "1.15", label: "1,15" },
+        { id: "1.5", label: "1,5" },
+        { id: "2", label: "2,0" },
+        { id: "2.5", label: "2,5" },
+        { id: "3", label: "3,0" },
+        { id: "-" },
+        { id: "exact", label: @tr("Dokładnie jak rozmiar pisma") },
+        { id: "before+", label: @tr("Dodaj odstęp przed akapitem") },
+        { id: "after0", label: @tr("Usuń odstęp po akapicie") },
+    ];
+    out property <[ItemV]> caps: [
+        { id: "0", label: @tr("Jak w tekście") },
+        { id: "1", label: @tr("WERSALIKI") },
+        { id: "2", label: @tr("Kapitaliki") },
+        { id: "-" },
+        { id: "upper", label: @tr("Zamień na WIELKIE litery") },
+        { id: "lower", label: @tr("zamień na małe litery") },
+        { id: "title", label: @tr("Każdy Wyraz Wielką Literą") },
+        { id: "sentence", label: @tr("Jak w zdaniu") },
+    ];
+    out property <[ItemV]> underline: [
+        { id: "single", label: @tr("Pojedyncze") },
+        { id: "double", label: @tr("Podwójne") },
+        { id: "dotted", label: @tr("Kropkowane") },
+        { id: "wave", label: @tr("Faliste") },
+        { id: "none", label: @tr("Bez podkreślenia") },
+    ];
+    out property <[ItemV]> shapes: [
+        { id: "rect", label: @tr("Prostokąt"), icon: Icons.square },
+        { id: "rounded", label: @tr("Zaokrąglony prostokąt"), icon: Icons.square },
+        { id: "ellipse", label: @tr("Elipsa / koło"), icon: Icons.circle },
+        { id: "triangle", label: @tr("Trójkąt"), icon: Icons.triangle },
+        { id: "diamond", label: @tr("Romb"), icon: Icons.diamond },
+        { id: "pentagon", label: @tr("Pięciokąt"), icon: Icons.pentagon },
+        { id: "hexagon", label: @tr("Sześciokąt"), icon: Icons.hexagon },
+        { id: "octagon", label: @tr("Ośmiokąt"), icon: Icons.octagon },
+        { id: "star", label: @tr("Gwiazda"), icon: Icons.star },
+        { id: "star8", label: @tr("Gwiazda ośmioramienna"), icon: Icons.sparkles },
+        { id: "heart", label: @tr("Serce"), icon: Icons.heart },
+        { id: "wave", label: @tr("Fala"), icon: Icons.waves },
+        { id: "arch", label: @tr("Łuk"), icon: Icons.spline },
+        { id: "parallelogram", label: @tr("Równoległobok") },
+        { id: "trapezoid", label: @tr("Trapez") },
+        { id: "arrow", label: @tr("Strzałka"), icon: Icons.arrow-right },
+        { id: "chevron", label: @tr("Szewron") },
+        { id: "cross", label: @tr("Krzyż"), icon: Icons.plus },
+        { id: "speech", label: @tr("Dymek"), icon: Icons.message-square-quote },
+        { id: "ring", label: @tr("Pierścień (z otworem)"), icon: Icons.circle-dot },
+        { id: "-" },
+        { id: "line", label: @tr("Linia"), icon: Icons.minus },
+        { id: "arc", label: @tr("Łuk otwarty"), icon: Icons.spline },
+        { id: "pen", label: @tr("Rysuj własny (węzły)…"), icon: Icons.pen-tool },
+    ];
+    out property <[ItemV]> charts: [
+        { id: "column", label: @tr("Kolumnowy"), icon: Icons.chart-column },
+        { id: "bar", label: @tr("Słupkowy"), icon: Icons.chart-bar },
+        { id: "line", label: @tr("Liniowy"), icon: Icons.chart-line },
+        { id: "area", label: @tr("Warstwowy"), icon: Icons.chart-area },
+        { id: "pie", label: @tr("Kołowy"), icon: Icons.chart-pie },
+        { id: "doughnut", label: @tr("Pierścieniowy"), icon: Icons.circle-dot },
+    ];
+    out property <[ItemV]> symbols: [
+        { id: "©", label: "©  " + @tr("prawa autorskie") }, { id: "®", label: "®  " + @tr("znak zastrzeżony") }, { id: "™", label: "™  " + @tr("znak towarowy") },
+        { id: "§", label: "§  " + @tr("paragraf") }, { id: "¶", label: "¶  " + @tr("akapit") }, { id: "†", label: "†  " + @tr("krzyżyk") },
+        { id: "•", label: "•  " + @tr("punktor") }, { id: "…", label: "…  " + @tr("wielokropek") }, { id: "–", label: "–  " + @tr("półpauza") },
+        { id: "—", label: "—  " + @tr("pauza") }, { id: "„", label: "„  " + @tr("cudzysłów dolny") }, { id: "”", label: "”  " + @tr("cudzysłów górny") },
+        { id: "«", label: "«  " + @tr("cudzysłów francuski") }, { id: "»", label: "»" }, { id: "°", label: "°  " + @tr("stopień") },
+        { id: "±", label: "±" }, { id: "×", label: "×  " + @tr("razy") }, { id: "÷", label: "÷" }, { id: "≈", label: "≈" }, { id: "≠", label: "≠" },
+        { id: "≤", label: "≤" }, { id: "≥", label: "≥" }, { id: "€", label: "€  euro" }, { id: "£", label: "£" }, { id: "$", label: "$" },
+        { id: "→", label: "→" }, { id: "←", label: "←" }, { id: "↑", label: "↑" }, { id: "↓", label: "↓" }, { id: "∞", label: "∞" },
+        { id: "√", label: "√" }, { id: "π", label: "π" }, { id: "Ω", label: "Ω" }, { id: "µ", label: "µ" }, { id: "α", label: "α" },
+        { id: "β", label: "β" }, { id: "γ", label: "γ" }, { id: "Δ", label: "Δ" }, { id: "★", label: "★" }, { id: "♥", label: "♥" },
+        { id: "\u{00A0}", label: @tr("Twarda spacja (Ctrl+Shift+Spacja)") }, { id: "\u{00AD}", label: @tr("Miękki dywiz") },
+    ];
+    out property <[ItemV]> fields: [
+        { id: "page-number", label: @tr("Numer strony"), icon: Icons.hash },
+        { id: "page-count", label: @tr("Liczba stron") },
+        { id: "date", label: @tr("Data (aktualizowana)"), icon: Icons.calendar },
+        { id: "time", label: @tr("Godzina"), icon: Icons.clock },
+        { id: "title", label: @tr("Tytuł dokumentu") },
+        { id: "author", label: @tr("Autor") },
+        { id: "-" },
+        { id: "date-text", label: @tr("Dzisiejsza data jako tekst") },
+    ];
+    out property <[ItemV]> page-sizes: [
+        { id: "A4", label: "A4  ·  210 × 297 mm" }, { id: "A5", label: "A5  ·  148 × 210 mm" }, { id: "A3", label: "A3  ·  297 × 420 mm" },
+        { id: "B5", label: "B5  ·  176 × 250 mm" }, { id: "Letter", label: "Letter  ·  8,5 × 11 in" }, { id: "Legal", label: "Legal  ·  8,5 × 14 in" },
+        { id: "A6", label: "A6  ·  105 × 148 mm" }, { id: "DL", label: "DL  ·  99 × 210 mm" }, { id: "Square", label: @tr("Kwadrat  ·  210 × 210 mm") },
+    ];
+    out property <[ItemV]> margins: [
+        { id: "normal", label: @tr("Normalne  ·  25 mm") }, { id: "narrow", label: @tr("Wąskie  ·  12,7 mm") }, { id: "moderate", label: @tr("Umiarkowane  ·  19 / 25 mm") },
+        { id: "wide", label: @tr("Szerokie  ·  38 mm") }, { id: "book", label: @tr("Książkowe  ·  20 / 30 mm") }, { id: "none", label: @tr("Bez marginesów (plakat)") },
+    ];
+    out property <[ItemV]> wraps: [
+        { id: "0", label: @tr("Bez opływania (przed tekstem)") },
+        { id: "1", label: @tr("Wokół – z obu stron"), icon: Icons.wrap-text },
+        { id: "2", label: @tr("Tylko po lewej stronie") },
+        { id: "3", label: @tr("Tylko po prawej stronie") },
+        { id: "4", label: @tr("Po stronie z większym miejscem") },
+        { id: "5", label: @tr("Nad i pod obiektem") },
+        { id: "6", label: @tr("Za tekstem") },
+    ];
+    out property <[ItemV]> zooms: [
+        { id: "50", label: "50%" }, { id: "75", label: "75%" }, { id: "100", label: "100%" }, { id: "125", label: "125%" },
+        { id: "150", label: "150%" }, { id: "200", label: "200%" }, { id: "300", label: "300%" }, { id: "400", label: "400%" },
+        { id: "-" }, { id: "width", label: @tr("Szerokość strony") }, { id: "page", label: @tr("Cała strona") },
+    ];
+}
+
+// ---------------------------------------------------------------- karty
+
+component HomeTab inherits HorizontalLayout {
+    alignment: start;
+    Group {
+        title: @tr("AI");
+        BigButton {
+            icon: Icons.wand-sparkles;
+            label: @tr("Generuj");
+            tip: @tr("Generuj dokument z AI na podstawie opisu");
+            tint: Theme.accent;
+            clicked => {
+                App.cmd("ai", "");
+            }
+        }
+    }
+    Group {
+        title: @tr("Schowek");
+        BigButton {
+            icon: Icons.clipboard-paste;
+            label: @tr("Wklej");
+            tip: @tr("Wklej (Ctrl+V)");
+            clicked => {
+                App.cmd("paste", "");
+            }
+        }
+        Col {
+            RowButton {
+                icon: Icons.scissors;
+                label: @tr("Wytnij");
+                tip: @tr("Wytnij (Ctrl+X)");
+                clicked => {
+                    App.cmd("cut", "");
+                }
+            }
+            RowButton {
+                icon: Icons.copy;
+                label: @tr("Kopiuj");
+                tip: @tr("Kopiuj (Ctrl+C)");
+                clicked => {
+                    App.cmd("copy", "");
+                }
+            }
+            RowButton {
+                icon: Icons.paintbrush;
+                label: @tr("Malarz");
+                tip: @tr("Malarz formatów – skopiuj formatowanie i kliknij tekst docelowy (Ctrl+Shift+C / Ctrl+Shift+V)");
+                active: App.tool == 6;
+                clicked => {
+                    App.cmd("format-painter", "");
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Czcionka");
+        Col {
+            Row {
+                FontBox {}
+                SizeBox {}
+                IconButton {
+                    icon: Icons.a-arrow-up;
+                    tip: @tr("Powiększ czcionkę (Ctrl+])");
+                    size: 24px;
+                    clicked => {
+                        App.cmd("grow", "");
+                    }
+                }
+                IconButton {
+                    icon: Icons.a-arrow-down;
+                    tip: @tr("Pomniejsz czcionkę (Ctrl+[)");
+                    size: 24px;
+                    clicked => {
+                        App.cmd("shrink", "");
+                    }
+                }
+                IconButton {
+                    icon: Icons.eraser;
+                    tip: @tr("Wyczyść formatowanie znaków (Ctrl+Spacja)");
+                    size: 24px;
+                    clicked => {
+                        App.cmd("clear-format", "");
+                    }
+                }
+            }
+            Row {
+                IconButton {
+                    icon: Icons.bold;
+                    tip: @tr("Pogrubienie (Ctrl+B)");
+                    active: App.bold;
+                    size: 26px;
+                    clicked => {
+                        App.cmd("bold", "");
+                    }
+                }
+                IconButton {
+                    icon: Icons.italic;
+                    tip: @tr("Kursywa (Ctrl+I)");
+                    active: App.italic;
+                    size: 26px;
+                    clicked => {
+                        App.cmd("italic", "");
+                    }
+                }
+                IconButton {
+                    icon: Icons.underline;
+                    tip: @tr("Podkreślenie (Ctrl+U)");
+                    active: App.underline;
+                    size: 26px;
+                    clicked => {
+                        App.cmd("underline", "");
+                    }
+                }
+                MenuButton {
+                    icon: Icons.chevron-down;
+                    label: "";
+                    tip: @tr("Rodzaj podkreślenia");
+                    items: Menus.underline;
+                    menu-w: 180px;
+                    width: 16px;
+                    picked(id) => {
+                        App.cmd("underline-kind", id);
+                    }
+                }
+                IconButton {
+                    icon: Icons.strikethrough;
+                    tip: @tr("Przekreślenie");
+                    active: App.strike;
+                    size: 26px;
+                    clicked => {
+                        App.cmd("strike", "");
+                    }
+                }
+                IconButton {
+                    icon: Icons.superscript;
+                    tip: @tr("Indeks górny (Ctrl+Shift+=)");
+                    active: App.sup;
+                    size: 26px;
+                    clicked => {
+                        App.cmd("sup", "");
+                    }
+                }
+                IconButton {
+                    icon: Icons.subscript;
+                    tip: @tr("Indeks dolny (Ctrl+=)");
+                    active: App.sub;
+                    size: 26px;
+                    clicked => {
+                        App.cmd("sub", "");
+                    }
+                }
+                MenuButton {
+                    icon: Icons.case-sensitive;
+                    label: "";
+                    tip: @tr("Wersaliki, kapitaliki i zmiana wielkości liter");
+                    items: Menus.caps;
+                    active: App.caps > 0;
+                    menu-w: 230px;
+                    picked(id) => {
+                        App.cmd("caps", id);
+                    }
+                }
+                ColorPick {
+                    icon: Icons.baseline;
+                    current: App.last-color;
+                    tip: @tr("Kolor czcionki");
+                    allow-none: false;
+                    apply => {
+                        App.cmd("color", "last");
+                    }
+                    picked(c) => {
+                        App.last-color = c;
+                        App.cmd("color", "last");
+                    }
+                }
+                ColorPick {
+                    icon: Icons.highlighter;
+                    current: App.last-highlight;
+                    tip: @tr("Kolor wyróżnienia tekstu");
+                    apply => {
+                        App.cmd("highlight", "last");
+                    }
+                    picked(c) => {
+                        App.last-highlight = c;
+                        App.cmd("highlight", "last");
+                    }
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Akapit");
+        Col {
+            Row {
+                MenuButton {
+                    icon: Icons.list;
+                    label: "";
+                    tip: @tr("Punktory (listy nienumerowane)");
+                    items: Menus.lists;
+                    active: App.list-kind != "" && App.list-kind != "number";
+                    current: App.list-kind;
+                    picked(id) => {
+                        App.cmd("list", id);
+                    }
+                }
+                IconButton {
+                    icon: Icons.list-ordered;
+                    tip: @tr("Numeracja");
+                    active: App.list-kind == "number";
+                    size: 26px;
+                    clicked => {
+                        App.cmd("list", App.list-kind == "number" ? "" : "number");
+                    }
+                }
+                IconButton {
+                    icon: Icons.list-indent-decrease;
+                    tip: @tr("Zmniejsz wcięcie / poziom listy (Shift+Tab)");
+                    size: 26px;
+                    clicked => {
+                        App.cmd("outdent", "");
+                    }
+                }
+                IconButton {
+                    icon: Icons.list-indent-increase;
+                    tip: @tr("Zwiększ wcięcie / poziom listy (Tab)");
+                    size: 26px;
+                    clicked => {
+                        App.cmd("indent", "");
+                    }
+                }
+                IconButton {
+                    icon: Icons.pilcrow;
+                    tip: @tr("Pokaż znaki formatowania (Ctrl+*)");
+                    active: App.marks;
+                    size: 26px;
+                    clicked => {
+                        App.cmd("marks", "");
+                    }
+                }
+            }
+            Row {
+                IconButton {
+                    icon: Icons.align-left;
+                    tip: @tr("Do lewej (Ctrl+L)");
+                    active: App.align == 0;
+                    size: 26px;
+                    clicked => {
+                        App.cmd("align", "0");
+                    }
+                }
+                IconButton {
+                    icon: Icons.align-center;
+                    tip: @tr("Wyśrodkuj (Ctrl+E)");
+                    active: App.align == 1;
+                    size: 26px;
+                    clicked => {
+                        App.cmd("align", "1");
+                    }
+                }
+                IconButton {
+                    icon: Icons.align-right;
+                    tip: @tr("Do prawej (Ctrl+R)");
+                    active: App.align == 2;
+                    size: 26px;
+                    clicked => {
+                        App.cmd("align", "2");
+                    }
+                }
+                IconButton {
+                    icon: Icons.align-justify;
+                    tip: @tr("Wyjustuj (Ctrl+J)");
+                    active: App.align == 3;
+                    size: 26px;
+                    clicked => {
+                        App.cmd("align", "3");
+                    }
+                }
+                MenuButton {
+                    icon: Icons.move-vertical;
+                    label: App.line-spacing;
+                    tip: @tr("Interlinia i odstępy akapitu");
+                    items: Menus.spacing;
+                    menu-w: 240px;
+                    picked(id) => {
+                        App.cmd("line-spacing", id);
+                    }
+                }
+                ColorPick {
+                    icon: Icons.paint-bucket;
+                    current: App.shading;
+                    tip: @tr("Cieniowanie akapitu");
+                    apply => {
+                        App.cmd("shading", "current");
+                    }
+                    picked(c) => {
+                        App.shading = c;
+                        App.cmd("shading", "current");
+                    }
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Style");
+        StyleGallery {}
+    }
+    Group {
+        title: @tr("Edycja");
+        last: true;
+        Col {
+            RowButton {
+                icon: Icons.search;
+                label: @tr("Znajdź");
+                tip: @tr("Znajdź (Ctrl+F)");
+                clicked => {
+                    App.cmd("find", "");
+                }
+            }
+            RowButton {
+                icon: Icons.replace;
+                label: @tr("Zamień");
+                tip: @tr("Zamień (Ctrl+H)");
+                clicked => {
+                    App.cmd("replace", "");
+                }
+            }
+            RowButton {
+                icon: Icons.text-select;
+                label: @tr("Zaznacz wszystko");
+                tip: @tr("Zaznacz cały tekst (Ctrl+A)");
+                clicked => {
+                    App.cmd("select-all", "");
+                }
+            }
+        }
+    }
+}
+
+component InsertTab inherits HorizontalLayout {
+    alignment: start;
+    Group {
+        title: @tr("AI");
+        BigButton {
+            icon: Icons.wand-sparkles;
+            label: @tr("Generuj z AI");
+            tip: @tr("Opisz dokument, a sztuczna inteligencja go napisze i złoży z formatowaniem");
+            tint: Theme.accent;
+            clicked => {
+                App.cmd("ai", "");
+            }
+        }
+    }
+    Group {
+        title: @tr("Strony");
+        BigButton {
+            icon: Icons.file-plus;
+            label: @tr("Pusta strona");
+            tip: @tr("Dodaj pustą stronę na obiekty");
+            clicked => {
+                App.cmd("page-blank", "");
+            }
+        }
+        Col {
+            RowButton {
+                icon: Icons.separator-horizontal;
+                label: @tr("Podział strony");
+                tip: @tr("Podział strony (Ctrl+Enter)");
+                clicked => {
+                    App.cmd("page-break", "");
+                }
+            }
+            RowButton {
+                icon: Icons.columns-2;
+                label: @tr("Podział kolumny");
+                tip: @tr("Następny tekst od nowej kolumny (Ctrl+Shift+Enter)");
+                clicked => {
+                    App.cmd("column-break", "");
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Ilustracje");
+        BigButton {
+            icon: Icons.image;
+            label: @tr("Obraz");
+            tip: @tr("Wstaw obraz z pliku (PNG, JPEG, WebP, GIF, BMP)");
+            clicked => {
+                App.cmd("image", "");
+            }
+        }
+        BigMenuButton {
+            icon: Icons.shapes;
+            label: @tr("Kształt");
+            tip: @tr("Wstaw kształt – przeciągnij na stronie, aby go narysować");
+            items: Menus.shapes;
+            menu-w: 230px;
+            picked(id) => {
+                App.cmd("shape", id);
+            }
+        }
+        BigMenuButton {
+            icon: Icons.chart-column;
+            label: @tr("Wykres");
+            tip: @tr("Wstaw wykres z edytowalnymi danymi");
+            items: Menus.charts;
+            menu-w: 190px;
+            picked(id) => {
+                App.cmd("chart", id);
+            }
+        }
+    }
+    Group {
+        title: @tr("Tekst");
+        BigButton {
+            icon: Icons.type;
+            label: @tr("Ramka tekstowa");
+            tip: @tr("Narysuj ramkę tekstową (przeciągnij na stronie)");
+            active: App.tool == 1;
+            clicked => {
+                App.cmd("text-frame", "");
+            }
+        }
+        BigMenuButton {
+            icon: Icons.pentagon;
+            label: @tr("Kształt tekstu");
+            tip: @tr("Tekst wpisany w kształt – opływa treść strony");
+            items: Menus.shapes;
+            menu-w: 230px;
+            picked(id) => {
+                App.cmd("text-shape", id);
+            }
+        }
+        Col {
+            RowButton {
+                icon: Icons.spline;
+                label: @tr("Tekst na ścieżce");
+                tip: @tr("Tekst biegnący po krzywej");
+                active: App.tool == 4;
+                clicked => {
+                    App.cmd("path-text", "");
+                }
+            }
+            RowButton {
+                icon: Icons.heading;
+                label: @tr("Inicjał");
+                tip: @tr("Pierwsza litera akapitu na trzy wiersze");
+                active: App.drop-cap;
+                clicked => {
+                    App.cmd("drop-cap", "");
+                }
+            }
+            MenuButton {
+                icon: Icons.omega;
+                label: @tr("Symbol");
+                tip: @tr("Wstaw znak specjalny");
+                items: Menus.symbols;
+                menu-w: 260px;
+                picked(id) => {
+                    App.cmd("symbol", id);
+                }
+            }
+        }
+        Col {
+            MenuButton {
+                icon: Icons.hash;
+                label: @tr("Pole");
+                tip: @tr("Numer strony, liczba stron, data…");
+                items: Menus.fields;
+                menu-w: 230px;
+                picked(id) => {
+                    App.cmd("field", id);
+                }
+            }
+            RowButton {
+                icon: Icons.link;
+                label: @tr("Łącze");
+                tip: @tr("Hiperłącze (Ctrl+Shift+K)");
+                clicked => {
+                    App.cmd("link", "");
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Nagłówek i stopka");
+        last: true;
+        Col {
+            RowButton {
+                icon: Icons.panel-top;
+                label: App.has-header ? @tr("Edytuj nagłówek") : @tr("Dodaj nagłówek");
+                tip: @tr("Tekst u góry każdej strony");
+                clicked => {
+                    App.cmd("header-edit", "");
+                }
+            }
+            RowButton {
+                icon: Icons.panel-bottom;
+                label: App.has-footer ? @tr("Edytuj stopkę") : @tr("Dodaj stopkę");
+                tip: @tr("Tekst u dołu każdej strony (z numerem strony)");
+                clicked => {
+                    App.cmd("footer-edit", "");
+                }
+            }
+            RowButton {
+                icon: Icons.files;
+                label: @tr("Inna pierwsza strona");
+                tip: @tr("Osobny nagłówek i stopka na pierwszej stronie");
+                active: App.diff-first;
+                clicked => {
+                    App.cmd("diff-first", "");
+                }
+            }
+        }
+        Col {
+            RowButton {
+                icon: Icons.trash-2;
+                label: @tr("Usuń nagłówek");
+                enabled: App.has-header;
+                clicked => {
+                    App.cmd("header-remove", "");
+                }
+            }
+            RowButton {
+                icon: Icons.trash-2;
+                label: @tr("Usuń stopkę");
+                enabled: App.has-footer;
+                clicked => {
+                    App.cmd("footer-remove", "");
+                }
+            }
+        }
+    }
+}
+
+component DesignTab inherits HorizontalLayout {
+    alignment: start;
+    Group {
+        title: @tr("Motyw dokumentu");
+        for t in App.doc-themes: Rectangle {
+            width: 76px * Theme.scale;
+            height: 66px * Theme.scale;
+            border-radius: Theme.r-small;
+            background: t.id == App.doc-theme ? Theme.accent-soft : dta.has-hover ? Theme.hover : transparent;
+            border-width: t.id == App.doc-theme ? 1px : 0;
+            border-color: Theme.accent;
+            VerticalLayout {
+                padding: 5px;
+                spacing: 3px;
+                Rectangle {
+                    border-radius: 4px;
+                    background: #ffffff;
+                    height: 36px * Theme.scale;
+                    Text {
+                        text: "Aa";
+                        font-family: t.font;
+                        font-size: 20px * Theme.scale;
+                        color: #222;
+                    }
+                }
+                Text {
+                    text: t.label;
+                    font-family: Theme.font;
+                    font-size: 10px * Theme.scale;
+                    color: Theme.text-dim;
+                    horizontal-alignment: center;
+                    overflow: elide;
+                }
+            }
+            dta := TipArea {
+                tip: @tr("Motyw: {} – kroje i kolory stylów", t.label);
+                clicked => {
+                    App.cmd("doc-theme", t.id);
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Tło i typografia");
+        last: true;
+        ColorPick {
+            big: true;
+            icon: Icons.paint-bucket;
+            current: App.page-color;
+            tip: @tr("Kolor strony");
+            allow-none: false;
+            apply => {
+                App.cmd("page-color", "current");
+            }
+            picked(c) => {
+                App.page-color = c;
+                App.cmd("page-color", "current");
+            }
+        }
+        Col {
+            Switch {
+                label: @tr("Polskie sierotki");
+                tip: @tr("Krótkie wyrazy (a, i, o, u, w, z) nie zostają na końcu wiersza");
+                on: App.orphans;
+                toggled => {
+                    App.cmd("orphans", "");
+                }
+            }
+            Switch {
+                label: @tr("Siatka bazowa");
+                tip: @tr("Wiersze treści głównej na wspólnej siatce (równe linie w kolumnach)");
+                on: App.baseline-grid;
+                toggled => {
+                    App.cmd("baseline-grid", "");
+                }
+            }
+        }
+    }
+}
+
+component LayoutTab inherits HorizontalLayout {
+    alignment: start;
+    Group {
+        title: @tr("Strona");
+        BigMenuButton {
+            icon: Icons.file;
+            label: App.page-size;
+            tip: @tr("Rozmiar strony");
+            items: Menus.page-sizes;
+            current: App.page-size;
+            menu-w: 230px;
+            picked(id) => {
+                App.cmd("page-size", id);
+            }
+        }
+        BigButton {
+            icon: App.landscape ? Icons.rectangle-horizontal : Icons.rectangle-vertical;
+            label: App.landscape ? @tr("Pozioma") : @tr("Pionowa");
+            tip: @tr("Orientacja strony");
+            clicked => {
+                App.cmd("orientation", "");
+            }
+        }
+        BigMenuButton {
+            icon: Icons.square-dashed;
+            label: @tr("Marginesy");
+            tip: @tr("Gotowe marginesy");
+            items: Menus.margins;
+            menu-w: 240px;
+            picked(id) => {
+                App.cmd("margins", id);
+            }
+        }
+        Col {
+            Row {
+                Spin {
+                    label: "↑";
+                    tip: @tr("Margines górny");
+                    value: App.m-top;
+                    unit: App.unit;
+                    w: 78px;
+                    changed-value(v) => {
+                        App.cmd("m-top", v);
+                    }
+                    step(d) => {
+                        App.cmd("m-top-step", d);
+                    }
+                }
+                Spin {
+                    label: "↓";
+                    tip: @tr("Margines dolny");
+                    value: App.m-bottom;
+                    unit: App.unit;
+                    w: 78px;
+                    changed-value(v) => {
+                        App.cmd("m-bottom", v);
+                    }
+                    step(d) => {
+                        App.cmd("m-bottom-step", d);
+                    }
+                }
+            }
+            Row {
+                Spin {
+                    label: "←";
+                    tip: @tr("Margines lewy");
+                    value: App.m-left;
+                    unit: App.unit;
+                    w: 78px;
+                    changed-value(v) => {
+                        App.cmd("m-left", v);
+                    }
+                    step(d) => {
+                        App.cmd("m-left-step", d);
+                    }
+                }
+                Spin {
+                    label: "→";
+                    tip: @tr("Margines prawy");
+                    value: App.m-right;
+                    unit: App.unit;
+                    w: 78px;
+                    changed-value(v) => {
+                        App.cmd("m-right", v);
+                    }
+                    step(d) => {
+                        App.cmd("m-right-step", d);
+                    }
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Kolumny");
+        for n in [1, 2, 3, 4]: IconButton {
+            icon: n == 1 ? Icons.file-text : n == 2 ? Icons.columns-2 : n == 3 ? Icons.columns-3 : Icons.columns-4;
+            tip: n == 1 ? @tr("Jedna kolumna") : @tr("Kolumny: {}", n);
+            active: App.columns == n;
+            size: 36px;
+            icon-size: 20px;
+            clicked => {
+                App.cmd("columns", n);
+            }
+        }
+        Col {
+            Spin {
+                label: @tr("Odstęp");
+                tip: @tr("Odstęp między kolumnami");
+                value: App.col-gap;
+                unit: App.unit;
+                w: 80px;
+                changed-value(v) => {
+                    App.cmd("col-gap", v);
+                }
+                step(d) => {
+                    App.cmd("col-gap-step", d);
+                }
+            }
+            Switch {
+                label: @tr("Linia między");
+                on: App.col-rule;
+                tip: @tr("Pionowa linia między kolumnami");
+                toggled => {
+                    App.cmd("col-rule", "");
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Akapit");
+        Col {
+            Spin {
+                label: @tr("Wcięcie ←");
+                tip: @tr("Wcięcie z lewej");
+                value: App.indent-left;
+                unit: App.unit;
+                w: 84px;
+                changed-value(v) => {
+                    App.cmd("indent-left", v);
+                }
+                step(d) => {
+                    App.cmd("indent-left-step", d);
+                }
+            }
+            Spin {
+                label: @tr("Wcięcie →");
+                tip: @tr("Wcięcie z prawej");
+                value: App.indent-right;
+                unit: App.unit;
+                w: 84px;
+                changed-value(v) => {
+                    App.cmd("indent-right", v);
+                }
+                step(d) => {
+                    App.cmd("indent-right-step", d);
+                }
+            }
+            Spin {
+                label: @tr("1. wiersz");
+                tip: @tr("Wcięcie pierwszego wiersza (ujemne – wysunięcie)");
+                value: App.first-line;
+                unit: App.unit;
+                w: 84px;
+                changed-value(v) => {
+                    App.cmd("first-line", v);
+                }
+                step(d) => {
+                    App.cmd("first-line-step", d);
+                }
+            }
+        }
+        Col {
+            Spin {
+                label: @tr("Przed");
+                tip: @tr("Odstęp przed akapitem (pt)");
+                value: App.space-before;
+                unit: "pt";
+                w: 80px;
+                changed-value(v) => {
+                    App.cmd("space-before", v);
+                }
+                step(d) => {
+                    App.cmd("space-before-step", d);
+                }
+            }
+            Spin {
+                label: @tr("Po");
+                tip: @tr("Odstęp po akapicie (pt)");
+                value: App.space-after;
+                unit: "pt";
+                w: 80px;
+                changed-value(v) => {
+                    App.cmd("space-after", v);
+                }
+                step(d) => {
+                    App.cmd("space-after-step", d);
+                }
+            }
+            Spin {
+                label: @tr("Światło");
+                tip: @tr("Odstępy między znakami zaznaczenia (pt)");
+                value: App.tracking;
+                unit: "pt";
+                w: 80px;
+                changed-value(v) => {
+                    App.cmd("tracking", v);
+                }
+                step(d) => {
+                    App.cmd("tracking-step", d);
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Rozmieść");
+        last: true;
+        BigMenuButton {
+            icon: Icons.wrap-text;
+            label: @tr("Opływanie");
+            tip: @tr("Jak tekst opływa zaznaczony obiekt");
+            items: Menus.wraps;
+            current: App.wrap-mode;
+            menu-w: 250px;
+            picked(id) => {
+                App.cmd("wrap", id);
+            }
+        }
+        Col {
+            RowButton {
+                icon: Icons.bring-to-front;
+                label: @tr("Na wierzch");
+                enabled: App.obj-sel;
+                clicked => {
+                    App.cmd("z-front", "");
+                }
+            }
+            RowButton {
+                icon: Icons.arrow-up-from-line;
+                label: @tr("Do przodu");
+                enabled: App.obj-sel;
+                clicked => {
+                    App.cmd("z-forward", "");
+                }
+            }
+            RowButton {
+                icon: Icons.arrow-down-to-line;
+                label: @tr("Do tyłu");
+                enabled: App.obj-sel;
+                clicked => {
+                    App.cmd("z-backward", "");
+                }
+            }
+        }
+        Col {
+            RowButton {
+                icon: Icons.send-to-back;
+                label: @tr("Na spód");
+                enabled: App.obj-sel;
+                clicked => {
+                    App.cmd("z-back", "");
+                }
+            }
+            Row {
+                IconButton {
+                    icon: Icons.align-start-vertical;
+                    tip: @tr("Do lewej krawędzi strony");
+                    enabled: App.obj-sel;
+                    size: 24px;
+                    clicked => {
+                        App.cmd("align-obj", "left");
+                    }
+                }
+                IconButton {
+                    icon: Icons.align-center-vertical;
+                    tip: @tr("Wyśrodkuj na stronie w poziomie");
+                    enabled: App.obj-sel;
+                    size: 24px;
+                    clicked => {
+                        App.cmd("align-obj", "center");
+                    }
+                }
+                IconButton {
+                    icon: Icons.align-end-vertical;
+                    tip: @tr("Do prawej krawędzi strony");
+                    enabled: App.obj-sel;
+                    size: 24px;
+                    clicked => {
+                        App.cmd("align-obj", "right");
+                    }
+                }
+            }
+            Row {
+                IconButton {
+                    icon: Icons.align-start-horizontal;
+                    tip: @tr("Do górnej krawędzi strony");
+                    enabled: App.obj-sel;
+                    size: 24px;
+                    clicked => {
+                        App.cmd("align-obj", "top");
+                    }
+                }
+                IconButton {
+                    icon: Icons.align-center-horizontal;
+                    tip: @tr("Wyśrodkuj na stronie w pionie");
+                    enabled: App.obj-sel;
+                    size: 24px;
+                    clicked => {
+                        App.cmd("align-obj", "middle");
+                    }
+                }
+                IconButton {
+                    icon: Icons.align-end-horizontal;
+                    tip: @tr("Do dolnej krawędzi strony");
+                    enabled: App.obj-sel;
+                    size: 24px;
+                    clicked => {
+                        App.cmd("align-obj", "bottom");
+                    }
+                }
+            }
+        }
+    }
+}
+
+component ShapesTab inherits HorizontalLayout {
+    alignment: start;
+    Group {
+        title: @tr("Kształt tekstu");
+        BigButton {
+            icon: Icons.pen-tool;
+            label: @tr("Rysuj węzłami");
+            tip: @tr("Klikaj, aby stawiać węzły (przeciągnij – krzywa). Kliknij pierwszy węzeł albo Enter, aby zamknąć kształt; tekst wypełni jego wnętrze.");
+            active: App.tool == 3;
+            tint: Theme.accent;
+            clicked => {
+                App.cmd("draw-shape", "");
+            }
+        }
+        BigMenuButton {
+            icon: Icons.shapes;
+            label: @tr("Gotowy kształt");
+            tip: @tr("Kształt tekstu z gotowego wzoru");
+            items: Menus.shapes;
+            menu-w: 230px;
+            picked(id) => {
+                App.cmd("text-shape", id);
+            }
+        }
+        BigButton {
+            icon: Icons.type;
+            label: @tr("Ramka");
+            tip: @tr("Prostokątna ramka tekstowa");
+            active: App.tool == 1;
+            clicked => {
+                App.cmd("text-frame", "");
+            }
+        }
+    }
+    Group {
+        title: @tr("Węzły");
+        BigButton {
+            icon: Icons.spline-pointer;
+            label: @tr("Edytuj węzły");
+            tip: @tr("Pokaż węzły kształtu (dwuklik na obiekcie). Przeciągaj węzły i uchwyty krzywych; dwuklik na krawędzi dodaje węzeł.");
+            active: App.node-mode;
+            enabled: App.obj-sel;
+            clicked => {
+                App.cmd("node-mode", "");
+            }
+        }
+        Col {
+            RowButton {
+                icon: Icons.plus;
+                label: @tr("Dodaj węzeł");
+                tip: @tr("Dodaj węzeł w połowie zaznaczonego odcinka");
+                enabled: App.node-mode;
+                clicked => {
+                    App.cmd("node-add", "");
+                }
+            }
+            RowButton {
+                icon: Icons.minus;
+                label: @tr("Usuń węzeł");
+                tip: @tr("Usuń zaznaczony węzeł (Delete)");
+                enabled: App.node-mode;
+                clicked => {
+                    App.cmd("node-delete", "");
+                }
+            }
+            RowButton {
+                icon: Icons.circle-dot;
+                label: @tr("Gładki / narożny");
+                tip: @tr("Przełącz węzeł między gładkim (z uchwytami) a narożnym");
+                enabled: App.node-mode;
+                clicked => {
+                    App.cmd("node-smooth", "");
+                }
+            }
+        }
+        Col {
+            RowButton {
+                icon: Icons.minus;
+                label: @tr("Odcinek prosty");
+                tip: @tr("Odcinek za zaznaczonym węzłem jako prosta");
+                enabled: App.node-mode;
+                clicked => {
+                    App.cmd("seg-line", "");
+                }
+            }
+            RowButton {
+                icon: Icons.spline;
+                label: @tr("Odcinek krzywy");
+                tip: @tr("Odcinek za zaznaczonym węzłem jako krzywa Béziera");
+                enabled: App.node-mode;
+                clicked => {
+                    App.cmd("seg-curve", "");
+                }
+            }
+            RowButton {
+                icon: Icons.flip-horizontal;
+                label: @tr("Odbij");
+                tip: @tr("Odbij kształt w poziomie (Shift – w pionie)");
+                enabled: App.obj-sel;
+                clicked => {
+                    App.cmd("flip-h", "");
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Łączenie kształtów");
+        Col {
+            RowButton {
+                icon: Icons.squares-unite;
+                label: @tr("Suma");
+                tip: @tr("Połącz zaznaczone kształty w jeden (zaznacz dwa z Shift)");
+                enabled: App.multi-count >= 2;
+                clicked => {
+                    App.cmd("bool", "union");
+                }
+            }
+            RowButton {
+                icon: Icons.squares-subtract;
+                label: @tr("Różnica");
+                tip: @tr("Wytnij drugi kształt z pierwszego");
+                enabled: App.multi-count >= 2;
+                clicked => {
+                    App.cmd("bool", "difference");
+                }
+            }
+        }
+        Col {
+            RowButton {
+                icon: Icons.squares-intersect;
+                label: @tr("Część wspólna");
+                enabled: App.multi-count >= 2;
+                clicked => {
+                    App.cmd("bool", "intersect");
+                }
+            }
+            RowButton {
+                icon: Icons.squares-exclude;
+                label: @tr("Wyklucz");
+                tip: @tr("Wszystko poza częścią wspólną");
+                enabled: App.multi-count >= 2;
+                clicked => {
+                    App.cmd("bool", "xor");
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Tekst w kształcie");
+        Col {
+            Spin {
+                label: @tr("Margines");
+                tip: @tr("Odstęp tekstu od krawędzi kształtu (pt)");
+                value: App.padding;
+                unit: "pt";
+                w: 76px;
+                changed-value(v) => {
+                    App.cmd("padding", v);
+                }
+                step(d) => {
+                    App.cmd("padding-step", d);
+                }
+            }
+            Spin {
+                label: @tr("Kolumny");
+                tip: @tr("Liczba kolumn tekstu w kształcie");
+                value: App.frame-cols;
+                w: 76px;
+                changed-value(v) => {
+                    App.cmd("frame-cols", v);
+                }
+                step(d) => {
+                    App.cmd("frame-cols-step", d);
+                }
+            }
+            Segmented {
+                items: [@tr("Góra"), @tr("Środek"), @tr("Dół")];
+                current: App.valign;
+                tip: @tr("Wyrównanie tekstu w pionie (ramki prostokątne)");
+                picked(i) => {
+                    App.cmd("valign", i);
+                }
+            }
+        }
+        Col {
+            RowButton {
+                icon: Icons.link-2;
+                label: @tr("Połącz ramki");
+                tip: @tr("Tekst, który się nie mieści, popłynie do wskazanej ramki");
+                active: App.tool == 5;
+                enabled: App.obj-kind == "text";
+                clicked => {
+                    App.cmd("link-frame", "");
+                }
+            }
+            RowButton {
+                icon: Icons.unlink;
+                label: @tr("Rozłącz");
+                enabled: App.linked;
+                clicked => {
+                    App.cmd("unlink-frame", "");
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Opływanie");
+        Col {
+            Row {
+                for m[i] in [Icons.x, Icons.wrap-text, Icons.align-start-vertical, Icons.align-end-vertical, Icons.move-horizontal, Icons.between-horizontal-start, Icons.layers]: IconButton {
+                    icon: m;
+                    size: 26px;
+                    active: App.obj-sel && App.wrap-mode == i;
+                    enabled: App.obj-sel;
+                    tip: i == 0 ? @tr("Bez opływania") : i == 1 ? @tr("Z obu stron") : i == 2 ? @tr("Tekst po lewej") : i == 3 ? @tr("Tekst po prawej") : i == 4 ? @tr("Po większej stronie") : i == 5 ? @tr("Nad i pod") : @tr("Za tekstem");
+                    clicked => {
+                        App.cmd("wrap", i);
+                    }
+                }
+            }
+            Row {
+                Spin {
+                    label: @tr("Odstęp");
+                    tip: @tr("Odstęp tekstu od obiektu (pt)");
+                    value: App.wrap-dist;
+                    unit: "pt";
+                    w: 72px;
+                    changed-value(v) => {
+                        App.cmd("wrap-dist", v);
+                    }
+                    step(d) => {
+                        App.cmd("wrap-dist-step", d);
+                    }
+                }
+            }
+            Row {
+                Switch {
+                    label: @tr("Po konturze");
+                    tip: @tr("Opływaj kształt (wyłączone – prostokąt ramki)");
+                    on: App.wrap-contour;
+                    toggled => {
+                        App.cmd("wrap-contour", "");
+                    }
+                }
+                RowButton {
+                    icon: Icons.scan;
+                    label: @tr("Wykryj kontur");
+                    tip: @tr("Kontur opływania z przezroczystości albo tła obrazu");
+                    enabled: App.obj-kind == "image";
+                    clicked => {
+                        App.cmd("detect-contour", "");
+                    }
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Wygląd");
+        last: true;
+        ColorPick {
+            big: true;
+            icon: Icons.paint-bucket;
+            current: App.has-fill ? App.fill : #00000000;
+            tip: @tr("Wypełnienie kształtu");
+            apply => {
+                App.cmd("fill", "current");
+            }
+            picked(c) => {
+                App.fill = c;
+                App.cmd("fill", "current");
+            }
+        }
+        ColorPick {
+            big: true;
+            icon: Icons.pen-line;
+            current: App.has-stroke ? App.stroke : #00000000;
+            tip: @tr("Kolor obrysu");
+            apply => {
+                App.cmd("stroke", "current");
+            }
+            picked(c) => {
+                App.stroke = c;
+                App.cmd("stroke", "current");
+            }
+        }
+        Col {
+            Spin {
+                label: @tr("Obrys");
+                tip: @tr("Grubość obrysu (pt)");
+                value: App.stroke-w;
+                unit: "pt";
+                w: 70px;
+                changed-value(v) => {
+                    App.cmd("stroke-w", v);
+                }
+                step(d) => {
+                    App.cmd("stroke-w-step", d);
+                }
+            }
+            Segmented {
+                items: [@tr("Jednolite"), @tr("Gradient"), @tr("Kołowy")];
+                current: App.fill-kind;
+                tip: @tr("Rodzaj wypełnienia");
+                picked(i) => {
+                    App.cmd("fill-kind", i);
+                }
+            }
+            Row {
+                Switch {
+                    label: @tr("Cień");
+                    on: App.shadow;
+                    toggled => {
+                        App.cmd("shadow", "");
+                    }
+                }
+                Switch {
+                    label: @tr("Kreski");
+                    tip: @tr("Obrys przerywany");
+                    on: App.dashed;
+                    toggled => {
+                        App.cmd("dashed", "");
+                    }
+                }
+            }
+        }
+        Col {
+            Dim {
+                text: @tr("Krycie {}%", round(App.opacity * 100));
+            }
+            Slider {
+                width: 100px;
+                value: App.opacity;
+                tip: @tr("Krycie obiektu");
+                moved(v) => {
+                    App.cmd("opacity", v);
+                }
+            }
+            Spin {
+                label: @tr("Narożniki");
+                tip: @tr("Zaokrąglenie narożników prostokąta (pt)");
+                value: App.corner;
+                unit: "pt";
+                w: 64px;
+                changed-value(v) => {
+                    App.cmd("corner", v);
+                }
+                step(d) => {
+                    App.cmd("corner-step", d);
+                }
+            }
+        }
+    }
+}
+
+component RefsTab inherits HorizontalLayout {
+    alignment: start;
+    Group {
+        title: @tr("Spis treści");
+        BigButton {
+            icon: Icons.table-of-contents;
+            label: @tr("Spis treści");
+            tip: @tr("Wstaw spis treści z nagłówków (z numerami stron)");
+            clicked => {
+                App.cmd("toc", "");
+            }
+        }
+        BigButton {
+            icon: Icons.refresh-cw;
+            label: @tr("Aktualizuj");
+            tip: @tr("Odśwież spis treści");
+            clicked => {
+                App.cmd("toc-update", "");
+            }
+        }
+    }
+    Group {
+        title: @tr("Podpisy i nawigacja");
+        last: true;
+        BigButton {
+            icon: Icons.captions;
+            label: @tr("Podpis");
+            tip: @tr("Wstaw podpis rysunku z kolejnym numerem");
+            clicked => {
+                App.cmd("caption", "");
+            }
+        }
+        BigButton {
+            icon: Icons.list-tree;
+            label: @tr("Nawigator");
+            tip: @tr("Panel z konspektem dokumentu");
+            active: App.left-panel == "nav";
+            clicked => {
+                App.cmd("panel", "nav");
+            }
+        }
+    }
+}
+
+component ReviewTab inherits HorizontalLayout {
+    alignment: start;
+    Group {
+        title: @tr("Pisownia");
+        BigButton {
+            icon: Icons.spell-check;
+            label: @tr("Sprawdź");
+            tip: @tr("Przejdź do następnego błędu (F7)");
+            clicked => {
+                App.cmd("spell-next", "");
+            }
+        }
+        Col {
+            Switch {
+                label: @tr("Podczas pisania");
+                tip: @tr("Podkreślaj błędy na bieżąco");
+                on: App.spell-live;
+                toggled => {
+                    App.cmd("spell-live", "");
+                }
+            }
+            RowButton {
+                icon: Icons.languages;
+                label: @tr("Polski");
+                tip: @tr("Język zaznaczonego tekstu: polski");
+                clicked => {
+                    App.cmd("lang", "pl");
+                }
+            }
+            RowButton {
+                icon: Icons.languages;
+                label: @tr("Angielski");
+                tip: @tr("Język zaznaczonego tekstu: angielski");
+                clicked => {
+                    App.cmd("lang", "en");
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Narzędzia");
+        last: true;
+        BigButton {
+            icon: Icons.sigma;
+            label: @tr("Statystyka");
+            tip: @tr("Wyrazy, znaki, akapity i strony");
+            clicked => {
+                App.cmd("stats", "");
+            }
+        }
+        BigButton {
+            icon: Icons.book-a;
+            label: @tr("Słownik");
+            tip: @tr("Słownik użytkownika – dodane wyrazy");
+            clicked => {
+                App.cmd("user-dict", "");
+            }
+        }
+    }
+}
+
+component ViewTab inherits HorizontalLayout {
+    alignment: start;
+    Group {
+        title: @tr("Powiększenie");
+        BigButton {
+            icon: Icons.zoom-out;
+            label: @tr("Pomniejsz");
+            tip: @tr("Pomniejsz (Ctrl+−, Ctrl+kółko)");
+            clicked => {
+                App.cmd("zoom-out", "");
+            }
+        }
+        BigButton {
+            icon: Icons.zoom-in;
+            label: @tr("Powiększ");
+            tip: @tr("Powiększ (Ctrl++, Ctrl+kółko)");
+            clicked => {
+                App.cmd("zoom-in", "");
+            }
+        }
+        Col {
+            RowButton {
+                icon: Icons.scan;
+                label: "100%";
+                clicked => {
+                    App.cmd("zoom", "100");
+                }
+            }
+            RowButton {
+                icon: Icons.move-horizontal;
+                label: @tr("Szerokość strony");
+                clicked => {
+                    App.cmd("zoom", "width");
+                }
+            }
+            RowButton {
+                icon: Icons.file;
+                label: @tr("Cała strona");
+                clicked => {
+                    App.cmd("zoom", "page");
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Pokaż");
+        Col {
+            Switch {
+                label: @tr("Znaki formatowania");
+                on: App.marks;
+                toggled => {
+                    App.cmd("marks", "");
+                }
+            }
+            Switch {
+                label: @tr("Linie pomocnicze");
+                tip: @tr("Marginesy, kolumny i kontury ramek");
+                on: App.guides;
+                toggled => {
+                    App.cmd("guides", "");
+                }
+            }
+            Switch {
+                label: @tr("Nawigator");
+                on: App.left-panel == "nav";
+                toggled => {
+                    App.cmd("panel", "nav");
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Interfejs");
+        last: true;
+        Col {
+            Segmented {
+                items: ["AMOLED", @tr("Grafit"), @tr("Jasny")];
+                current: Theme.mode;
+                tip: @tr("Motyw interfejsu");
+                picked(i) => {
+                    App.cmd("theme", i);
+                }
+            }
+            Switch {
+                label: @tr("Zwinięta wstążka");
+                on: App.ribbon-collapsed;
+                toggled => {
+                    App.cmd("ribbon-collapse", "");
+                }
+            }
+        }
+        BigButton {
+            icon: App.fullscreen ? Icons.minimize : Icons.maximize;
+            label: @tr("Pełny ekran");
+            tip: @tr("Pełny ekran (F11)");
+            active: App.fullscreen;
+            clicked => {
+                App.cmd("fullscreen", "");
+            }
+        }
+        BigButton {
+            icon: Icons.settings;
+            label: @tr("Ustawienia");
+            clicked => {
+                App.cmd("settings", "");
+            }
+        }
+    }
+}
+
+component CustomTab inherits HorizontalLayout {
+    alignment: start;
+    Group {
+        title: @tr("Moje polecenia");
+        last: true;
+        for c in App.custom-tab: BigButton {
+            icon: c.icon;
+            label: c.label;
+            tip: c.hint != "" ? c.label + " (" + c.hint + ")" : c.label;
+            clicked => {
+                App.cmd(c.id, "");
+            }
+        }
+        BigButton {
+            icon: Icons.plus;
+            label: @tr("Dostosuj");
+            tip: @tr("Wybierz polecenia tej karty");
+            clicked => {
+                App.cmd("customize", "tab");
+            }
+        }
+    }
+}
+
+export component RibbonTabs inherits Rectangle {
+    height: 34px * Theme.scale;
+    HorizontalLayout {
+        padding-left: 8px;
+        padding-right: 8px;
+        spacing: 2px;
+        alignment: start;
+        Rectangle {
+            width: ft.preferred-width + 24px;
+            height: 26px * Theme.scale;
+            y: (parent.height - self.height) / 2;
+            border-radius: Theme.r-small;
+            background: fta.pressed ? Theme.accent.darker(0.15) : Theme.accent;
+            ft := Text {
+                text: @tr("Plik");
+                font-family: Theme.font;
+                font-size: Theme.fs;
+                font-weight: 600;
+                color: Theme.accent-text;
+            }
+            fta := TipArea {
+                tip: @tr("Nowy, otwórz, zapisz, eksport, ustawienia (Alt+F)");
+                clicked => {
+                    App.cmd("backstage", "");
+                }
+            }
+        }
+        for t[i] in [@tr("Narzędzia główne"), @tr("Wstawianie"), @tr("Projekt"), @tr("Układ"), @tr("Kształty tekstu"), @tr("Odwołania"), @tr("Recenzja"), @tr("Widok"), @tr("Moja karta")]: Rectangle {
+            width: tt.preferred-width + 22px;
+            tt := Text {
+                text: t;
+                font-family: Theme.font;
+                font-size: Theme.fs;
+                font-weight: App.tab == i ? 600 : 400;
+                color: App.tab == i ? Theme.text : tta.has-hover ? Theme.text : Theme.text-dim;
+            }
+            if i == 4: Rectangle {
+                x: parent.width - 9px;
+                y: 7px;
+                width: 5px;
+                height: 5px;
+                border-radius: 2.5px;
+                background: Theme.accent;
+            }
+            Rectangle {
+                y: parent.height - 3px;
+                height: 2px;
+                width: App.tab == i ? parent.width - 14px : 0;
+                border-radius: 1px;
+                background: Theme.accent;
+                animate width { duration: 140ms; easing: ease-out; }
+            }
+            tta := TipArea {
+                tip: i == 4 ? @tr("Kształty tekstu: tekst w dowolnym konturze z węzłów, opływanie, łączenie ramek") : "";
+                clicked => {
+                    if (App.ribbon-collapsed && App.tab == i) {
+                        App.ribbon-peek = !App.ribbon-peek;
+                    } else {
+                        App.tab = i;
+                        App.ribbon-peek = App.ribbon-collapsed;
+                    }
+                }
+            }
+        }
+    }
+}
+
+export component RibbonBody inherits Rectangle {
+    height: Theme.ribbon-h;
+    background: Theme.panel;
+    Flickable {
+        content-width: max(self.width, hl.preferred-width);
+        content-height: self.height;
+        hl := HorizontalLayout {
+            height: Theme.ribbon-h;
+            padding-left: 6px;
+            padding-right: 6px;
+            alignment: start;
+            if App.tab == 0: HomeTab {}
+            if App.tab == 1: InsertTab {}
+            if App.tab == 2: DesignTab {}
+            if App.tab == 3: LayoutTab {}
+            if App.tab == 4: ShapesTab {}
+            if App.tab == 5: RefsTab {}
+            if App.tab == 6: ReviewTab {}
+            if App.tab == 7: ViewTab {}
+            if App.tab == 8: CustomTab {}
+        }
+    }
+}

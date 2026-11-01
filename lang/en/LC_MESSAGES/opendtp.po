@@ -1,0 +1,2329 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: OpenDTP\n"
+"Language: en\n"
+"X-Language-Name: English\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Wróć do dokumentu (Esc)"
+msgstr "Back to the document (Esc)"
+
+msgid "Nowy"
+msgstr "New"
+
+msgid "Otwórz"
+msgstr "Open"
+
+msgid "Zapisz"
+msgstr "Save"
+
+msgid "Zapisz jako"
+msgstr "Save as"
+
+msgid "Eksportuj"
+msgstr "Export"
+
+msgid "Drukuj"
+msgstr "Print"
+
+msgid "Informacje"
+msgstr "Info"
+
+msgid "Ustawienia"
+msgstr "Settings"
+
+msgid "O programie"
+msgstr "About"
+
+msgid "Nowy dokument"
+msgstr "New document"
+
+msgid "Pusty dokument"
+msgstr "Blank document"
+
+msgid "Czysta strona A4"
+msgstr "Empty A4 page"
+
+msgid "Raport"
+msgstr "Report"
+
+msgid "Tytuł, spis treści, nagłówki, stopka"
+msgstr "Title, table of contents, headings, footer"
+
+msgid "List"
+msgstr "Letter"
+
+msgid "Pismo z nadawcą i adresatem"
+msgstr "Letter with sender and recipient"
+
+msgid "Gazetka"
+msgstr "Newsletter"
+
+msgid "Trzy kolumny, obrazy, opływanie"
+msgstr "Three columns, images, text wrap"
+
+msgid "Ulotka"
+msgstr "Flyer"
+
+msgid "Kształty tekstu i duża typografia"
+msgstr "Text shapes and large typography"
+
+msgid "Przewodnik"
+msgstr "Tour"
+
+msgid "Pokaz możliwości OpenDTP"
+msgstr "A showcase of OpenDTP features"
+
+msgid "OSTATNIE DOKUMENTY"
+msgstr "RECENT DOCUMENTS"
+
+msgid "Przeglądaj…"
+msgstr "Browse…"
+
+msgid "OpenDTP, Word (DOCX), tekst, Markdown (Ctrl+O)"
+msgstr "OpenDTP, Word (DOCX), text, Markdown (Ctrl+O)"
+
+msgid "OSTATNIE"
+msgstr "RECENT"
+
+msgid "Tu pojawią się ostatnio otwierane pliki."
+msgstr "Recently opened files will appear here."
+
+msgid "Usuń z listy"
+msgstr "Remove from list"
+
+msgid "Microsoft Word (.docx)"
+msgstr "Microsoft Word (.docx)"
+
+msgid "Edytowalny dokument Worda: style, listy, obrazy, kształty i opływanie w tych samych miejscach"
+msgstr "Editable Word document: styles, lists, images, shapes and wrapping in the same places"
+
+msgid "PDF (.pdf)"
+msgstr "PDF (.pdf)"
+
+msgid "Dokładnie jak na ekranie, czcionki osadzone, tekst do zaznaczania"
+msgstr "Exactly as on screen, embedded fonts, selectable text"
+
+msgid "Strona internetowa (.html)"
+msgstr "Web page (.html)"
+
+msgid "Tekst z formatowaniem, nagłówki i listy"
+msgstr "Formatted text, headings and lists"
+
+msgid "Markdown (.md)"
+msgstr "Markdown (.md)"
+
+msgid "Tekst z nagłówkami, listami i wyróżnieniami"
+msgstr "Text with headings, lists and emphasis"
+
+msgid "Tekst (.txt)"
+msgstr "Text (.txt)"
+
+msgid "Sam tekst bez formatowania"
+msgstr "Plain text without formatting"
+
+msgid "Obraz strony (.png)"
+msgstr "Page image (.png)"
+
+msgid "Bieżąca strona w 300 dpi"
+msgstr "Current page at 300 dpi"
+
+msgid "KSZTAŁTY TEKSTU W DOCX"
+msgstr "TEXT SHAPES IN DOCX"
+
+msgid "Dokładne wiersze (wygląd 1:1)"
+msgstr "Exact lines (1:1 look)"
+
+msgid "Edytowalne pole tekstowe"
+msgstr "Editable text box"
+
+msgid "Word nie wpisuje tekstu w dowolny kształt – wybierz wierność wyglądu albo łatwą edycję"
+msgstr "Word cannot fit text into an arbitrary shape – choose exact look or easy editing"
+
+msgid "Dokładne wiersze: każdy wiersz kształtu to osobne pole w tym samym miejscu. Edytowalne pole: tekst w ramce kształtu, Word przełamie go po swojemu."
+msgstr "Exact lines: every line of the shape is a separate box in the same place. Editable box: text in the shape's frame, Word breaks lines its own way."
+
+msgid "Informacje o dokumencie"
+msgstr "Document info"
+
+msgid "Tytuł"
+msgstr "Title"
+
+msgid "Autor"
+msgstr "Author"
+
+msgid "STATYSTYKA"
+msgstr "STATISTICS"
+
+msgid "WYGLĄD"
+msgstr "APPEARANCE"
+
+msgid "Język interfejsu"
+msgstr "Interface language"
+
+msgid "Zmiana po ponownym uruchomieniu"
+msgstr "Takes effect after restart"
+
+msgid "Jak Windows"
+msgstr "Like Windows"
+
+msgid "Motyw"
+msgstr "Theme"
+
+msgid "Grafit"
+msgstr "Graphite"
+
+msgid "Jasny"
+msgstr "Light"
+
+msgid "Kolor akcentu"
+msgstr "Accent colour"
+
+msgid "Własny kolor akcentu"
+msgstr "Custom accent colour"
+
+msgid "Zaokrąglenia"
+msgstr "Corners"
+
+msgid "Ostre"
+msgstr "Sharp"
+
+msgid "Zwykłe"
+msgstr "Normal"
+
+msgid "Mocne"
+msgstr "Round"
+
+msgid "Wielkość interfejsu"
+msgstr "Interface size"
+
+msgid "Skala przycisków i tekstu interfejsu"
+msgstr "Scale of buttons and interface text"
+
+msgid "Gęsty układ"
+msgstr "Compact layout"
+
+msgid "Jednostki"
+msgstr "Units"
+
+msgid "cale"
+msgstr "inches"
+
+msgid "PISANIE"
+msgstr "TYPING"
+
+msgid "Sprawdzanie pisowni na bieżąco"
+msgstr "Check spelling as you type"
+
+msgid "Inteligentne cudzysłowy"
+msgstr "Smart quotes"
+
+msgid "„polskie” i ’apostrofy’"
+msgstr "“typographic” quotes and ’apostrophes’"
+
+msgid "Autokorekta"
+msgstr "AutoCorrect"
+
+msgid "-- → –, ... → …, (c) → ©, -> → →"
+msgstr "-- → –, ... → …, (c) → ©, -> → →"
+
+msgid "Wielka litera na początku zdania"
+msgstr "Capitalise first letter of sentences"
+
+msgid "Automatyczne listy"
+msgstr "Automatic lists"
+
+msgid "„- ” i „1. ” na początku akapitu"
+msgstr "“- ” and “1. ” at the start of a paragraph"
+
+msgid "Przyciąganie obiektów"
+msgstr "Object snapping"
+
+msgid "Do marginesów, środka strony i innych obiektów"
+msgstr "To margins, page centre and other objects"
+
+msgid "Czcionka nowych dokumentów"
+msgstr "Font for new documents"
+
+msgid "Autor dokumentów"
+msgstr "Document author"
+
+msgid "PLIKI"
+msgstr "FILES"
+
+msgid "Autozapis kopii"
+msgstr "Backup autosave"
+
+msgid "Kopia do odzyskania po awarii"
+msgstr "Copy to recover after a crash"
+
+msgid "Wył."
+msgstr "Off"
+
+msgid "Przywracaj ostatni dokument"
+msgstr "Reopen last document"
+
+msgid "PASEK I WSTĄŻKA"
+msgstr "TOOLBAR AND RIBBON"
+
+msgid "Pasek szybkiego dostępu"
+msgstr "Quick access toolbar"
+
+msgid "Dostosuj…"
+msgstr "Customise…"
+
+msgid "Karta „Moja karta”"
+msgstr "“My tab” tab"
+
+msgid "Słownik użytkownika"
+msgstr "User dictionary"
+
+msgid "Pokaż…"
+msgstr "Show…"
+
+msgid "SZTUCZNA INTELIGENCJA"
+msgstr "ARTIFICIAL INTELLIGENCE"
+
+msgid "Dostawca"
+msgstr "Provider"
+
+msgid "OpenRouter daje dostęp do setek modeli jednym kluczem"
+msgstr "OpenRouter gives access to hundreds of models with one key"
+
+msgid "Dostawca modeli językowych"
+msgstr "Language model provider"
+
+msgid "Klucz API"
+msgstr "API key"
+
+msgid "Zapisywany zaszyfrowany (Windows DPAPI), tylko na tym komputerze"
+msgstr "Stored encrypted (Windows DPAPI), only on this computer"
+
+msgid "•••• zapisany – wpisz nowy, aby zmienić"
+msgstr "•••• saved – type a new one to change it"
+
+msgid "Wklej klucz API"
+msgstr "Paste the API key"
+
+msgid "Adres API"
+msgstr "API address"
+
+msgid "Serwer zgodny z OpenAI, np. http://localhost:11434/v1"
+msgstr "OpenAI-compatible server, e.g. http://localhost:11434/v1"
+
+msgid "Model"
+msgstr "Model"
+
+msgid "Wybierz model"
+msgstr "Choose a model"
+
+msgid "Lista modeli pobrana od dostawcy"
+msgstr "Model list fetched from the provider"
+
+msgid "Pobierz listę"
+msgstr "Fetch list"
+
+msgid "Pobierz modele dostępne dla tego klucza"
+msgstr "Fetch the models available for this key"
+
+msgid "Własny identyfikator modelu"
+msgstr "Custom model ID"
+
+msgid "Gdy modelu nie ma na liście"
+msgstr "When the model is not on the list"
+
+msgid "Temperatura"
+msgstr "Temperature"
+
+msgid "Niżej – rzeczowo i przewidywalnie, wyżej – swobodniej i kreatywniej"
+msgstr "Lower – factual and predictable, higher – freer and more creative"
+
+msgid "Temperatura modelu (0–2)"
+msgstr "Model temperature (0–2)"
+
+msgid "Generuj dokument…"
+msgstr "Generate document…"
+
+msgid "AKTUALIZACJE"
+msgstr "UPDATES"
+
+msgid "Sprawdzaj w tle"
+msgstr "Check in the background"
+
+msgid "Nowe wersje z redzikowski.com"
+msgstr "New versions from redzikowski.com"
+
+msgid "Instaluj bez pytania"
+msgstr "Install without asking"
+
+msgid "Sprawdź teraz"
+msgstr "Check now"
+
+msgid "Zaktualizuj"
+msgstr "Update"
+
+msgid "Wersja {}"
+msgstr "Version {}"
+
+msgid " · przenośna"
+msgstr " · portable"
+
+msgid "Edytor tekstu i skład dokumentów: kształty tekstu z węzłami, opływanie, kolumny, wykresy, eksport do Worda i PDF."
+msgstr "Word processor and document layout: text shapes with nodes, text wrap, columns, charts, export to Word and PDF."
+
+msgid "Strona autora"
+msgstr "Author's website"
+
+msgid "Postaw kawę"
+msgstr "Buy me a coffee"
+
+msgid "Sprawdź aktualizacje"
+msgstr "Check for updates"
+
+msgid "Słowniki: SJP.PL (pl), SCOWL (en). Ikony: Lucide (ISC). Interfejs: Slint."
+msgstr "Dictionaries: SJP.PL (pl), SCOWL (en). Icons: Lucide (ISC). UI: Slint."
+
+msgid "Dostosuj pasek szybkiego dostępu"
+msgstr "Customise quick access toolbar"
+
+msgid "Szukaj poleceń…"
+msgstr "Search commands…"
+
+msgid "Paleta poleceń – wszystkie funkcje programu (Ctrl+K)"
+msgstr "Command palette – every feature of the app (Ctrl+K)"
+
+msgid "Generuj dokument z AI"
+msgstr "Generate a document with AI"
+
+msgid "Przełącz motyw: AMOLED / grafit / jasny"
+msgstr "Switch theme: AMOLED / graphite / light"
+
+msgid "Rozwiń wstążkę (Ctrl+F1)"
+msgstr "Expand the ribbon (Ctrl+F1)"
+
+msgid "Zwiń wstążkę (Ctrl+F1)"
+msgstr "Collapse the ribbon (Ctrl+F1)"
+
+msgid "Statystyka dokumentu"
+msgstr "Document statistics"
+
+msgid "Następny błąd pisowni (F7)"
+msgstr "Next spelling error (F7)"
+
+msgid "Nawigator"
+msgstr "Navigator"
+
+msgid "Znaki formatowania"
+msgstr "Formatting marks"
+
+msgid "Pomniejsz"
+msgstr "Zoom out"
+
+msgid "Powiększenie"
+msgstr "Zoom"
+
+msgid "Powiększ"
+msgstr "Zoom in"
+
+msgid "Wpisz polecenie, np. „kolumny”, „kształt”, „PDF”…"
+msgstr "Type a command, e.g. “columns”, “shape”, “PDF”…"
+
+msgid "Zamknij (Esc)"
+msgstr "Close (Esc)"
+
+msgid "Moja karta"
+msgstr "My tab"
+
+msgid "Zaznacz polecenia, które mają być pod ręką."
+msgstr "Tick the commands you want at hand."
+
+msgid "Przywróć domyślne"
+msgstr "Restore defaults"
+
+msgid "Gotowe"
+msgstr "Done"
+
+msgid "Hiperłącze"
+msgstr "Hyperlink"
+
+msgid "Usuń łącze"
+msgstr "Remove link"
+
+msgid "Wstaw"
+msgstr "Insert"
+
+msgid "Opisz, jaki dokument ma powstać – temat, odbiorców, układ, ton. AI napisze treść i złoży ją z formatowaniem: nagłówki, listy, wykresy, kształty tekstu, kolumny."
+msgstr "Describe the document – topic, audience, layout, tone. AI will write the content and lay it out with formatting: headings, lists, charts, text shapes, columns."
+
+msgid "Krótki"
+msgstr "Short"
+
+msgid "Średni"
+msgstr "Medium"
+
+msgid "Obszerny"
+msgstr "Long"
+
+msgid "Długość dokumentu"
+msgstr "Document length"
+
+msgid "Wstaw w miejscu kursora"
+msgstr "Insert at the cursor"
+
+msgid "Gdzie umieścić wynik"
+msgstr "Where to put the result"
+
+msgid "Raport kwartalny firmy z wykresami"
+msgstr "Quarterly company report with charts"
+
+msgid "Ulotka na otwarcie kawiarni"
+msgstr "Flyer for a café opening"
+
+msgid "Gazetka szkolna w trzech kolumnach"
+msgstr "School newsletter in three columns"
+
+msgid "Wstaw przykład"
+msgstr "Insert example"
+
+msgid "Generowanie… to może potrwać do minuty"
+msgstr "Generating… this may take up to a minute"
+
+msgid "Ustawienia AI"
+msgstr "AI settings"
+
+msgid "Generowanie…"
+msgstr "Generating…"
+
+msgid "Generuj"
+msgstr "Generate"
+
+msgid "Statystyka"
+msgstr "Statistics"
+
+msgid "Zamknij"
+msgstr "Close"
+
+msgid "Niezapisane zmiany"
+msgstr "Unsaved changes"
+
+msgid "Anuluj"
+msgstr "Cancel"
+
+msgid "Nie zapisuj"
+msgstr "Don't save"
+
+msgid "Zamknij panel"
+msgstr "Close panel"
+
+msgid "Brak nagłówków. Użyj stylów „Tytuł” i „Nagłówek 1–3”, a pojawią się tutaj."
+msgstr "No headings. Use the “Title” and “Heading 1–3” styles and they will appear here."
+
+msgid "Przejdź do: {}"
+msgstr "Go to: {}"
+
+msgid "Style"
+msgstr "Styles"
+
+msgid "Aktualizuj styl według zaznaczenia"
+msgstr "Update style to match selection"
+
+msgid "Zastosuj styl: {}"
+msgstr "Apply style: {}"
+
+msgid "Nowy styl z zaznaczenia"
+msgstr "New style from selection"
+
+msgid "Słownik jest pusty. Wyrazy dodasz z menu prawego przycisku na podkreślonym słowie."
+msgstr "The dictionary is empty. Add words from the right-click menu on an underlined word."
+
+msgid "Usuń ze słownika"
+msgstr "Remove from dictionary"
+
+msgid "Znajdź i zamień"
+msgstr "Find and replace"
+
+msgid "Szukaj…"
+msgstr "Search…"
+
+msgid "Zamień na…"
+msgstr "Replace with…"
+
+msgid "Wielkość liter"
+msgstr "Match case"
+
+msgid "Całe wyrazy"
+msgstr "Whole words"
+
+msgid "Poprzedni"
+msgstr "Previous"
+
+msgid "Następny"
+msgstr "Next"
+
+msgid "Zamień"
+msgstr "Replace"
+
+msgid "Zamień wszystko"
+msgstr "Replace all"
+
+msgid "Obiekt"
+msgstr "Object"
+
+msgid "POŁOŻENIE I ROZMIAR"
+msgstr "POSITION AND SIZE"
+
+msgid "Odległość od lewej krawędzi strony"
+msgstr "Distance from the left edge of the page"
+
+msgid "Odległość od górnej krawędzi strony"
+msgstr "Distance from the top edge of the page"
+
+msgid "Szerokość"
+msgstr "Width"
+
+msgid "Wysokość"
+msgstr "Height"
+
+msgid "Duplikuj"
+msgstr "Duplicate"
+
+msgid "Duplikuj obiekt (Ctrl+D)"
+msgstr "Duplicate object (Ctrl+D)"
+
+msgid "Odblokuj"
+msgstr "Unlock"
+
+msgid "Zablokuj"
+msgstr "Lock"
+
+msgid "Usuń"
+msgstr "Delete"
+
+msgid "OBRAZ"
+msgstr "IMAGE"
+
+msgid "Wypełnij kształt"
+msgstr "Fill shape"
+
+msgid "Zmieść cały"
+msgstr "Fit whole"
+
+msgid "Dopasowanie obrazu do kształtu"
+msgstr "Image fit in the shape"
+
+msgid "Wykryj kontur"
+msgstr "Detect outline"
+
+msgid "Zmień obraz"
+msgstr "Change image"
+
+msgid "WYKRES"
+msgstr "CHART"
+
+msgid "Kolumny"
+msgstr "Columns"
+
+msgid "Słupki"
+msgstr "Bars"
+
+msgid "Linie"
+msgstr "Lines"
+
+msgid "Pola"
+msgstr "Areas"
+
+msgid "Koło"
+msgstr "Pie"
+
+msgid "Pierścień"
+msgstr "Ring"
+
+msgid "Tytuł wykresu"
+msgstr "Chart title"
+
+msgid "Dane: pierwszy wiersz – nazwy serii, potem etykieta i wartości oddzielone średnikiem."
+msgstr "Data: first row – series names, then a label and values separated by semicolons."
+
+msgid "Legenda"
+msgstr "Legend"
+
+msgid "Wartości"
+msgstr "Values"
+
+msgid "Zastosuj dane"
+msgstr "Apply data"
+
+msgid "TEKST NA ŚCIEŻCE"
+msgstr "TEXT ON PATH"
+
+msgid "Tekst biegnący po krzywej"
+msgstr "Text running along a curve"
+
+msgid "Przesunięcie wzdłuż ścieżki"
+msgstr "Offset along the path"
+
+msgid "Początek tekstu na krzywej"
+msgstr "Start of the text on the curve"
+
+msgid "Formatowanie (czcionka, kolor, rozmiar) – z karty Narzędzia główne, gdy obiekt jest zaznaczony. Kształt ścieżki zmienisz węzłami."
+msgstr "Formatting (font, colour, size) – from the Home tab while the object is selected. Change the path shape with nodes."
+
+msgid "NAZWA"
+msgstr "NAME"
+
+msgid "Nazwa obiektu"
+msgstr "Object name"
+
+msgid "Kolory motywu i podstawowe"
+msgstr "Theme and standard colours"
+
+msgid "Brak"
+msgstr "None"
+
+msgid "Bez koloru"
+msgstr "No colour"
+
+msgid "Własny kolor szesnastkowo"
+msgstr "Custom colour (hex)"
+
+msgid "Użyj"
+msgstr "Use"
+
+msgid "Użyj wpisanego koloru"
+msgstr "Use the typed colour"
+
+msgid "Czcionka – lista krojów zainstalowanych w systemie"
+msgstr "Font – typefaces installed in the system"
+
+msgid "Szukaj czcionki…"
+msgstr "Search fonts…"
+
+msgid "Ostatnio używane"
+msgstr "Recently used"
+
+msgid "Rozmiar czcionki (pt)"
+msgstr "Font size (pt)"
+
+msgid "Styl: {}"
+msgstr "Style: {}"
+
+msgid "Poprzednie style"
+msgstr "Previous styles"
+
+msgid "Kolejne style"
+msgstr "More styles"
+
+msgid "Panel stylów"
+msgstr "Styles panel"
+
+msgid "Bez listy"
+msgstr "No list"
+
+msgid "• Punktor"
+msgstr "• Bullet"
+
+msgid "– Myślnik"
+msgstr "– Dash"
+
+msgid "✓ Znacznik"
+msgstr "✓ Check mark"
+
+msgid "➔ Strzałka"
+msgstr "➔ Arrow"
+
+msgid "1. Numeracja"
+msgstr "1. Numbering"
+
+msgid "1) Numeracja z nawiasem"
+msgstr "1) Numbering with parenthesis"
+
+msgid "a) Litery małe"
+msgstr "a) Lowercase letters"
+
+msgid "A. Litery wielkie"
+msgstr "A. Uppercase letters"
+
+msgid "i. Rzymskie małe"
+msgstr "i. Lowercase Roman"
+
+msgid "I. Rzymskie wielkie"
+msgstr "I. Uppercase Roman"
+
+msgid "Zacznij numerację od 1"
+msgstr "Restart numbering at 1"
+
+msgid "Dokładnie jak rozmiar pisma"
+msgstr "Exactly the font size"
+
+msgid "Dodaj odstęp przed akapitem"
+msgstr "Add space before paragraph"
+
+msgid "Usuń odstęp po akapicie"
+msgstr "Remove space after paragraph"
+
+msgid "Jak w tekście"
+msgstr "As typed"
+
+msgid "WERSALIKI"
+msgstr "ALL CAPS"
+
+msgid "Kapitaliki"
+msgstr "Small caps"
+
+msgid "Zamień na WIELKIE litery"
+msgstr "Change to UPPERCASE"
+
+msgid "zamień na małe litery"
+msgstr "change to lowercase"
+
+msgid "Każdy Wyraz Wielką Literą"
+msgstr "Capitalise Each Word"
+
+msgid "Jak w zdaniu"
+msgstr "Sentence case"
+
+msgid "Pojedyncze"
+msgstr "Single"
+
+msgid "Podwójne"
+msgstr "Double"
+
+msgid "Kropkowane"
+msgstr "Dotted"
+
+msgid "Faliste"
+msgstr "Wavy"
+
+msgid "Bez podkreślenia"
+msgstr "No underline"
+
+msgid "Prostokąt"
+msgstr "Rectangle"
+
+msgid "Zaokrąglony prostokąt"
+msgstr "Rounded rectangle"
+
+msgid "Elipsa / koło"
+msgstr "Ellipse / circle"
+
+msgid "Trójkąt"
+msgstr "Triangle"
+
+msgid "Romb"
+msgstr "Diamond"
+
+msgid "Pięciokąt"
+msgstr "Pentagon"
+
+msgid "Sześciokąt"
+msgstr "Hexagon"
+
+msgid "Ośmiokąt"
+msgstr "Octagon"
+
+msgid "Gwiazda"
+msgstr "Star"
+
+msgid "Gwiazda ośmioramienna"
+msgstr "Eight-pointed star"
+
+msgid "Serce"
+msgstr "Heart"
+
+msgid "Fala"
+msgstr "Wave"
+
+msgid "Łuk"
+msgstr "Arch"
+
+msgid "Równoległobok"
+msgstr "Parallelogram"
+
+msgid "Trapez"
+msgstr "Trapezoid"
+
+msgid "Strzałka"
+msgstr "Arrow"
+
+msgid "Szewron"
+msgstr "Chevron"
+
+msgid "Krzyż"
+msgstr "Cross"
+
+msgid "Dymek"
+msgstr "Speech bubble"
+
+msgid "Pierścień (z otworem)"
+msgstr "Ring (with a hole)"
+
+msgid "Linia"
+msgstr "Line"
+
+msgid "Łuk otwarty"
+msgstr "Open arc"
+
+msgid "Rysuj własny (węzły)…"
+msgstr "Draw your own (nodes)…"
+
+msgid "Kolumnowy"
+msgstr "Column"
+
+msgid "Słupkowy"
+msgstr "Bar"
+
+msgid "Liniowy"
+msgstr "Line"
+
+msgid "Warstwowy"
+msgstr "Area"
+
+msgid "Kołowy"
+msgstr "Pie"
+
+msgid "Pierścieniowy"
+msgstr "Doughnut"
+
+msgid "prawa autorskie"
+msgstr "copyright"
+
+msgid "znak zastrzeżony"
+msgstr "registered"
+
+msgid "znak towarowy"
+msgstr "trademark"
+
+msgid "paragraf"
+msgstr "section"
+
+msgid "akapit"
+msgstr "pilcrow"
+
+msgid "krzyżyk"
+msgstr "dagger"
+
+msgid "punktor"
+msgstr "bullet"
+
+msgid "wielokropek"
+msgstr "ellipsis"
+
+msgid "półpauza"
+msgstr "en dash"
+
+msgid "pauza"
+msgstr "em dash"
+
+msgid "cudzysłów dolny"
+msgstr "low quote"
+
+msgid "cudzysłów górny"
+msgstr "high quote"
+
+msgid "cudzysłów francuski"
+msgstr "guillemet"
+
+msgid "stopień"
+msgstr "degree"
+
+msgid "razy"
+msgstr "times"
+
+msgid "Twarda spacja (Ctrl+Shift+Spacja)"
+msgstr "Non-breaking space (Ctrl+Shift+Space)"
+
+msgid "Miękki dywiz"
+msgstr "Soft hyphen"
+
+msgid "Numer strony"
+msgstr "Page number"
+
+msgid "Liczba stron"
+msgstr "Page count"
+
+msgid "Data (aktualizowana)"
+msgstr "Date (updating)"
+
+msgid "Godzina"
+msgstr "Time"
+
+msgid "Tytuł dokumentu"
+msgstr "Document title"
+
+msgid "Dzisiejsza data jako tekst"
+msgstr "Today's date as text"
+
+msgid "Kwadrat  ·  210 × 210 mm"
+msgstr "Square  ·  210 × 210 mm"
+
+msgid "Normalne  ·  25 mm"
+msgstr "Normal  ·  25 mm"
+
+msgid "Wąskie  ·  12,7 mm"
+msgstr "Narrow  ·  12.7 mm"
+
+msgid "Umiarkowane  ·  19 / 25 mm"
+msgstr "Moderate  ·  19 / 25 mm"
+
+msgid "Szerokie  ·  38 mm"
+msgstr "Wide  ·  38 mm"
+
+msgid "Książkowe  ·  20 / 30 mm"
+msgstr "Book  ·  20 / 30 mm"
+
+msgid "Bez marginesów (plakat)"
+msgstr "No margins (poster)"
+
+msgid "Bez opływania (przed tekstem)"
+msgstr "No wrap (in front of text)"
+
+msgid "Wokół – z obu stron"
+msgstr "Around – both sides"
+
+msgid "Tylko po lewej stronie"
+msgstr "Left side only"
+
+msgid "Tylko po prawej stronie"
+msgstr "Right side only"
+
+msgid "Po stronie z większym miejscem"
+msgstr "Largest side"
+
+msgid "Nad i pod obiektem"
+msgstr "Top and bottom"
+
+msgid "Za tekstem"
+msgstr "Behind text"
+
+msgid "Szerokość strony"
+msgstr "Page width"
+
+msgid "Cała strona"
+msgstr "Whole page"
+
+msgid "AI"
+msgstr "AI"
+
+msgid "Generuj dokument z AI na podstawie opisu"
+msgstr "Generate a document with AI from a description"
+
+msgid "Schowek"
+msgstr "Clipboard"
+
+msgid "Wklej"
+msgstr "Paste"
+
+msgid "Wklej (Ctrl+V)"
+msgstr "Paste (Ctrl+V)"
+
+msgid "Wytnij"
+msgstr "Cut"
+
+msgid "Wytnij (Ctrl+X)"
+msgstr "Cut (Ctrl+X)"
+
+msgid "Kopiuj"
+msgstr "Copy"
+
+msgid "Kopiuj (Ctrl+C)"
+msgstr "Copy (Ctrl+C)"
+
+msgid "Malarz"
+msgstr "Painter"
+
+msgid "Malarz formatów – skopiuj formatowanie i kliknij tekst docelowy (Ctrl+Shift+C / Ctrl+Shift+V)"
+msgstr "Format painter – copy formatting and click the target text (Ctrl+Shift+C / Ctrl+Shift+V)"
+
+msgid "Czcionka"
+msgstr "Font"
+
+msgid "Powiększ czcionkę (Ctrl+])"
+msgstr "Grow font (Ctrl+])"
+
+msgid "Pomniejsz czcionkę (Ctrl+[)"
+msgstr "Shrink font (Ctrl+[)"
+
+msgid "Wyczyść formatowanie znaków (Ctrl+Spacja)"
+msgstr "Clear character formatting (Ctrl+Space)"
+
+msgid "Pogrubienie (Ctrl+B)"
+msgstr "Bold (Ctrl+B)"
+
+msgid "Kursywa (Ctrl+I)"
+msgstr "Italic (Ctrl+I)"
+
+msgid "Podkreślenie (Ctrl+U)"
+msgstr "Underline (Ctrl+U)"
+
+msgid "Rodzaj podkreślenia"
+msgstr "Underline style"
+
+msgid "Przekreślenie"
+msgstr "Strikethrough"
+
+msgid "Indeks górny (Ctrl+Shift+=)"
+msgstr "Superscript (Ctrl+Shift+=)"
+
+msgid "Indeks dolny (Ctrl+=)"
+msgstr "Subscript (Ctrl+=)"
+
+msgid "Wersaliki, kapitaliki i zmiana wielkości liter"
+msgstr "All caps, small caps and change case"
+
+msgid "Kolor czcionki"
+msgstr "Font colour"
+
+msgid "Kolor wyróżnienia tekstu"
+msgstr "Text highlight colour"
+
+msgid "Akapit"
+msgstr "Paragraph"
+
+msgid "Punktory (listy nienumerowane)"
+msgstr "Bullets (unnumbered lists)"
+
+msgid "Numeracja"
+msgstr "Numbering"
+
+msgid "Zmniejsz wcięcie / poziom listy (Shift+Tab)"
+msgstr "Decrease indent / list level (Shift+Tab)"
+
+msgid "Zwiększ wcięcie / poziom listy (Tab)"
+msgstr "Increase indent / list level (Tab)"
+
+msgid "Pokaż znaki formatowania (Ctrl+*)"
+msgstr "Show formatting marks (Ctrl+*)"
+
+msgid "Do lewej (Ctrl+L)"
+msgstr "Align left (Ctrl+L)"
+
+msgid "Wyśrodkuj (Ctrl+E)"
+msgstr "Centre (Ctrl+E)"
+
+msgid "Do prawej (Ctrl+R)"
+msgstr "Align right (Ctrl+R)"
+
+msgid "Wyjustuj (Ctrl+J)"
+msgstr "Justify (Ctrl+J)"
+
+msgid "Interlinia i odstępy akapitu"
+msgstr "Line and paragraph spacing"
+
+msgid "Cieniowanie akapitu"
+msgstr "Paragraph shading"
+
+msgid "Edycja"
+msgstr "Editing"
+
+msgid "Znajdź"
+msgstr "Find"
+
+msgid "Znajdź (Ctrl+F)"
+msgstr "Find (Ctrl+F)"
+
+msgid "Zamień (Ctrl+H)"
+msgstr "Replace (Ctrl+H)"
+
+msgid "Zaznacz wszystko"
+msgstr "Select all"
+
+msgid "Zaznacz cały tekst (Ctrl+A)"
+msgstr "Select all text (Ctrl+A)"
+
+msgid "Generuj z AI"
+msgstr "Generate with AI"
+
+msgid "Opisz dokument, a sztuczna inteligencja go napisze i złoży z formatowaniem"
+msgstr "Describe a document and AI will write and lay it out with formatting"
+
+msgid "Strony"
+msgstr "Pages"
+
+msgid "Pusta strona"
+msgstr "Blank page"
+
+msgid "Dodaj pustą stronę na obiekty"
+msgstr "Add a blank page for objects"
+
+msgid "Podział strony"
+msgstr "Page break"
+
+msgid "Podział strony (Ctrl+Enter)"
+msgstr "Page break (Ctrl+Enter)"
+
+msgid "Podział kolumny"
+msgstr "Column break"
+
+msgid "Następny tekst od nowej kolumny (Ctrl+Shift+Enter)"
+msgstr "Continue text in a new column (Ctrl+Shift+Enter)"
+
+msgid "Ilustracje"
+msgstr "Illustrations"
+
+msgid "Obraz"
+msgstr "Image"
+
+msgid "Wstaw obraz z pliku (PNG, JPEG, WebP, GIF, BMP)"
+msgstr "Insert an image from a file (PNG, JPEG, WebP, GIF, BMP)"
+
+msgid "Kształt"
+msgstr "Shape"
+
+msgid "Wstaw kształt – przeciągnij na stronie, aby go narysować"
+msgstr "Insert a shape – drag on the page to draw it"
+
+msgid "Wykres"
+msgstr "Chart"
+
+msgid "Wstaw wykres z edytowalnymi danymi"
+msgstr "Insert a chart with editable data"
+
+msgid "Tekst"
+msgstr "Text"
+
+msgid "Ramka tekstowa"
+msgstr "Text frame"
+
+msgid "Narysuj ramkę tekstową (przeciągnij na stronie)"
+msgstr "Draw a text frame (drag on the page)"
+
+msgid "Kształt tekstu"
+msgstr "Text shape"
+
+msgid "Tekst wpisany w kształt – opływa treść strony"
+msgstr "Text fitted into a shape – page text wraps around it"
+
+msgid "Tekst na ścieżce"
+msgstr "Text on path"
+
+msgid "Inicjał"
+msgstr "Drop cap"
+
+msgid "Pierwsza litera akapitu na trzy wiersze"
+msgstr "First letter of the paragraph across three lines"
+
+msgid "Symbol"
+msgstr "Symbol"
+
+msgid "Wstaw znak specjalny"
+msgstr "Insert a special character"
+
+msgid "Pole"
+msgstr "Field"
+
+msgid "Numer strony, liczba stron, data…"
+msgstr "Page number, page count, date…"
+
+msgid "Łącze"
+msgstr "Link"
+
+msgid "Hiperłącze (Ctrl+Shift+K)"
+msgstr "Hyperlink (Ctrl+Shift+K)"
+
+msgid "Nagłówek i stopka"
+msgstr "Header and footer"
+
+msgid "Edytuj nagłówek"
+msgstr "Edit header"
+
+msgid "Dodaj nagłówek"
+msgstr "Add header"
+
+msgid "Tekst u góry każdej strony"
+msgstr "Text at the top of every page"
+
+msgid "Edytuj stopkę"
+msgstr "Edit footer"
+
+msgid "Dodaj stopkę"
+msgstr "Add footer"
+
+msgid "Tekst u dołu każdej strony (z numerem strony)"
+msgstr "Text at the bottom of every page (with page number)"
+
+msgid "Inna pierwsza strona"
+msgstr "Different first page"
+
+msgid "Osobny nagłówek i stopka na pierwszej stronie"
+msgstr "Separate header and footer on the first page"
+
+msgid "Usuń nagłówek"
+msgstr "Remove header"
+
+msgid "Usuń stopkę"
+msgstr "Remove footer"
+
+msgid "Motyw dokumentu"
+msgstr "Document theme"
+
+msgid "Motyw: {} – kroje i kolory stylów"
+msgstr "Theme: {} – style fonts and colours"
+
+msgid "Tło i typografia"
+msgstr "Background and typography"
+
+msgid "Kolor strony"
+msgstr "Page colour"
+
+msgid "Polskie sierotki"
+msgstr "Polish orphans"
+
+msgid "Krótkie wyrazy (a, i, o, u, w, z) nie zostają na końcu wiersza"
+msgstr "Short words (a, i, o, u, w, z) are not left at the end of a line"
+
+msgid "Siatka bazowa"
+msgstr "Baseline grid"
+
+msgid "Wiersze treści głównej na wspólnej siatce (równe linie w kolumnach)"
+msgstr "Body lines on a common grid (aligned lines across columns)"
+
+msgid "Strona"
+msgstr "Page"
+
+msgid "Rozmiar strony"
+msgstr "Page size"
+
+msgid "Pozioma"
+msgstr "Landscape"
+
+msgid "Pionowa"
+msgstr "Portrait"
+
+msgid "Orientacja strony"
+msgstr "Page orientation"
+
+msgid "Marginesy"
+msgstr "Margins"
+
+msgid "Gotowe marginesy"
+msgstr "Preset margins"
+
+msgid "Margines górny"
+msgstr "Top margin"
+
+msgid "Margines dolny"
+msgstr "Bottom margin"
+
+msgid "Margines lewy"
+msgstr "Left margin"
+
+msgid "Margines prawy"
+msgstr "Right margin"
+
+msgid "Jedna kolumna"
+msgstr "One column"
+
+msgid "Kolumny: {}"
+msgstr "Columns: {}"
+
+msgid "Odstęp"
+msgstr "Gap"
+
+msgid "Odstęp między kolumnami"
+msgstr "Gap between columns"
+
+msgid "Linia między"
+msgstr "Line between"
+
+msgid "Pionowa linia między kolumnami"
+msgstr "Vertical line between columns"
+
+msgid "Wcięcie ←"
+msgstr "Indent ←"
+
+msgid "Wcięcie z lewej"
+msgstr "Left indent"
+
+msgid "Wcięcie →"
+msgstr "Indent →"
+
+msgid "Wcięcie z prawej"
+msgstr "Right indent"
+
+msgid "1. wiersz"
+msgstr "1st line"
+
+msgid "Wcięcie pierwszego wiersza (ujemne – wysunięcie)"
+msgstr "First line indent (negative – hanging)"
+
+msgid "Przed"
+msgstr "Before"
+
+msgid "Odstęp przed akapitem (pt)"
+msgstr "Space before paragraph (pt)"
+
+msgid "Po"
+msgstr "After"
+
+msgid "Odstęp po akapicie (pt)"
+msgstr "Space after paragraph (pt)"
+
+msgid "Światło"
+msgstr "Tracking"
+
+msgid "Odstępy między znakami zaznaczenia (pt)"
+msgstr "Spacing between characters of the selection (pt)"
+
+msgid "Rozmieść"
+msgstr "Arrange"
+
+msgid "Opływanie"
+msgstr "Wrap"
+
+msgid "Jak tekst opływa zaznaczony obiekt"
+msgstr "How text wraps around the selected object"
+
+msgid "Na wierzch"
+msgstr "Bring to front"
+
+msgid "Do przodu"
+msgstr "Bring forward"
+
+msgid "Do tyłu"
+msgstr "Send backward"
+
+msgid "Na spód"
+msgstr "Send to back"
+
+msgid "Do lewej krawędzi strony"
+msgstr "To the left page edge"
+
+msgid "Wyśrodkuj na stronie w poziomie"
+msgstr "Centre horizontally on the page"
+
+msgid "Do prawej krawędzi strony"
+msgstr "To the right page edge"
+
+msgid "Do górnej krawędzi strony"
+msgstr "To the top page edge"
+
+msgid "Wyśrodkuj na stronie w pionie"
+msgstr "Centre vertically on the page"
+
+msgid "Do dolnej krawędzi strony"
+msgstr "To the bottom page edge"
+
+msgid "Rysuj węzłami"
+msgstr "Draw with nodes"
+
+msgid "Klikaj, aby stawiać węzły (przeciągnij – krzywa). Kliknij pierwszy węzeł albo Enter, aby zamknąć kształt; tekst wypełni jego wnętrze."
+msgstr "Click to place nodes (drag – curve). Click the first node or press Enter to close the shape; text will fill it."
+
+msgid "Gotowy kształt"
+msgstr "Preset shape"
+
+msgid "Kształt tekstu z gotowego wzoru"
+msgstr "Text shape from a preset"
+
+msgid "Ramka"
+msgstr "Frame"
+
+msgid "Prostokątna ramka tekstowa"
+msgstr "Rectangular text frame"
+
+msgid "Węzły"
+msgstr "Nodes"
+
+msgid "Edytuj węzły"
+msgstr "Edit nodes"
+
+msgid "Pokaż węzły kształtu (dwuklik na obiekcie). Przeciągaj węzły i uchwyty krzywych; dwuklik na krawędzi dodaje węzeł."
+msgstr "Show shape nodes (double-click the object). Drag nodes and curve handles; double-click an edge to add a node."
+
+msgid "Dodaj węzeł"
+msgstr "Add node"
+
+msgid "Dodaj węzeł w połowie zaznaczonego odcinka"
+msgstr "Add a node in the middle of the selected segment"
+
+msgid "Usuń węzeł"
+msgstr "Delete node"
+
+msgid "Usuń zaznaczony węzeł (Delete)"
+msgstr "Delete the selected node (Delete)"
+
+msgid "Gładki / narożny"
+msgstr "Smooth / corner"
+
+msgid "Przełącz węzeł między gładkim (z uchwytami) a narożnym"
+msgstr "Toggle the node between smooth (with handles) and corner"
+
+msgid "Odcinek prosty"
+msgstr "Straight segment"
+
+msgid "Odcinek za zaznaczonym węzłem jako prosta"
+msgstr "Segment after the selected node as a straight line"
+
+msgid "Odcinek krzywy"
+msgstr "Curved segment"
+
+msgid "Odcinek za zaznaczonym węzłem jako krzywa Béziera"
+msgstr "Segment after the selected node as a Bézier curve"
+
+msgid "Odbij"
+msgstr "Flip"
+
+msgid "Odbij kształt w poziomie (Shift – w pionie)"
+msgstr "Flip the shape horizontally (Shift – vertically)"
+
+msgid "Łączenie kształtów"
+msgstr "Combine shapes"
+
+msgid "Suma"
+msgstr "Union"
+
+msgid "Połącz zaznaczone kształty w jeden (zaznacz dwa z Shift)"
+msgstr "Merge the selected shapes into one (select two with Shift)"
+
+msgid "Różnica"
+msgstr "Subtract"
+
+msgid "Wytnij drugi kształt z pierwszego"
+msgstr "Cut the second shape out of the first"
+
+msgid "Część wspólna"
+msgstr "Intersect"
+
+msgid "Wyklucz"
+msgstr "Exclude"
+
+msgid "Wszystko poza częścią wspólną"
+msgstr "Everything except the overlap"
+
+msgid "Tekst w kształcie"
+msgstr "Text in shape"
+
+msgid "Margines"
+msgstr "Padding"
+
+msgid "Odstęp tekstu od krawędzi kształtu (pt)"
+msgstr "Distance of text from the shape edge (pt)"
+
+msgid "Liczba kolumn tekstu w kształcie"
+msgstr "Number of text columns in the shape"
+
+msgid "Góra"
+msgstr "Top"
+
+msgid "Środek"
+msgstr "Middle"
+
+msgid "Dół"
+msgstr "Bottom"
+
+msgid "Wyrównanie tekstu w pionie (ramki prostokątne)"
+msgstr "Vertical text alignment (rectangular frames)"
+
+msgid "Połącz ramki"
+msgstr "Link frames"
+
+msgid "Tekst, który się nie mieści, popłynie do wskazanej ramki"
+msgstr "Overflowing text will continue in the chosen frame"
+
+msgid "Rozłącz"
+msgstr "Unlink"
+
+msgid "Bez opływania"
+msgstr "No wrap"
+
+msgid "Z obu stron"
+msgstr "Both sides"
+
+msgid "Tekst po lewej"
+msgstr "Text on the left"
+
+msgid "Tekst po prawej"
+msgstr "Text on the right"
+
+msgid "Po większej stronie"
+msgstr "Largest side"
+
+msgid "Nad i pod"
+msgstr "Top and bottom"
+
+msgid "Odstęp tekstu od obiektu (pt)"
+msgstr "Distance of text from the object (pt)"
+
+msgid "Po konturze"
+msgstr "Follow outline"
+
+msgid "Opływaj kształt (wyłączone – prostokąt ramki)"
+msgstr "Wrap around the shape (off – frame rectangle)"
+
+msgid "Kontur opływania z przezroczystości albo tła obrazu"
+msgstr "Wrap outline from transparency or image background"
+
+msgid "Wygląd"
+msgstr "Appearance"
+
+msgid "Wypełnienie kształtu"
+msgstr "Shape fill"
+
+msgid "Kolor obrysu"
+msgstr "Outline colour"
+
+msgid "Obrys"
+msgstr "Outline"
+
+msgid "Grubość obrysu (pt)"
+msgstr "Outline width (pt)"
+
+msgid "Jednolite"
+msgstr "Solid"
+
+msgid "Gradient"
+msgstr "Gradient"
+
+msgid "Rodzaj wypełnienia"
+msgstr "Fill type"
+
+msgid "Cień"
+msgstr "Shadow"
+
+msgid "Kreski"
+msgstr "Dashes"
+
+msgid "Obrys przerywany"
+msgstr "Dashed outline"
+
+msgid "Krycie {}%"
+msgstr "Opacity {}%"
+
+msgid "Krycie obiektu"
+msgstr "Object opacity"
+
+msgid "Narożniki"
+msgstr "Corners"
+
+msgid "Zaokrąglenie narożników prostokąta (pt)"
+msgstr "Rectangle corner radius (pt)"
+
+msgid "Spis treści"
+msgstr "Table of contents"
+
+msgid "Wstaw spis treści z nagłówków (z numerami stron)"
+msgstr "Insert a table of contents from headings (with page numbers)"
+
+msgid "Aktualizuj"
+msgstr "Update"
+
+msgid "Odśwież spis treści"
+msgstr "Refresh the table of contents"
+
+msgid "Podpisy i nawigacja"
+msgstr "Captions and navigation"
+
+msgid "Podpis"
+msgstr "Caption"
+
+msgid "Wstaw podpis rysunku z kolejnym numerem"
+msgstr "Insert a numbered figure caption"
+
+msgid "Panel z konspektem dokumentu"
+msgstr "Document outline panel"
+
+msgid "Pisownia"
+msgstr "Spelling"
+
+msgid "Sprawdź"
+msgstr "Check"
+
+msgid "Przejdź do następnego błędu (F7)"
+msgstr "Go to the next error (F7)"
+
+msgid "Podczas pisania"
+msgstr "As you type"
+
+msgid "Podkreślaj błędy na bieżąco"
+msgstr "Underline errors as you type"
+
+msgid "Polski"
+msgstr "Polish"
+
+msgid "Język zaznaczonego tekstu: polski"
+msgstr "Language of the selected text: Polish"
+
+msgid "Angielski"
+msgstr "English"
+
+msgid "Język zaznaczonego tekstu: angielski"
+msgstr "Language of the selected text: English"
+
+msgid "Narzędzia"
+msgstr "Tools"
+
+msgid "Wyrazy, znaki, akapity i strony"
+msgstr "Words, characters, paragraphs and pages"
+
+msgid "Słownik"
+msgstr "Dictionary"
+
+msgid "Słownik użytkownika – dodane wyrazy"
+msgstr "User dictionary – added words"
+
+msgid "Pomniejsz (Ctrl+−, Ctrl+kółko)"
+msgstr "Zoom out (Ctrl+−, Ctrl+wheel)"
+
+msgid "Powiększ (Ctrl++, Ctrl+kółko)"
+msgstr "Zoom in (Ctrl++, Ctrl+wheel)"
+
+msgid "Pokaż"
+msgstr "Show"
+
+msgid "Linie pomocnicze"
+msgstr "Guides"
+
+msgid "Marginesy, kolumny i kontury ramek"
+msgstr "Margins, columns and frame outlines"
+
+msgid "Interfejs"
+msgstr "Interface"
+
+msgid "Motyw interfejsu"
+msgstr "Interface theme"
+
+msgid "Zwinięta wstążka"
+msgstr "Collapsed ribbon"
+
+msgid "Pełny ekran"
+msgstr "Full screen"
+
+msgid "Pełny ekran (F11)"
+msgstr "Full screen (F11)"
+
+msgid "Moje polecenia"
+msgstr "My commands"
+
+msgid "Dostosuj"
+msgstr "Customise"
+
+msgid "Wybierz polecenia tej karty"
+msgstr "Choose the commands of this tab"
+
+msgid "Plik"
+msgstr "File"
+
+msgid "Nowy, otwórz, zapisz, eksport, ustawienia (Alt+F)"
+msgstr "New, open, save, export, settings (Alt+F)"
+
+msgid "Narzędzia główne"
+msgstr "Home"
+
+msgid "Wstawianie"
+msgstr "Insert"
+
+msgid "Projekt"
+msgstr "Design"
+
+msgid "Układ"
+msgstr "Layout"
+
+msgid "Kształty tekstu"
+msgstr "Text shapes"
+
+msgid "Odwołania"
+msgstr "References"
+
+msgid "Recenzja"
+msgstr "Review"
+
+msgid "Widok"
+msgstr "View"
+
+msgid "Kształty tekstu: tekst w dowolnym konturze z węzłów, opływanie, łączenie ramek"
+msgstr "Text shapes: text in any node outline, wrapping, linked frames"
+
+msgid "Dokument bez tytułu"
+msgstr "Untitled document"
+
+msgid "Strony: {pg}\nAkapity: {p}\nWyrazy: {w}\nZnaki (bez spacji): {ns}\nZnaki (ze spacjami): {c}"
+msgstr "Pages: {pg}\nParagraphs: {p}\nWords: {w}\nCharacters (no spaces): {ns}\nCharacters (with spaces): {c}"
+
+msgid "Nie ma czego cofnąć"
+msgstr "Nothing to undo"
+
+msgid "Zaznacz tekst, który ma dostać to formatowanie"
+msgstr "Select the text that should get this formatting"
+
+msgid "Skopiowano formatowanie (Ctrl+Shift+V wkleja)"
+msgstr "Formatting copied (Ctrl+Shift+V pastes it)"
+
+msgid "Zamieniono: {}"
+msgstr "Replaced: {}"
+
+msgid "Nieprawidłowy kolor – wpisz np. #1f4e79"
+msgstr "Invalid colour – type e.g. #1f4e79"
+
+msgid "Styl zaktualizowany według zaznaczenia"
+msgstr "Style updated to match the selection"
+
+msgid "Mój styl {}"
+msgstr "My style {}"
+
+msgid "Dodano pustą stronę – wstaw na nią obrazy, kształty i ramki"
+msgstr "Blank page added – place images, shapes and frames on it"
+
+msgid "Wstaw obraz"
+msgstr "Insert image"
+
+msgid "Obrazy"
+msgstr "Images"
+
+msgid "Nieobsługiwany format obrazu"
+msgstr "Unsupported image format"
+
+msgid "Przeciągnij na stronie, aby narysować (kliknięcie – rozmiar domyślny)"
+msgstr "Drag on the page to draw (click – default size)"
+
+msgid "Przeciągnij na stronie, aby narysować ramkę tekstową"
+msgstr "Drag on the page to draw a text frame"
+
+msgid "Klikaj, aby stawiać węzły (przeciągnij – krzywa). Kliknij pierwszy węzeł albo Enter, aby zamknąć."
+msgstr "Click to place nodes (drag – curve). Click the first node or press Enter to close."
+
+msgid "Przeciągnij na stronie – powstanie łuk z tekstem"
+msgstr "Drag on the page – an arc with text will appear"
+
+msgid "Produkt A"
+msgstr "Product A"
+
+msgid "Produkt B"
+msgstr "Product B"
+
+msgid "Produkt C"
+msgstr "Product C"
+
+msgid "Inne"
+msgstr "Other"
+
+msgid "Udział"
+msgstr "Share"
+
+msgid "Edytujesz nagłówek/stopkę – Esc wraca do treści"
+msgstr "Editing header/footer – Esc returns to the body"
+
+msgid "Brak nagłówków – nadaj akapitom style „Nagłówek 1–3”"
+msgstr "No headings – apply the “Heading 1–3” styles to paragraphs"
+
+msgid "Spis treści zaktualizowany"
+msgstr "Table of contents updated"
+
+msgid "W dokumencie nie ma spisu treści"
+msgstr "The document has no table of contents"
+
+msgid "Rysunek {}. "
+msgstr "Figure {}."
+
+msgid "Najpierw zaznacz obiekt"
+msgstr "Select an object first"
+
+msgid "Kontur wykrywamy dla obrazów"
+msgstr "Outlines are detected for images"
+
+msgid "Wykryto kontur – tekst opływa kształt obrazu"
+msgstr "Outline detected – text wraps around the image shape"
+
+msgid "Nie znaleziono konturu (obraz bez przezroczystości i jednolitego tła)"
+msgstr "No outline found (image without transparency or a plain background)"
+
+msgid "Zaznacz ramkę tekstową"
+msgstr "Select a text frame"
+
+msgid "Kliknij ramkę, do której ma popłynąć dalszy tekst"
+msgstr "Click the frame where the text should continue"
+
+msgid "Zaznacz dwa kształty na tej samej stronie (drugi z Shift)"
+msgstr "Select two shapes on the same page (the second with Shift)"
+
+msgid "Nie rozpoznano danych wykresu"
+msgstr "Chart data not recognised"
+
+msgid "Dane wykresu zastosowane"
+msgstr "Chart data applied"
+
+msgid "Słowniki jeszcze się wczytują…"
+msgstr "Dictionaries are still loading…"
+
+msgid "Nie znaleziono błędów pisowni"
+msgstr "No spelling errors found"
+
+msgid "Nieprawidłowy kolor – wpisz np. #5b8cff"
+msgstr "Invalid colour – type e.g. #5b8cff"
+
+msgid "Język zmieni się po ponownym uruchomieniu"
+msgstr "The language will change after restart"
+
+msgid "Najpierw ustaw dostawcę, klucz API i model"
+msgstr "Set the provider, API key and model first"
+
+msgid "Klucz API zapisany (zaszyfrowany)"
+msgstr "API key saved (encrypted)"
+
+msgid "Model: {}"
+msgstr "Model: {}"
+
+msgid "Pobieranie listy modeli…"
+msgstr "Fetching the model list…"
+
+msgid "Dostępne modele: {}"
+msgstr "Available models: {}"
+
+msgid "Nie udało się pobrać modeli: {}"
+msgstr "Could not fetch models: {}"
+
+msgid "Dokument wygenerowany – możesz go dowolnie edytować"
+msgstr "Document generated – edit it freely"
+
+msgid "Błąd: {}"
+msgstr "Error: {}"
+
+msgid "Nieznane polecenie: {}"
+msgstr "Unknown command: {}"
+
+msgid "Brak wyników"
+msgstr "No results"
+
+msgid "Wynik {} z {}"
+msgstr "Result {} of {}"
+
+msgid "Kształt tekstu gotowy – pisz albo wklej tekst; dwuklik na krawędzi edytuje węzły"
+msgstr "Text shape ready – type or paste text; double-click the edge to edit nodes"
+
+msgid "Wskaż ramkę tekstową"
+msgstr "Point to a text frame"
+
+msgid "Ta ramka należy już do łańcucha"
+msgstr "This frame already belongs to a chain"
+
+msgid "Ramki połączone – tekst płynie dalej"
+msgstr "Frames linked – text continues"
+
+msgid "Sprawdzanie aktualizacji…"
+msgstr "Checking for updates…"
+
+msgid "Dostępna wersja {v} (masz {}) · sprawdzono o {when}"
+msgstr "Version {v} available (you have {}) · checked at {when}"
+
+msgid "Jest nowa wersja OpenDTP {v} – Plik → Ustawienia → Zaktualizuj"
+msgstr "A new OpenDTP version {v} is available – File → Settings → Update"
+
+msgid "Masz najnowszą wersję {} · sprawdzono o {when}"
+msgstr "You have the latest version {} · checked at {when}"
+
+msgid "Masz najnowszą wersję"
+msgstr "You have the latest version"
+
+msgid "Nie udało się sprawdzić ({}) · {when}"
+msgstr "Check failed ({}) · {when}"
+
+msgid "Nie udało się sprawdzić aktualizacji"
+msgstr "Could not check for updates"
+
+msgid "Zapisz dokument przed aktualizacją"
+msgstr "Save the document before updating"
+
+msgid "Instalacja nie powiodła się: {}"
+msgstr "Installation failed: {}"
+
+msgid "Pobieranie aktualizacji…"
+msgstr "Downloading update…"
+
+msgid "Pobieranie aktualizacji… {}%"
+msgstr "Downloading update… {}%"
+
+msgid "Wersja {} pobrana – zainstaluje się przy zamknięciu programu"
+msgstr "Version {} downloaded – it will install when you close the app"
+
+msgid "Aktualizacja pobrana – zainstaluje się po zamknięciu OpenDTP"
+msgstr "Update downloaded – it will install after OpenDTP closes"
+
+msgid "Otwórz…"
+msgstr "Open…"
+
+msgid "Zapisz jako…"
+msgstr "Save as…"
+
+msgid "Eksportuj do Worda (DOCX)"
+msgstr "Export to Word (DOCX)"
+
+msgid "Eksportuj do PDF"
+msgstr "Export to PDF"
+
+msgid "Eksportuj do HTML"
+msgstr "Export to HTML"
+
+msgid "Eksportuj do Markdown"
+msgstr "Export to Markdown"
+
+msgid "Eksportuj do tekstu"
+msgstr "Export to text"
+
+msgid "Eksportuj stronę jako obraz"
+msgstr "Export page as image"
+
+msgid "Drukuj (przez PDF)"
+msgstr "Print (via PDF)"
+
+msgid "Cofnij"
+msgstr "Undo"
+
+msgid "Ponów"
+msgstr "Redo"
+
+msgid "Wklej jako tekst"
+msgstr "Paste as text"
+
+msgid "Malarz formatów"
+msgstr "Format painter"
+
+msgid "Pogrubienie"
+msgstr "Bold"
+
+msgid "Kursywa"
+msgstr "Italic"
+
+msgid "Podkreślenie"
+msgstr "Underline"
+
+msgid "Indeks górny"
+msgstr "Superscript"
+
+msgid "Indeks dolny"
+msgstr "Subscript"
+
+msgid "Powiększ czcionkę"
+msgstr "Grow font"
+
+msgid "Pomniejsz czcionkę"
+msgstr "Shrink font"
+
+msgid "Wyczyść formatowanie"
+msgstr "Clear formatting"
+
+msgid "Wersaliki"
+msgstr "All caps"
+
+msgid "Wyrównaj do lewej"
+msgstr "Align left"
+
+msgid "Wyśrodkuj"
+msgstr "Centre"
+
+msgid "Wyrównaj do prawej"
+msgstr "Align right"
+
+msgid "Wyjustuj"
+msgstr "Justify"
+
+msgid "Lista punktowana"
+msgstr "Bulleted list"
+
+msgid "Lista numerowana"
+msgstr "Numbered list"
+
+msgid "Zwiększ wcięcie"
+msgstr "Increase indent"
+
+msgid "Zmniejsz wcięcie"
+msgstr "Decrease indent"
+
+msgid "Styl: Tytuł"
+msgstr "Style: Title"
+
+msgid "Styl: Nagłówek 1"
+msgstr "Style: Heading 1"
+
+msgid "Styl: Nagłówek 2"
+msgstr "Style: Heading 2"
+
+msgid "Styl: Normalny"
+msgstr "Style: Normal"
+
+msgid "Styl: Cytat"
+msgstr "Style: Quote"
+
+msgid "Pokaż znaki formatowania"
+msgstr "Show formatting marks"
+
+msgid "Rysuj kształt tekstu węzłami"
+msgstr "Draw a text shape with nodes"
+
+msgid "Kształt tekstu: gwiazda"
+msgstr "Text shape: star"
+
+msgid "Kształt tekstu: koło"
+msgstr "Text shape: circle"
+
+msgid "Kształt tekstu: serce"
+msgstr "Text shape: heart"
+
+msgid "Kształt tekstu: fala"
+msgstr "Text shape: wave"
+
+msgid "Kształt: prostokąt"
+msgstr "Shape: rectangle"
+
+msgid "Kształt: elipsa"
+msgstr "Shape: ellipse"
+
+msgid "Kształt: linia"
+msgstr "Shape: line"
+
+msgid "Wykres kolumnowy"
+msgstr "Column chart"
+
+msgid "Wykres kołowy"
+msgstr "Pie chart"
+
+msgid "Wykres liniowy"
+msgstr "Line chart"
+
+msgid "Data"
+msgstr "Date"
+
+msgid "Nagłówek strony"
+msgstr "Page header"
+
+msgid "Stopka strony"
+msgstr "Page footer"
+
+msgid "Wstaw spis treści"
+msgstr "Insert table of contents"
+
+msgid "Aktualizuj spis treści"
+msgstr "Update table of contents"
+
+msgid "Podpis rysunku"
+msgstr "Figure caption"
+
+msgid "Dwie kolumny"
+msgstr "Two columns"
+
+msgid "Trzy kolumny"
+msgstr "Three columns"
+
+msgid "Zmień orientację strony"
+msgstr "Change page orientation"
+
+msgid "Edytuj węzły kształtu"
+msgstr "Edit shape nodes"
+
+msgid "Połącz ramki tekstowe"
+msgstr "Link text frames"
+
+msgid "Rozłącz ramki"
+msgstr "Unlink frames"
+
+msgid "Suma kształtów"
+msgstr "Union of shapes"
+
+msgid "Różnica kształtów"
+msgstr "Subtract shapes"
+
+msgid "Opływanie z obu stron"
+msgstr "Wrap on both sides"
+
+msgid "Opływanie: nad i pod"
+msgstr "Wrap: top and bottom"
+
+msgid "Duplikuj obiekt"
+msgstr "Duplicate object"
+
+msgid "Usuń obiekt"
+msgstr "Delete object"
+
+msgid "Wykryj kontur obrazu"
+msgstr "Detect image outline"
+
+msgid "Następny błąd pisowni"
+msgstr "Next spelling error"
+
+msgid "Motyw AMOLED"
+msgstr "AMOLED theme"
+
+msgid "Motyw grafitowy"
+msgstr "Graphite theme"
+
+msgid "Motyw jasny"
+msgstr "Light theme"
+
+msgid "Zwiń / rozwiń wstążkę"
+msgstr "Collapse / expand ribbon"
+
+msgid "Postaw kawę autorowi"
+msgstr "Buy the author a coffee"
+
+msgid "Nie udało się otworzyć pliku: {}"
+msgstr "Could not open the file: {}"
+
+msgid "Otwórz dokument"
+msgstr "Open document"
+
+msgid "Dokumenty"
+msgstr "Documents"
+
+msgid "Tekst i Markdown"
+msgstr "Text and Markdown"
+
+msgid "Zapisz dokument"
+msgstr "Save document"
+
+msgid "Zapisano: {}"
+msgstr "Saved: {}"
+
+msgid "Nie udało się zapisać: {}"
+msgstr "Could not save: {}"
+
+msgid "Wyeksportowano: {}"
+msgstr "Exported: {}"
+
+msgid "Eksport nie powiódł się: {}"
+msgstr "Export failed: {}"
+
+msgid "Otwarto PDF do wydruku"
+msgstr "PDF opened for printing"
+
+msgid "Nie udało się przygotować wydruku: {}"
+msgstr "Could not prepare printing: {}"
+
+msgid "Odzyskano niezapisany dokument z poprzedniej sesji"
+msgstr "Recovered an unsaved document from the previous session"
+
+msgid "Czy zapisać zmiany w dokumencie „{}”?"
+msgstr "Save changes to “{}”?"
+
+msgid "Właściwości obiektu…"
+msgstr "Object properties…"
+
+msgid "Wykryj kontur do opływania"
+msgstr "Detect wrap outline"
+
+msgid "Opływanie nad i pod"
+msgstr "Wrap top and bottom"
+
+msgid "Przed tekstem"
+msgstr "In front of text"
+
+msgid "Zablokuj położenie"
+msgstr "Lock position"
+
+msgid "(brak podpowiedzi)"
+msgstr "(no suggestions)"
+
+msgid "Dodaj do słownika"
+msgstr "Add to dictionary"
+
+msgid "Ignoruj wszystkie"
+msgstr "Ignore all"
+
+msgid "Hiperłącze…"
+msgstr "Hyperlink…"
+
+msgid "Style…"
+msgstr "Styles…"
+
+msgid "Strona {} z {}"
+msgstr "Page {} of {}"
+
+msgid "Wyrazy: {}"
+msgstr "Words: {}"
+
+msgid "Pisownia wyłączona"
+msgstr "Spelling off"
+
+msgid "Wczytywanie słowników…"
+msgstr "Loading dictionaries…"
+
+msgid "Wybierz dostawcę, wklej klucz i wybierz model"
+msgstr "Choose a provider, paste the key and pick a model"
+
+msgid "Wersja {} · jeszcze nie sprawdzano"
+msgstr "Version {} · not checked yet"
+
+msgid "Podaj adres API"
+msgstr "Enter the API address"
+
+msgid "Brak klucza API – wpisz go w Ustawieniach → Sztuczna inteligencja"
+msgstr "No API key – enter it in Settings → Artificial intelligence"
+
+msgid "Wybierz model w Ustawieniach"
+msgstr "Choose a model in Settings"
+
+msgid "To nie jest plik DOCX"
+msgstr "This is not a DOCX file"
+
+msgid "Plik nie zawiera dokumentu"
+msgstr "The file contains no document"
+
+msgid "To nie jest plik OpenDTP"
+msgstr "This is not an OpenDTP file"
+
+msgid "Instalacja anulowana albo brak uprawnień administratora"
+msgstr "Installation cancelled or no administrator rights"
+
+msgid "Normalny"
+msgstr "Normal"
+
+msgid "Podtytuł"
+msgstr "Subtitle"
+
+msgid "Nagłówek 1"
+msgstr "Heading 1"
+
+msgid "Nagłówek 2"
+msgstr "Heading 2"
+
+msgid "Nagłówek 3"
+msgstr "Heading 3"
+
+msgid "Cytat"
+msgstr "Quote"
+
+msgid "Wyróżnienie"
+msgstr "Callout"
+
+msgid "Kod"
+msgstr "Code"
+
+msgid "Akapit listy"
+msgstr "List paragraph"
+
+msgid "Spis treści 1"
+msgstr "TOC 1"
+
+msgid "Spis treści 2"
+msgstr "TOC 2"
+
+msgid "Spis treści 3"
+msgstr "TOC 3"
+
+msgid "Klasyczny"
+msgstr "Classic"
+
+msgid "Redakcyjny"
+msgstr "Editorial"
+
+msgid "Nowoczesny"
+msgstr "Modern"
+
+msgid "Elegancki"
+msgstr "Elegant"
+
+msgid "Techniczny"
+msgstr "Technical"
+
+msgid "Firmowy"
+msgstr "Corporate"
+
+msgid "Czerń i biel"
+msgstr "Black and white"
+
+msgid "Ollama (lokalnie)"
+msgstr "Ollama (local)"
+
+msgid "Własny (zgodny z OpenAI)"
+msgstr "Custom (OpenAI-compatible)"
+

@@ -1,0 +1,33 @@
+[package]
+name = "opendtp"
+version = "0.1.0"
+description = "OpenDTP – edytor tekstu i skład dokumentów dla Windows"
+authors = ["Adam Rędzikowski"]
+edition = "2021"
+rust-version = "1.80"
+
+[[bin]]
+name = "OpenDTP"
+path = "src/main.rs"
+
+[dependencies]
+opendtp-core = { path = "../core" }
+slint = { version = "1.18", default-features = false, features = ["std", "compat-1-2", "accessibility", "backend-winit", "renderer-femtovg", "unstable-winit-030"] }
+raw-window-handle = "0.6"
+rfd = "0.15"
+open = "5"
+arboard = "3.6"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tiny-skia = "0.11"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "bmp", "gif"] }
+unicode-segmentation = "1"
+base64 = "0.22"
+
+[dependencies.windows]
+version = "0.61"
+features = ["Win32_Foundation", "Win32_Graphics_Dwm", "Win32_UI_WindowsAndMessaging", "Win32_Security_Cryptography"]
+
+[build-dependencies]
+slint-build = "1.18"
+winresource = "0.1"

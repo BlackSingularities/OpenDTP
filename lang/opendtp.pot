@@ -1,0 +1,2329 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: OpenDTP\n"
+"Language: \n"
+"X-Language-Name: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Wróć do dokumentu (Esc)"
+msgstr ""
+
+msgid "Nowy"
+msgstr ""
+
+msgid "Otwórz"
+msgstr ""
+
+msgid "Zapisz"
+msgstr ""
+
+msgid "Zapisz jako"
+msgstr ""
+
+msgid "Eksportuj"
+msgstr ""
+
+msgid "Drukuj"
+msgstr ""
+
+msgid "Informacje"
+msgstr ""
+
+msgid "Ustawienia"
+msgstr ""
+
+msgid "O programie"
+msgstr ""
+
+msgid "Nowy dokument"
+msgstr ""
+
+msgid "Pusty dokument"
+msgstr ""
+
+msgid "Czysta strona A4"
+msgstr ""
+
+msgid "Raport"
+msgstr ""
+
+msgid "Tytuł, spis treści, nagłówki, stopka"
+msgstr ""
+
+msgid "List"
+msgstr ""
+
+msgid "Pismo z nadawcą i adresatem"
+msgstr ""
+
+msgid "Gazetka"
+msgstr ""
+
+msgid "Trzy kolumny, obrazy, opływanie"
+msgstr ""
+
+msgid "Ulotka"
+msgstr ""
+
+msgid "Kształty tekstu i duża typografia"
+msgstr ""
+
+msgid "Przewodnik"
+msgstr ""
+
+msgid "Pokaz możliwości OpenDTP"
+msgstr ""
+
+msgid "OSTATNIE DOKUMENTY"
+msgstr ""
+
+msgid "Przeglądaj…"
+msgstr ""
+
+msgid "OpenDTP, Word (DOCX), tekst, Markdown (Ctrl+O)"
+msgstr ""
+
+msgid "OSTATNIE"
+msgstr ""
+
+msgid "Tu pojawią się ostatnio otwierane pliki."
+msgstr ""
+
+msgid "Usuń z listy"
+msgstr ""
+
+msgid "Microsoft Word (.docx)"
+msgstr ""
+
+msgid "Edytowalny dokument Worda: style, listy, obrazy, kształty i opływanie w tych samych miejscach"
+msgstr ""
+
+msgid "PDF (.pdf)"
+msgstr ""
+
+msgid "Dokładnie jak na ekranie, czcionki osadzone, tekst do zaznaczania"
+msgstr ""
+
+msgid "Strona internetowa (.html)"
+msgstr ""
+
+msgid "Tekst z formatowaniem, nagłówki i listy"
+msgstr ""
+
+msgid "Markdown (.md)"
+msgstr ""
+
+msgid "Tekst z nagłówkami, listami i wyróżnieniami"
+msgstr ""
+
+msgid "Tekst (.txt)"
+msgstr ""
+
+msgid "Sam tekst bez formatowania"
+msgstr ""
+
+msgid "Obraz strony (.png)"
+msgstr ""
+
+msgid "Bieżąca strona w 300 dpi"
+msgstr ""
+
+msgid "KSZTAŁTY TEKSTU W DOCX"
+msgstr ""
+
+msgid "Dokładne wiersze (wygląd 1:1)"
+msgstr ""
+
+msgid "Edytowalne pole tekstowe"
+msgstr ""
+
+msgid "Word nie wpisuje tekstu w dowolny kształt – wybierz wierność wyglądu albo łatwą edycję"
+msgstr ""
+
+msgid "Dokładne wiersze: każdy wiersz kształtu to osobne pole w tym samym miejscu. Edytowalne pole: tekst w ramce kształtu, Word przełamie go po swojemu."
+msgstr ""
+
+msgid "Informacje o dokumencie"
+msgstr ""
+
+msgid "Tytuł"
+msgstr ""
+
+msgid "Autor"
+msgstr ""
+
+msgid "STATYSTYKA"
+msgstr ""
+
+msgid "WYGLĄD"
+msgstr ""
+
+msgid "Język interfejsu"
+msgstr ""
+
+msgid "Zmiana po ponownym uruchomieniu"
+msgstr ""
+
+msgid "Jak Windows"
+msgstr ""
+
+msgid "Motyw"
+msgstr ""
+
+msgid "Grafit"
+msgstr ""
+
+msgid "Jasny"
+msgstr ""
+
+msgid "Kolor akcentu"
+msgstr ""
+
+msgid "Własny kolor akcentu"
+msgstr ""
+
+msgid "Zaokrąglenia"
+msgstr ""
+
+msgid "Ostre"
+msgstr ""
+
+msgid "Zwykłe"
+msgstr ""
+
+msgid "Mocne"
+msgstr ""
+
+msgid "Wielkość interfejsu"
+msgstr ""
+
+msgid "Skala przycisków i tekstu interfejsu"
+msgstr ""
+
+msgid "Gęsty układ"
+msgstr ""
+
+msgid "Jednostki"
+msgstr ""
+
+msgid "cale"
+msgstr ""
+
+msgid "PISANIE"
+msgstr ""
+
+msgid "Sprawdzanie pisowni na bieżąco"
+msgstr ""
+
+msgid "Inteligentne cudzysłowy"
+msgstr ""
+
+msgid "„polskie” i ’apostrofy’"
+msgstr ""
+
+msgid "Autokorekta"
+msgstr ""
+
+msgid "-- → –, ... → …, (c) → ©, -> → →"
+msgstr ""
+
+msgid "Wielka litera na początku zdania"
+msgstr ""
+
+msgid "Automatyczne listy"
+msgstr ""
+
+msgid "„- ” i „1. ” na początku akapitu"
+msgstr ""
+
+msgid "Przyciąganie obiektów"
+msgstr ""
+
+msgid "Do marginesów, środka strony i innych obiektów"
+msgstr ""
+
+msgid "Czcionka nowych dokumentów"
+msgstr ""
+
+msgid "Autor dokumentów"
+msgstr ""
+
+msgid "PLIKI"
+msgstr ""
+
+msgid "Autozapis kopii"
+msgstr ""
+
+msgid "Kopia do odzyskania po awarii"
+msgstr ""
+
+msgid "Wył."
+msgstr ""
+
+msgid "Przywracaj ostatni dokument"
+msgstr ""
+
+msgid "PASEK I WSTĄŻKA"
+msgstr ""
+
+msgid "Pasek szybkiego dostępu"
+msgstr ""
+
+msgid "Dostosuj…"
+msgstr ""
+
+msgid "Karta „Moja karta”"
+msgstr ""
+
+msgid "Słownik użytkownika"
+msgstr ""
+
+msgid "Pokaż…"
+msgstr ""
+
+msgid "SZTUCZNA INTELIGENCJA"
+msgstr ""
+
+msgid "Dostawca"
+msgstr ""
+
+msgid "OpenRouter daje dostęp do setek modeli jednym kluczem"
+msgstr ""
+
+msgid "Dostawca modeli językowych"
+msgstr ""
+
+msgid "Klucz API"
+msgstr ""
+
+msgid "Zapisywany zaszyfrowany (Windows DPAPI), tylko na tym komputerze"
+msgstr ""
+
+msgid "•••• zapisany – wpisz nowy, aby zmienić"
+msgstr ""
+
+msgid "Wklej klucz API"
+msgstr ""
+
+msgid "Adres API"
+msgstr ""
+
+msgid "Serwer zgodny z OpenAI, np. http://localhost:11434/v1"
+msgstr ""
+
+msgid "Model"
+msgstr ""
+
+msgid "Wybierz model"
+msgstr ""
+
+msgid "Lista modeli pobrana od dostawcy"
+msgstr ""
+
+msgid "Pobierz listę"
+msgstr ""
+
+msgid "Pobierz modele dostępne dla tego klucza"
+msgstr ""
+
+msgid "Własny identyfikator modelu"
+msgstr ""
+
+msgid "Gdy modelu nie ma na liście"
+msgstr ""
+
+msgid "Temperatura"
+msgstr ""
+
+msgid "Niżej – rzeczowo i przewidywalnie, wyżej – swobodniej i kreatywniej"
+msgstr ""
+
+msgid "Temperatura modelu (0–2)"
+msgstr ""
+
+msgid "Generuj dokument…"
+msgstr ""
+
+msgid "AKTUALIZACJE"
+msgstr ""
+
+msgid "Sprawdzaj w tle"
+msgstr ""
+
+msgid "Nowe wersje z redzikowski.com"
+msgstr ""
+
+msgid "Instaluj bez pytania"
+msgstr ""
+
+msgid "Sprawdź teraz"
+msgstr ""
+
+msgid "Zaktualizuj"
+msgstr ""
+
+msgid "Wersja {}"
+msgstr ""
+
+msgid " · przenośna"
+msgstr ""
+
+msgid "Edytor tekstu i skład dokumentów: kształty tekstu z węzłami, opływanie, kolumny, wykresy, eksport do Worda i PDF."
+msgstr ""
+
+msgid "Strona autora"
+msgstr ""
+
+msgid "Postaw kawę"
+msgstr ""
+
+msgid "Sprawdź aktualizacje"
+msgstr ""
+
+msgid "Słowniki: SJP.PL (pl), SCOWL (en). Ikony: Lucide (ISC). Interfejs: Slint."
+msgstr ""
+
+msgid "Dostosuj pasek szybkiego dostępu"
+msgstr ""
+
+msgid "Szukaj poleceń…"
+msgstr ""
+
+msgid "Paleta poleceń – wszystkie funkcje programu (Ctrl+K)"
+msgstr ""
+
+msgid "Generuj dokument z AI"
+msgstr ""
+
+msgid "Przełącz motyw: AMOLED / grafit / jasny"
+msgstr ""
+
+msgid "Rozwiń wstążkę (Ctrl+F1)"
+msgstr ""
+
+msgid "Zwiń wstążkę (Ctrl+F1)"
+msgstr ""
+
+msgid "Statystyka dokumentu"
+msgstr ""
+
+msgid "Następny błąd pisowni (F7)"
+msgstr ""
+
+msgid "Nawigator"
+msgstr ""
+
+msgid "Znaki formatowania"
+msgstr ""
+
+msgid "Pomniejsz"
+msgstr ""
+
+msgid "Powiększenie"
+msgstr ""
+
+msgid "Powiększ"
+msgstr ""
+
+msgid "Wpisz polecenie, np. „kolumny”, „kształt”, „PDF”…"
+msgstr ""
+
+msgid "Zamknij (Esc)"
+msgstr ""
+
+msgid "Moja karta"
+msgstr ""
+
+msgid "Zaznacz polecenia, które mają być pod ręką."
+msgstr ""
+
+msgid "Przywróć domyślne"
+msgstr ""
+
+msgid "Gotowe"
+msgstr ""
+
+msgid "Hiperłącze"
+msgstr ""
+
+msgid "Usuń łącze"
+msgstr ""
+
+msgid "Wstaw"
+msgstr ""
+
+msgid "Opisz, jaki dokument ma powstać – temat, odbiorców, układ, ton. AI napisze treść i złoży ją z formatowaniem: nagłówki, listy, wykresy, kształty tekstu, kolumny."
+msgstr ""
+
+msgid "Krótki"
+msgstr ""
+
+msgid "Średni"
+msgstr ""
+
+msgid "Obszerny"
+msgstr ""
+
+msgid "Długość dokumentu"
+msgstr ""
+
+msgid "Wstaw w miejscu kursora"
+msgstr ""
+
+msgid "Gdzie umieścić wynik"
+msgstr ""
+
+msgid "Raport kwartalny firmy z wykresami"
+msgstr ""
+
+msgid "Ulotka na otwarcie kawiarni"
+msgstr ""
+
+msgid "Gazetka szkolna w trzech kolumnach"
+msgstr ""
+
+msgid "Wstaw przykład"
+msgstr ""
+
+msgid "Generowanie… to może potrwać do minuty"
+msgstr ""
+
+msgid "Ustawienia AI"
+msgstr ""
+
+msgid "Generowanie…"
+msgstr ""
+
+msgid "Generuj"
+msgstr ""
+
+msgid "Statystyka"
+msgstr ""
+
+msgid "Zamknij"
+msgstr ""
+
+msgid "Niezapisane zmiany"
+msgstr ""
+
+msgid "Anuluj"
+msgstr ""
+
+msgid "Nie zapisuj"
+msgstr ""
+
+msgid "Zamknij panel"
+msgstr ""
+
+msgid "Brak nagłówków. Użyj stylów „Tytuł” i „Nagłówek 1–3”, a pojawią się tutaj."
+msgstr ""
+
+msgid "Przejdź do: {}"
+msgstr ""
+
+msgid "Style"
+msgstr ""
+
+msgid "Aktualizuj styl według zaznaczenia"
+msgstr ""
+
+msgid "Zastosuj styl: {}"
+msgstr ""
+
+msgid "Nowy styl z zaznaczenia"
+msgstr ""
+
+msgid "Słownik jest pusty. Wyrazy dodasz z menu prawego przycisku na podkreślonym słowie."
+msgstr ""
+
+msgid "Usuń ze słownika"
+msgstr ""
+
+msgid "Znajdź i zamień"
+msgstr ""
+
+msgid "Szukaj…"
+msgstr ""
+
+msgid "Zamień na…"
+msgstr ""
+
+msgid "Wielkość liter"
+msgstr ""
+
+msgid "Całe wyrazy"
+msgstr ""
+
+msgid "Poprzedni"
+msgstr ""
+
+msgid "Następny"
+msgstr ""
+
+msgid "Zamień"
+msgstr ""
+
+msgid "Zamień wszystko"
+msgstr ""
+
+msgid "Obiekt"
+msgstr ""
+
+msgid "POŁOŻENIE I ROZMIAR"
+msgstr ""
+
+msgid "Odległość od lewej krawędzi strony"
+msgstr ""
+
+msgid "Odległość od górnej krawędzi strony"
+msgstr ""
+
+msgid "Szerokość"
+msgstr ""
+
+msgid "Wysokość"
+msgstr ""
+
+msgid "Duplikuj"
+msgstr ""
+
+msgid "Duplikuj obiekt (Ctrl+D)"
+msgstr ""
+
+msgid "Odblokuj"
+msgstr ""
+
+msgid "Zablokuj"
+msgstr ""
+
+msgid "Usuń"
+msgstr ""
+
+msgid "OBRAZ"
+msgstr ""
+
+msgid "Wypełnij kształt"
+msgstr ""
+
+msgid "Zmieść cały"
+msgstr ""
+
+msgid "Dopasowanie obrazu do kształtu"
+msgstr ""
+
+msgid "Wykryj kontur"
+msgstr ""
+
+msgid "Zmień obraz"
+msgstr ""
+
+msgid "WYKRES"
+msgstr ""
+
+msgid "Kolumny"
+msgstr ""
+
+msgid "Słupki"
+msgstr ""
+
+msgid "Linie"
+msgstr ""
+
+msgid "Pola"
+msgstr ""
+
+msgid "Koło"
+msgstr ""
+
+msgid "Pierścień"
+msgstr ""
+
+msgid "Tytuł wykresu"
+msgstr ""
+
+msgid "Dane: pierwszy wiersz – nazwy serii, potem etykieta i wartości oddzielone średnikiem."
+msgstr ""
+
+msgid "Legenda"
+msgstr ""
+
+msgid "Wartości"
+msgstr ""
+
+msgid "Zastosuj dane"
+msgstr ""
+
+msgid "TEKST NA ŚCIEŻCE"
+msgstr ""
+
+msgid "Tekst biegnący po krzywej"
+msgstr ""
+
+msgid "Przesunięcie wzdłuż ścieżki"
+msgstr ""
+
+msgid "Początek tekstu na krzywej"
+msgstr ""
+
+msgid "Formatowanie (czcionka, kolor, rozmiar) – z karty Narzędzia główne, gdy obiekt jest zaznaczony. Kształt ścieżki zmienisz węzłami."
+msgstr ""
+
+msgid "NAZWA"
+msgstr ""
+
+msgid "Nazwa obiektu"
+msgstr ""
+
+msgid "Kolory motywu i podstawowe"
+msgstr ""
+
+msgid "Brak"
+msgstr ""
+
+msgid "Bez koloru"
+msgstr ""
+
+msgid "Własny kolor szesnastkowo"
+msgstr ""
+
+msgid "Użyj"
+msgstr ""
+
+msgid "Użyj wpisanego koloru"
+msgstr ""
+
+msgid "Czcionka – lista krojów zainstalowanych w systemie"
+msgstr ""
+
+msgid "Szukaj czcionki…"
+msgstr ""
+
+msgid "Ostatnio używane"
+msgstr ""
+
+msgid "Rozmiar czcionki (pt)"
+msgstr ""
+
+msgid "Styl: {}"
+msgstr ""
+
+msgid "Poprzednie style"
+msgstr ""
+
+msgid "Kolejne style"
+msgstr ""
+
+msgid "Panel stylów"
+msgstr ""
+
+msgid "Bez listy"
+msgstr ""
+
+msgid "• Punktor"
+msgstr ""
+
+msgid "– Myślnik"
+msgstr ""
+
+msgid "✓ Znacznik"
+msgstr ""
+
+msgid "➔ Strzałka"
+msgstr ""
+
+msgid "1. Numeracja"
+msgstr ""
+
+msgid "1) Numeracja z nawiasem"
+msgstr ""
+
+msgid "a) Litery małe"
+msgstr ""
+
+msgid "A. Litery wielkie"
+msgstr ""
+
+msgid "i. Rzymskie małe"
+msgstr ""
+
+msgid "I. Rzymskie wielkie"
+msgstr ""
+
+msgid "Zacznij numerację od 1"
+msgstr ""
+
+msgid "Dokładnie jak rozmiar pisma"
+msgstr ""
+
+msgid "Dodaj odstęp przed akapitem"
+msgstr ""
+
+msgid "Usuń odstęp po akapicie"
+msgstr ""
+
+msgid "Jak w tekście"
+msgstr ""
+
+msgid "WERSALIKI"
+msgstr ""
+
+msgid "Kapitaliki"
+msgstr ""
+
+msgid "Zamień na WIELKIE litery"
+msgstr ""
+
+msgid "zamień na małe litery"
+msgstr ""
+
+msgid "Każdy Wyraz Wielką Literą"
+msgstr ""
+
+msgid "Jak w zdaniu"
+msgstr ""
+
+msgid "Pojedyncze"
+msgstr ""
+
+msgid "Podwójne"
+msgstr ""
+
+msgid "Kropkowane"
+msgstr ""
+
+msgid "Faliste"
+msgstr ""
+
+msgid "Bez podkreślenia"
+msgstr ""
+
+msgid "Prostokąt"
+msgstr ""
+
+msgid "Zaokrąglony prostokąt"
+msgstr ""
+
+msgid "Elipsa / koło"
+msgstr ""
+
+msgid "Trójkąt"
+msgstr ""
+
+msgid "Romb"
+msgstr ""
+
+msgid "Pięciokąt"
+msgstr ""
+
+msgid "Sześciokąt"
+msgstr ""
+
+msgid "Ośmiokąt"
+msgstr ""
+
+msgid "Gwiazda"
+msgstr ""
+
+msgid "Gwiazda ośmioramienna"
+msgstr ""
+
+msgid "Serce"
+msgstr ""
+
+msgid "Fala"
+msgstr ""
+
+msgid "Łuk"
+msgstr ""
+
+msgid "Równoległobok"
+msgstr ""
+
+msgid "Trapez"
+msgstr ""
+
+msgid "Strzałka"
+msgstr ""
+
+msgid "Szewron"
+msgstr ""
+
+msgid "Krzyż"
+msgstr ""
+
+msgid "Dymek"
+msgstr ""
+
+msgid "Pierścień (z otworem)"
+msgstr ""
+
+msgid "Linia"
+msgstr ""
+
+msgid "Łuk otwarty"
+msgstr ""
+
+msgid "Rysuj własny (węzły)…"
+msgstr ""
+
+msgid "Kolumnowy"
+msgstr ""
+
+msgid "Słupkowy"
+msgstr ""
+
+msgid "Liniowy"
+msgstr ""
+
+msgid "Warstwowy"
+msgstr ""
+
+msgid "Kołowy"
+msgstr ""
+
+msgid "Pierścieniowy"
+msgstr ""
+
+msgid "prawa autorskie"
+msgstr ""
+
+msgid "znak zastrzeżony"
+msgstr ""
+
+msgid "znak towarowy"
+msgstr ""
+
+msgid "paragraf"
+msgstr ""
+
+msgid "akapit"
+msgstr ""
+
+msgid "krzyżyk"
+msgstr ""
+
+msgid "punktor"
+msgstr ""
+
+msgid "wielokropek"
+msgstr ""
+
+msgid "półpauza"
+msgstr ""
+
+msgid "pauza"
+msgstr ""
+
+msgid "cudzysłów dolny"
+msgstr ""
+
+msgid "cudzysłów górny"
+msgstr ""
+
+msgid "cudzysłów francuski"
+msgstr ""
+
+msgid "stopień"
+msgstr ""
+
+msgid "razy"
+msgstr ""
+
+msgid "Twarda spacja (Ctrl+Shift+Spacja)"
+msgstr ""
+
+msgid "Miękki dywiz"
+msgstr ""
+
+msgid "Numer strony"
+msgstr ""
+
+msgid "Liczba stron"
+msgstr ""
+
+msgid "Data (aktualizowana)"
+msgstr ""
+
+msgid "Godzina"
+msgstr ""
+
+msgid "Tytuł dokumentu"
+msgstr ""
+
+msgid "Dzisiejsza data jako tekst"
+msgstr ""
+
+msgid "Kwadrat  ·  210 × 210 mm"
+msgstr ""
+
+msgid "Normalne  ·  25 mm"
+msgstr ""
+
+msgid "Wąskie  ·  12,7 mm"
+msgstr ""
+
+msgid "Umiarkowane  ·  19 / 25 mm"
+msgstr ""
+
+msgid "Szerokie  ·  38 mm"
+msgstr ""
+
+msgid "Książkowe  ·  20 / 30 mm"
+msgstr ""
+
+msgid "Bez marginesów (plakat)"
+msgstr ""
+
+msgid "Bez opływania (przed tekstem)"
+msgstr ""
+
+msgid "Wokół – z obu stron"
+msgstr ""
+
+msgid "Tylko po lewej stronie"
+msgstr ""
+
+msgid "Tylko po prawej stronie"
+msgstr ""
+
+msgid "Po stronie z większym miejscem"
+msgstr ""
+
+msgid "Nad i pod obiektem"
+msgstr ""
+
+msgid "Za tekstem"
+msgstr ""
+
+msgid "Szerokość strony"
+msgstr ""
+
+msgid "Cała strona"
+msgstr ""
+
+msgid "AI"
+msgstr ""
+
+msgid "Generuj dokument z AI na podstawie opisu"
+msgstr ""
+
+msgid "Schowek"
+msgstr ""
+
+msgid "Wklej"
+msgstr ""
+
+msgid "Wklej (Ctrl+V)"
+msgstr ""
+
+msgid "Wytnij"
+msgstr ""
+
+msgid "Wytnij (Ctrl+X)"
+msgstr ""
+
+msgid "Kopiuj"
+msgstr ""
+
+msgid "Kopiuj (Ctrl+C)"
+msgstr ""
+
+msgid "Malarz"
+msgstr ""
+
+msgid "Malarz formatów – skopiuj formatowanie i kliknij tekst docelowy (Ctrl+Shift+C / Ctrl+Shift+V)"
+msgstr ""
+
+msgid "Czcionka"
+msgstr ""
+
+msgid "Powiększ czcionkę (Ctrl+])"
+msgstr ""
+
+msgid "Pomniejsz czcionkę (Ctrl+[)"
+msgstr ""
+
+msgid "Wyczyść formatowanie znaków (Ctrl+Spacja)"
+msgstr ""
+
+msgid "Pogrubienie (Ctrl+B)"
+msgstr ""
+
+msgid "Kursywa (Ctrl+I)"
+msgstr ""
+
+msgid "Podkreślenie (Ctrl+U)"
+msgstr ""
+
+msgid "Rodzaj podkreślenia"
+msgstr ""
+
+msgid "Przekreślenie"
+msgstr ""
+
+msgid "Indeks górny (Ctrl+Shift+=)"
+msgstr ""
+
+msgid "Indeks dolny (Ctrl+=)"
+msgstr ""
+
+msgid "Wersaliki, kapitaliki i zmiana wielkości liter"
+msgstr ""
+
+msgid "Kolor czcionki"
+msgstr ""
+
+msgid "Kolor wyróżnienia tekstu"
+msgstr ""
+
+msgid "Akapit"
+msgstr ""
+
+msgid "Punktory (listy nienumerowane)"
+msgstr ""
+
+msgid "Numeracja"
+msgstr ""
+
+msgid "Zmniejsz wcięcie / poziom listy (Shift+Tab)"
+msgstr ""
+
+msgid "Zwiększ wcięcie / poziom listy (Tab)"
+msgstr ""
+
+msgid "Pokaż znaki formatowania (Ctrl+*)"
+msgstr ""
+
+msgid "Do lewej (Ctrl+L)"
+msgstr ""
+
+msgid "Wyśrodkuj (Ctrl+E)"
+msgstr ""
+
+msgid "Do prawej (Ctrl+R)"
+msgstr ""
+
+msgid "Wyjustuj (Ctrl+J)"
+msgstr ""
+
+msgid "Interlinia i odstępy akapitu"
+msgstr ""
+
+msgid "Cieniowanie akapitu"
+msgstr ""
+
+msgid "Edycja"
+msgstr ""
+
+msgid "Znajdź"
+msgstr ""
+
+msgid "Znajdź (Ctrl+F)"
+msgstr ""
+
+msgid "Zamień (Ctrl+H)"
+msgstr ""
+
+msgid "Zaznacz wszystko"
+msgstr ""
+
+msgid "Zaznacz cały tekst (Ctrl+A)"
+msgstr ""
+
+msgid "Generuj z AI"
+msgstr ""
+
+msgid "Opisz dokument, a sztuczna inteligencja go napisze i złoży z formatowaniem"
+msgstr ""
+
+msgid "Strony"
+msgstr ""
+
+msgid "Pusta strona"
+msgstr ""
+
+msgid "Dodaj pustą stronę na obiekty"
+msgstr ""
+
+msgid "Podział strony"
+msgstr ""
+
+msgid "Podział strony (Ctrl+Enter)"
+msgstr ""
+
+msgid "Podział kolumny"
+msgstr ""
+
+msgid "Następny tekst od nowej kolumny (Ctrl+Shift+Enter)"
+msgstr ""
+
+msgid "Ilustracje"
+msgstr ""
+
+msgid "Obraz"
+msgstr ""
+
+msgid "Wstaw obraz z pliku (PNG, JPEG, WebP, GIF, BMP)"
+msgstr ""
+
+msgid "Kształt"
+msgstr ""
+
+msgid "Wstaw kształt – przeciągnij na stronie, aby go narysować"
+msgstr ""
+
+msgid "Wykres"
+msgstr ""
+
+msgid "Wstaw wykres z edytowalnymi danymi"
+msgstr ""
+
+msgid "Tekst"
+msgstr ""
+
+msgid "Ramka tekstowa"
+msgstr ""
+
+msgid "Narysuj ramkę tekstową (przeciągnij na stronie)"
+msgstr ""
+
+msgid "Kształt tekstu"
+msgstr ""
+
+msgid "Tekst wpisany w kształt – opływa treść strony"
+msgstr ""
+
+msgid "Tekst na ścieżce"
+msgstr ""
+
+msgid "Inicjał"
+msgstr ""
+
+msgid "Pierwsza litera akapitu na trzy wiersze"
+msgstr ""
+
+msgid "Symbol"
+msgstr ""
+
+msgid "Wstaw znak specjalny"
+msgstr ""
+
+msgid "Pole"
+msgstr ""
+
+msgid "Numer strony, liczba stron, data…"
+msgstr ""
+
+msgid "Łącze"
+msgstr ""
+
+msgid "Hiperłącze (Ctrl+Shift+K)"
+msgstr ""
+
+msgid "Nagłówek i stopka"
+msgstr ""
+
+msgid "Edytuj nagłówek"
+msgstr ""
+
+msgid "Dodaj nagłówek"
+msgstr ""
+
+msgid "Tekst u góry każdej strony"
+msgstr ""
+
+msgid "Edytuj stopkę"
+msgstr ""
+
+msgid "Dodaj stopkę"
+msgstr ""
+
+msgid "Tekst u dołu każdej strony (z numerem strony)"
+msgstr ""
+
+msgid "Inna pierwsza strona"
+msgstr ""
+
+msgid "Osobny nagłówek i stopka na pierwszej stronie"
+msgstr ""
+
+msgid "Usuń nagłówek"
+msgstr ""
+
+msgid "Usuń stopkę"
+msgstr ""
+
+msgid "Motyw dokumentu"
+msgstr ""
+
+msgid "Motyw: {} – kroje i kolory stylów"
+msgstr ""
+
+msgid "Tło i typografia"
+msgstr ""
+
+msgid "Kolor strony"
+msgstr ""
+
+msgid "Polskie sierotki"
+msgstr ""
+
+msgid "Krótkie wyrazy (a, i, o, u, w, z) nie zostają na końcu wiersza"
+msgstr ""
+
+msgid "Siatka bazowa"
+msgstr ""
+
+msgid "Wiersze treści głównej na wspólnej siatce (równe linie w kolumnach)"
+msgstr ""
+
+msgid "Strona"
+msgstr ""
+
+msgid "Rozmiar strony"
+msgstr ""
+
+msgid "Pozioma"
+msgstr ""
+
+msgid "Pionowa"
+msgstr ""
+
+msgid "Orientacja strony"
+msgstr ""
+
+msgid "Marginesy"
+msgstr ""
+
+msgid "Gotowe marginesy"
+msgstr ""
+
+msgid "Margines górny"
+msgstr ""
+
+msgid "Margines dolny"
+msgstr ""
+
+msgid "Margines lewy"
+msgstr ""
+
+msgid "Margines prawy"
+msgstr ""
+
+msgid "Jedna kolumna"
+msgstr ""
+
+msgid "Kolumny: {}"
+msgstr ""
+
+msgid "Odstęp"
+msgstr ""
+
+msgid "Odstęp między kolumnami"
+msgstr ""
+
+msgid "Linia między"
+msgstr ""
+
+msgid "Pionowa linia między kolumnami"
+msgstr ""
+
+msgid "Wcięcie ←"
+msgstr ""
+
+msgid "Wcięcie z lewej"
+msgstr ""
+
+msgid "Wcięcie →"
+msgstr ""
+
+msgid "Wcięcie z prawej"
+msgstr ""
+
+msgid "1. wiersz"
+msgstr ""
+
+msgid "Wcięcie pierwszego wiersza (ujemne – wysunięcie)"
+msgstr ""
+
+msgid "Przed"
+msgstr ""
+
+msgid "Odstęp przed akapitem (pt)"
+msgstr ""
+
+msgid "Po"
+msgstr ""
+
+msgid "Odstęp po akapicie (pt)"
+msgstr ""
+
+msgid "Światło"
+msgstr ""
+
+msgid "Odstępy między znakami zaznaczenia (pt)"
+msgstr ""
+
+msgid "Rozmieść"
+msgstr ""
+
+msgid "Opływanie"
+msgstr ""
+
+msgid "Jak tekst opływa zaznaczony obiekt"
+msgstr ""
+
+msgid "Na wierzch"
+msgstr ""
+
+msgid "Do przodu"
+msgstr ""
+
+msgid "Do tyłu"
+msgstr ""
+
+msgid "Na spód"
+msgstr ""
+
+msgid "Do lewej krawędzi strony"
+msgstr ""
+
+msgid "Wyśrodkuj na stronie w poziomie"
+msgstr ""
+
+msgid "Do prawej krawędzi strony"
+msgstr ""
+
+msgid "Do górnej krawędzi strony"
+msgstr ""
+
+msgid "Wyśrodkuj na stronie w pionie"
+msgstr ""
+
+msgid "Do dolnej krawędzi strony"
+msgstr ""
+
+msgid "Rysuj węzłami"
+msgstr ""
+
+msgid "Klikaj, aby stawiać węzły (przeciągnij – krzywa). Kliknij pierwszy węzeł albo Enter, aby zamknąć kształt; tekst wypełni jego wnętrze."
+msgstr ""
+
+msgid "Gotowy kształt"
+msgstr ""
+
+msgid "Kształt tekstu z gotowego wzoru"
+msgstr ""
+
+msgid "Ramka"
+msgstr ""
+
+msgid "Prostokątna ramka tekstowa"
+msgstr ""
+
+msgid "Węzły"
+msgstr ""
+
+msgid "Edytuj węzły"
+msgstr ""
+
+msgid "Pokaż węzły kształtu (dwuklik na obiekcie). Przeciągaj węzły i uchwyty krzywych; dwuklik na krawędzi dodaje węzeł."
+msgstr ""
+
+msgid "Dodaj węzeł"
+msgstr ""
+
+msgid "Dodaj węzeł w połowie zaznaczonego odcinka"
+msgstr ""
+
+msgid "Usuń węzeł"
+msgstr ""
+
+msgid "Usuń zaznaczony węzeł (Delete)"
+msgstr ""
+
+msgid "Gładki / narożny"
+msgstr ""
+
+msgid "Przełącz węzeł między gładkim (z uchwytami) a narożnym"
+msgstr ""
+
+msgid "Odcinek prosty"
+msgstr ""
+
+msgid "Odcinek za zaznaczonym węzłem jako prosta"
+msgstr ""
+
+msgid "Odcinek krzywy"
+msgstr ""
+
+msgid "Odcinek za zaznaczonym węzłem jako krzywa Béziera"
+msgstr ""
+
+msgid "Odbij"
+msgstr ""
+
+msgid "Odbij kształt w poziomie (Shift – w pionie)"
+msgstr ""
+
+msgid "Łączenie kształtów"
+msgstr ""
+
+msgid "Suma"
+msgstr ""
+
+msgid "Połącz zaznaczone kształty w jeden (zaznacz dwa z Shift)"
+msgstr ""
+
+msgid "Różnica"
+msgstr ""
+
+msgid "Wytnij drugi kształt z pierwszego"
+msgstr ""
+
+msgid "Część wspólna"
+msgstr ""
+
+msgid "Wyklucz"
+msgstr ""
+
+msgid "Wszystko poza częścią wspólną"
+msgstr ""
+
+msgid "Tekst w kształcie"
+msgstr ""
+
+msgid "Margines"
+msgstr ""
+
+msgid "Odstęp tekstu od krawędzi kształtu (pt)"
+msgstr ""
+
+msgid "Liczba kolumn tekstu w kształcie"
+msgstr ""
+
+msgid "Góra"
+msgstr ""
+
+msgid "Środek"
+msgstr ""
+
+msgid "Dół"
+msgstr ""
+
+msgid "Wyrównanie tekstu w pionie (ramki prostokątne)"
+msgstr ""
+
+msgid "Połącz ramki"
+msgstr ""
+
+msgid "Tekst, który się nie mieści, popłynie do wskazanej ramki"
+msgstr ""
+
+msgid "Rozłącz"
+msgstr ""
+
+msgid "Bez opływania"
+msgstr ""
+
+msgid "Z obu stron"
+msgstr ""
+
+msgid "Tekst po lewej"
+msgstr ""
+
+msgid "Tekst po prawej"
+msgstr ""
+
+msgid "Po większej stronie"
+msgstr ""
+
+msgid "Nad i pod"
+msgstr ""
+
+msgid "Odstęp tekstu od obiektu (pt)"
+msgstr ""
+
+msgid "Po konturze"
+msgstr ""
+
+msgid "Opływaj kształt (wyłączone – prostokąt ramki)"
+msgstr ""
+
+msgid "Kontur opływania z przezroczystości albo tła obrazu"
+msgstr ""
+
+msgid "Wygląd"
+msgstr ""
+
+msgid "Wypełnienie kształtu"
+msgstr ""
+
+msgid "Kolor obrysu"
+msgstr ""
+
+msgid "Obrys"
+msgstr ""
+
+msgid "Grubość obrysu (pt)"
+msgstr ""
+
+msgid "Jednolite"
+msgstr ""
+
+msgid "Gradient"
+msgstr ""
+
+msgid "Rodzaj wypełnienia"
+msgstr ""
+
+msgid "Cień"
+msgstr ""
+
+msgid "Kreski"
+msgstr ""
+
+msgid "Obrys przerywany"
+msgstr ""
+
+msgid "Krycie {}%"
+msgstr ""
+
+msgid "Krycie obiektu"
+msgstr ""
+
+msgid "Narożniki"
+msgstr ""
+
+msgid "Zaokrąglenie narożników prostokąta (pt)"
+msgstr ""
+
+msgid "Spis treści"
+msgstr ""
+
+msgid "Wstaw spis treści z nagłówków (z numerami stron)"
+msgstr ""
+
+msgid "Aktualizuj"
+msgstr ""
+
+msgid "Odśwież spis treści"
+msgstr ""
+
+msgid "Podpisy i nawigacja"
+msgstr ""
+
+msgid "Podpis"
+msgstr ""
+
+msgid "Wstaw podpis rysunku z kolejnym numerem"
+msgstr ""
+
+msgid "Panel z konspektem dokumentu"
+msgstr ""
+
+msgid "Pisownia"
+msgstr ""
+
+msgid "Sprawdź"
+msgstr ""
+
+msgid "Przejdź do następnego błędu (F7)"
+msgstr ""
+
+msgid "Podczas pisania"
+msgstr ""
+
+msgid "Podkreślaj błędy na bieżąco"
+msgstr ""
+
+msgid "Polski"
+msgstr ""
+
+msgid "Język zaznaczonego tekstu: polski"
+msgstr ""
+
+msgid "Angielski"
+msgstr ""
+
+msgid "Język zaznaczonego tekstu: angielski"
+msgstr ""
+
+msgid "Narzędzia"
+msgstr ""
+
+msgid "Wyrazy, znaki, akapity i strony"
+msgstr ""
+
+msgid "Słownik"
+msgstr ""
+
+msgid "Słownik użytkownika – dodane wyrazy"
+msgstr ""
+
+msgid "Pomniejsz (Ctrl+−, Ctrl+kółko)"
+msgstr ""
+
+msgid "Powiększ (Ctrl++, Ctrl+kółko)"
+msgstr ""
+
+msgid "Pokaż"
+msgstr ""
+
+msgid "Linie pomocnicze"
+msgstr ""
+
+msgid "Marginesy, kolumny i kontury ramek"
+msgstr ""
+
+msgid "Interfejs"
+msgstr ""
+
+msgid "Motyw interfejsu"
+msgstr ""
+
+msgid "Zwinięta wstążka"
+msgstr ""
+
+msgid "Pełny ekran"
+msgstr ""
+
+msgid "Pełny ekran (F11)"
+msgstr ""
+
+msgid "Moje polecenia"
+msgstr ""
+
+msgid "Dostosuj"
+msgstr ""
+
+msgid "Wybierz polecenia tej karty"
+msgstr ""
+
+msgid "Plik"
+msgstr ""
+
+msgid "Nowy, otwórz, zapisz, eksport, ustawienia (Alt+F)"
+msgstr ""
+
+msgid "Narzędzia główne"
+msgstr ""
+
+msgid "Wstawianie"
+msgstr ""
+
+msgid "Projekt"
+msgstr ""
+
+msgid "Układ"
+msgstr ""
+
+msgid "Kształty tekstu"
+msgstr ""
+
+msgid "Odwołania"
+msgstr ""
+
+msgid "Recenzja"
+msgstr ""
+
+msgid "Widok"
+msgstr ""
+
+msgid "Kształty tekstu: tekst w dowolnym konturze z węzłów, opływanie, łączenie ramek"
+msgstr ""
+
+msgid "Dokument bez tytułu"
+msgstr ""
+
+msgid "Strony: {pg}\nAkapity: {p}\nWyrazy: {w}\nZnaki (bez spacji): {ns}\nZnaki (ze spacjami): {c}"
+msgstr ""
+
+msgid "Nie ma czego cofnąć"
+msgstr ""
+
+msgid "Zaznacz tekst, który ma dostać to formatowanie"
+msgstr ""
+
+msgid "Skopiowano formatowanie (Ctrl+Shift+V wkleja)"
+msgstr ""
+
+msgid "Zamieniono: {}"
+msgstr ""
+
+msgid "Nieprawidłowy kolor – wpisz np. #1f4e79"
+msgstr ""
+
+msgid "Styl zaktualizowany według zaznaczenia"
+msgstr ""
+
+msgid "Mój styl {}"
+msgstr ""
+
+msgid "Dodano pustą stronę – wstaw na nią obrazy, kształty i ramki"
+msgstr ""
+
+msgid "Wstaw obraz"
+msgstr ""
+
+msgid "Obrazy"
+msgstr ""
+
+msgid "Nieobsługiwany format obrazu"
+msgstr ""
+
+msgid "Przeciągnij na stronie, aby narysować (kliknięcie – rozmiar domyślny)"
+msgstr ""
+
+msgid "Przeciągnij na stronie, aby narysować ramkę tekstową"
+msgstr ""
+
+msgid "Klikaj, aby stawiać węzły (przeciągnij – krzywa). Kliknij pierwszy węzeł albo Enter, aby zamknąć."
+msgstr ""
+
+msgid "Przeciągnij na stronie – powstanie łuk z tekstem"
+msgstr ""
+
+msgid "Produkt A"
+msgstr ""
+
+msgid "Produkt B"
+msgstr ""
+
+msgid "Produkt C"
+msgstr ""
+
+msgid "Inne"
+msgstr ""
+
+msgid "Udział"
+msgstr ""
+
+msgid "Edytujesz nagłówek/stopkę – Esc wraca do treści"
+msgstr ""
+
+msgid "Brak nagłówków – nadaj akapitom style „Nagłówek 1–3”"
+msgstr ""
+
+msgid "Spis treści zaktualizowany"
+msgstr ""
+
+msgid "W dokumencie nie ma spisu treści"
+msgstr ""
+
+msgid "Rysunek {}. "
+msgstr ""
+
+msgid "Najpierw zaznacz obiekt"
+msgstr ""
+
+msgid "Kontur wykrywamy dla obrazów"
+msgstr ""
+
+msgid "Wykryto kontur – tekst opływa kształt obrazu"
+msgstr ""
+
+msgid "Nie znaleziono konturu (obraz bez przezroczystości i jednolitego tła)"
+msgstr ""
+
+msgid "Zaznacz ramkę tekstową"
+msgstr ""
+
+msgid "Kliknij ramkę, do której ma popłynąć dalszy tekst"
+msgstr ""
+
+msgid "Zaznacz dwa kształty na tej samej stronie (drugi z Shift)"
+msgstr ""
+
+msgid "Nie rozpoznano danych wykresu"
+msgstr ""
+
+msgid "Dane wykresu zastosowane"
+msgstr ""
+
+msgid "Słowniki jeszcze się wczytują…"
+msgstr ""
+
+msgid "Nie znaleziono błędów pisowni"
+msgstr ""
+
+msgid "Nieprawidłowy kolor – wpisz np. #5b8cff"
+msgstr ""
+
+msgid "Język zmieni się po ponownym uruchomieniu"
+msgstr ""
+
+msgid "Najpierw ustaw dostawcę, klucz API i model"
+msgstr ""
+
+msgid "Klucz API zapisany (zaszyfrowany)"
+msgstr ""
+
+msgid "Model: {}"
+msgstr ""
+
+msgid "Pobieranie listy modeli…"
+msgstr ""
+
+msgid "Dostępne modele: {}"
+msgstr ""
+
+msgid "Nie udało się pobrać modeli: {}"
+msgstr ""
+
+msgid "Dokument wygenerowany – możesz go dowolnie edytować"
+msgstr ""
+
+msgid "Błąd: {}"
+msgstr ""
+
+msgid "Nieznane polecenie: {}"
+msgstr ""
+
+msgid "Brak wyników"
+msgstr ""
+
+msgid "Wynik {} z {}"
+msgstr ""
+
+msgid "Kształt tekstu gotowy – pisz albo wklej tekst; dwuklik na krawędzi edytuje węzły"
+msgstr ""
+
+msgid "Wskaż ramkę tekstową"
+msgstr ""
+
+msgid "Ta ramka należy już do łańcucha"
+msgstr ""
+
+msgid "Ramki połączone – tekst płynie dalej"
+msgstr ""
+
+msgid "Sprawdzanie aktualizacji…"
+msgstr ""
+
+msgid "Dostępna wersja {v} (masz {}) · sprawdzono o {when}"
+msgstr ""
+
+msgid "Jest nowa wersja OpenDTP {v} – Plik → Ustawienia → Zaktualizuj"
+msgstr ""
+
+msgid "Masz najnowszą wersję {} · sprawdzono o {when}"
+msgstr ""
+
+msgid "Masz najnowszą wersję"
+msgstr ""
+
+msgid "Nie udało się sprawdzić ({}) · {when}"
+msgstr ""
+
+msgid "Nie udało się sprawdzić aktualizacji"
+msgstr ""
+
+msgid "Zapisz dokument przed aktualizacją"
+msgstr ""
+
+msgid "Instalacja nie powiodła się: {}"
+msgstr ""
+
+msgid "Pobieranie aktualizacji…"
+msgstr ""
+
+msgid "Pobieranie aktualizacji… {}%"
+msgstr ""
+
+msgid "Wersja {} pobrana – zainstaluje się przy zamknięciu programu"
+msgstr ""
+
+msgid "Aktualizacja pobrana – zainstaluje się po zamknięciu OpenDTP"
+msgstr ""
+
+msgid "Otwórz…"
+msgstr ""
+
+msgid "Zapisz jako…"
+msgstr ""
+
+msgid "Eksportuj do Worda (DOCX)"
+msgstr ""
+
+msgid "Eksportuj do PDF"
+msgstr ""
+
+msgid "Eksportuj do HTML"
+msgstr ""
+
+msgid "Eksportuj do Markdown"
+msgstr ""
+
+msgid "Eksportuj do tekstu"
+msgstr ""
+
+msgid "Eksportuj stronę jako obraz"
+msgstr ""
+
+msgid "Drukuj (przez PDF)"
+msgstr ""
+
+msgid "Cofnij"
+msgstr ""
+
+msgid "Ponów"
+msgstr ""
+
+msgid "Wklej jako tekst"
+msgstr ""
+
+msgid "Malarz formatów"
+msgstr ""
+
+msgid "Pogrubienie"
+msgstr ""
+
+msgid "Kursywa"
+msgstr ""
+
+msgid "Podkreślenie"
+msgstr ""
+
+msgid "Indeks górny"
+msgstr ""
+
+msgid "Indeks dolny"
+msgstr ""
+
+msgid "Powiększ czcionkę"
+msgstr ""
+
+msgid "Pomniejsz czcionkę"
+msgstr ""
+
+msgid "Wyczyść formatowanie"
+msgstr ""
+
+msgid "Wersaliki"
+msgstr ""
+
+msgid "Wyrównaj do lewej"
+msgstr ""
+
+msgid "Wyśrodkuj"
+msgstr ""
+
+msgid "Wyrównaj do prawej"
+msgstr ""
+
+msgid "Wyjustuj"
+msgstr ""
+
+msgid "Lista punktowana"
+msgstr ""
+
+msgid "Lista numerowana"
+msgstr ""
+
+msgid "Zwiększ wcięcie"
+msgstr ""
+
+msgid "Zmniejsz wcięcie"
+msgstr ""
+
+msgid "Styl: Tytuł"
+msgstr ""
+
+msgid "Styl: Nagłówek 1"
+msgstr ""
+
+msgid "Styl: Nagłówek 2"
+msgstr ""
+
+msgid "Styl: Normalny"
+msgstr ""
+
+msgid "Styl: Cytat"
+msgstr ""
+
+msgid "Pokaż znaki formatowania"
+msgstr ""
+
+msgid "Rysuj kształt tekstu węzłami"
+msgstr ""
+
+msgid "Kształt tekstu: gwiazda"
+msgstr ""
+
+msgid "Kształt tekstu: koło"
+msgstr ""
+
+msgid "Kształt tekstu: serce"
+msgstr ""
+
+msgid "Kształt tekstu: fala"
+msgstr ""
+
+msgid "Kształt: prostokąt"
+msgstr ""
+
+msgid "Kształt: elipsa"
+msgstr ""
+
+msgid "Kształt: linia"
+msgstr ""
+
+msgid "Wykres kolumnowy"
+msgstr ""
+
+msgid "Wykres kołowy"
+msgstr ""
+
+msgid "Wykres liniowy"
+msgstr ""
+
+msgid "Data"
+msgstr ""
+
+msgid "Nagłówek strony"
+msgstr ""
+
+msgid "Stopka strony"
+msgstr ""
+
+msgid "Wstaw spis treści"
+msgstr ""
+
+msgid "Aktualizuj spis treści"
+msgstr ""
+
+msgid "Podpis rysunku"
+msgstr ""
+
+msgid "Dwie kolumny"
+msgstr ""
+
+msgid "Trzy kolumny"
+msgstr ""
+
+msgid "Zmień orientację strony"
+msgstr ""
+
+msgid "Edytuj węzły kształtu"
+msgstr ""
+
+msgid "Połącz ramki tekstowe"
+msgstr ""
+
+msgid "Rozłącz ramki"
+msgstr ""
+
+msgid "Suma kształtów"
+msgstr ""
+
+msgid "Różnica kształtów"
+msgstr ""
+
+msgid "Opływanie z obu stron"
+msgstr ""
+
+msgid "Opływanie: nad i pod"
+msgstr ""
+
+msgid "Duplikuj obiekt"
+msgstr ""
+
+msgid "Usuń obiekt"
+msgstr ""
+
+msgid "Wykryj kontur obrazu"
+msgstr ""
+
+msgid "Następny błąd pisowni"
+msgstr ""
+
+msgid "Motyw AMOLED"
+msgstr ""
+
+msgid "Motyw grafitowy"
+msgstr ""
+
+msgid "Motyw jasny"
+msgstr ""
+
+msgid "Zwiń / rozwiń wstążkę"
+msgstr ""
+
+msgid "Postaw kawę autorowi"
+msgstr ""
+
+msgid "Nie udało się otworzyć pliku: {}"
+msgstr ""
+
+msgid "Otwórz dokument"
+msgstr ""
+
+msgid "Dokumenty"
+msgstr ""
+
+msgid "Tekst i Markdown"
+msgstr ""
+
+msgid "Zapisz dokument"
+msgstr ""
+
+msgid "Zapisano: {}"
+msgstr ""
+
+msgid "Nie udało się zapisać: {}"
+msgstr ""
+
+msgid "Wyeksportowano: {}"
+msgstr ""
+
+msgid "Eksport nie powiódł się: {}"
+msgstr ""
+
+msgid "Otwarto PDF do wydruku"
+msgstr ""
+
+msgid "Nie udało się przygotować wydruku: {}"
+msgstr ""
+
+msgid "Odzyskano niezapisany dokument z poprzedniej sesji"
+msgstr ""
+
+msgid "Czy zapisać zmiany w dokumencie „{}”?"
+msgstr ""
+
+msgid "Właściwości obiektu…"
+msgstr ""
+
+msgid "Wykryj kontur do opływania"
+msgstr ""
+
+msgid "Opływanie nad i pod"
+msgstr ""
+
+msgid "Przed tekstem"
+msgstr ""
+
+msgid "Zablokuj położenie"
+msgstr ""
+
+msgid "(brak podpowiedzi)"
+msgstr ""
+
+msgid "Dodaj do słownika"
+msgstr ""
+
+msgid "Ignoruj wszystkie"
+msgstr ""
+
+msgid "Hiperłącze…"
+msgstr ""
+
+msgid "Style…"
+msgstr ""
+
+msgid "Strona {} z {}"
+msgstr ""
+
+msgid "Wyrazy: {}"
+msgstr ""
+
+msgid "Pisownia wyłączona"
+msgstr ""
+
+msgid "Wczytywanie słowników…"
+msgstr ""
+
+msgid "Wybierz dostawcę, wklej klucz i wybierz model"
+msgstr ""
+
+msgid "Wersja {} · jeszcze nie sprawdzano"
+msgstr ""
+
+msgid "Podaj adres API"
+msgstr ""
+
+msgid "Brak klucza API – wpisz go w Ustawieniach → Sztuczna inteligencja"
+msgstr ""
+
+msgid "Wybierz model w Ustawieniach"
+msgstr ""
+
+msgid "To nie jest plik DOCX"
+msgstr ""
+
+msgid "Plik nie zawiera dokumentu"
+msgstr ""
+
+msgid "To nie jest plik OpenDTP"
+msgstr ""
+
+msgid "Instalacja anulowana albo brak uprawnień administratora"
+msgstr ""
+
+msgid "Normalny"
+msgstr ""
+
+msgid "Podtytuł"
+msgstr ""
+
+msgid "Nagłówek 1"
+msgstr ""
+
+msgid "Nagłówek 2"
+msgstr ""
+
+msgid "Nagłówek 3"
+msgstr ""
+
+msgid "Cytat"
+msgstr ""
+
+msgid "Wyróżnienie"
+msgstr ""
+
+msgid "Kod"
+msgstr ""
+
+msgid "Akapit listy"
+msgstr ""
+
+msgid "Spis treści 1"
+msgstr ""
+
+msgid "Spis treści 2"
+msgstr ""
+
+msgid "Spis treści 3"
+msgstr ""
+
+msgid "Klasyczny"
+msgstr ""
+
+msgid "Redakcyjny"
+msgstr ""
+
+msgid "Nowoczesny"
+msgstr ""
+
+msgid "Elegancki"
+msgstr ""
+
+msgid "Techniczny"
+msgstr ""
+
+msgid "Firmowy"
+msgstr ""
+
+msgid "Czerń i biel"
+msgstr ""
+
+msgid "Ollama (lokalnie)"
+msgstr ""
+
+msgid "Własny (zgodny z OpenAI)"
+msgstr ""
+

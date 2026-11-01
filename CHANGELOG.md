@@ -1,0 +1,16 @@
+# Zmiany
+
+## 0.1.0
+
+Pierwsze wydanie OpenDTP – edytora tekstu i programu do składu dokumentów dla Windows 10 i 11.
+
+- **Kształty tekstu** – ramka o dowolnym kształcie z węzłów i krzywych Béziera (rysowanie piórem, 20 gotowych kształtów, edycja węzłów, operacje suma / różnica / część wspólna / wykluczenie). Tekst wypełnia wnętrze, a treść strony opływa kształt.
+- **Opływanie** po konturze albo ramce: z obu stron, z lewej, z prawej, po większej stronie, nad i pod, za tekstem; odstęp; kontur obrazu wykrywany z przezroczystości lub tła.
+- **Skład**: kolumny z linią, łańcuchy ramek (tekst przepływa między ramkami), kolumny w ramkach, inicjały, siatka bazowa, polskie sierotki, tabulatory z kropkami, nagłówki i stopki z numerami stron, inna pierwsza strona.
+- **Tekst na ścieżce**, wykresy (kolumnowy, słupkowy, liniowy, warstwowy, kołowy, pierścieniowy), obrazy z dopasowaniem i maską kształtu.
+- **Formatowanie**: style akapitów z galerią i panelem, motywy dokumentu, listy, wersaliki i kapitaliki, indeksy, podkreślenia, światło, cieniowanie i ramki akapitów, malarz formatów.
+- **Pisownia** polska i angielska na bieżąco, podpowiedzi, słownik użytkownika; autokorekta, inteligentne cudzysłowy, automatyczne listy.
+- **Generowanie dokumentów przez AI**: OpenRouter, OpenAI, Anthropic, Google Gemini, Mistral, Groq, DeepSeek, xAI, Ollama i własny serwer; lista modeli od dostawcy, temperatura, klucz szyfrowany DPAPI. AI zna wszystkie możliwości programu i składa dokument z pełnym formatowaniem.
+- **Pliki**: własny format `.odtp`, eksport DOCX (style, listy, obrazy i kształty w tych samych miejscach, opływanie wielokątem; kształty tekstu jako dokładne wiersze albo edytowalne pole), PDF 1:1 z osadzonymi czcionkami, HTML, Markdown, TXT, PNG; import DOCX, TXT i Markdown; kopie do odzyskania po awarii.
+- **Interfejs**: wstążka z 9 kartami, paleta poleceń (Ctrl+K), pasek szybkiego dostępu i „Moja karta” do dostosowania, panele wysuwane, motywy AMOLED / grafitowy / jasny, własny kolor akcentu, skala interfejsu; polski i angielski.
+- **Aktualizacje** przez redzikowski.com: sprawdzanie w tle, pobieranie i instalacja (Program Files, uprawnienia administratora) w tym samym folderze; wersja przenośna aktualizuje się sama.

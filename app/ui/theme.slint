@@ -1,0 +1,43 @@
+// Kolory i miary interfejsu. Trzy motywy: AMOLED (głęboka czerń jak w OpenPDF), grafitowy
+// i jasny; kolor akcentu ustawia się w Ustawieniach.
+
+export global Theme {
+    // 0 – AMOLED, 1 – grafitowy, 2 – jasny.
+    in-out property <int> mode: 0;
+    in-out property <color> accent: #5b8cff;
+    in-out property <float> scale: 1.0;
+    // 0 – ostre, 1 – zwykłe, 2 – mocne zaokrąglenia.
+    in-out property <int> corners: 1;
+    in-out property <bool> dense: false;
+    in-out property <string> font: "Segoe UI Variable Text";
+
+    out property <bool> dark: mode != 2;
+    out property <color> bg: mode == 0 ? #000000 : mode == 1 ? #1b1c1f : #f2f2f5;
+    out property <color> desk: mode == 0 ? #050505 : mode == 1 ? #141517 : #e3e3e8;
+    out property <color> panel: mode == 0 ? #000000 : mode == 1 ? #232428 : #ffffff;
+    out property <color> raised: mode == 0 ? #141414 : mode == 1 ? #2d2e33 : #ffffff;
+    out property <color> higher: mode == 0 ? #1c1c1c : mode == 1 ? #36373d : #f7f7fa;
+    out property <color> popup: mode == 0 ? #0d0d0d : mode == 1 ? #2a2b30 : #ffffff;
+    out property <color> line: mode == 0 ? #ffffff1a : mode == 1 ? #ffffff17 : #00000014;
+    out property <color> line-strong: mode == 0 ? #ffffff33 : mode == 1 ? #ffffff2b : #00000026;
+    out property <color> text: mode == 2 ? #18181c : #ffffff;
+    out property <color> text-dim: mode == 2 ? #18181cb3 : #ffffffb3;
+    out property <color> text-faint: mode == 2 ? #18181c73 : #ffffff66;
+    out property <color> hover: mode == 2 ? #0000000d : #ffffff12;
+    out property <color> press: mode == 2 ? #0000001a : #ffffff21;
+    out property <color> glass: mode == 2 ? #ffffffd9 : #000000c7;
+    out property <color> accent-soft: accent.with-alpha(0.18);
+    out property <color> accent-text: (accent.red * 0.299 + accent.green * 0.587 + accent.blue * 0.114) > 165 ? #000000 : #ffffff;
+    out property <color> danger: #ff4d5a;
+    out property <color> ok: #3ccf7a;
+    out property <color> selection: accent.with-alpha(0.28);
+
+    out property <length> r-small: corners == 0 ? 2px : corners == 1 ? 6px : 10px;
+    out property <length> r: corners == 0 ? 3px : corners == 1 ? 8px : 14px;
+    out property <length> r-big: corners == 0 ? 4px : corners == 1 ? 12px : 20px;
+    out property <length> fs: 12.5px * scale;
+    out property <length> fs-small: 11px * scale;
+    out property <length> fs-big: 15px * scale;
+    out property <length> row: (dense ? 26px : 30px) * scale;
+    out property <length> ribbon-h: (dense ? 84px : 96px) * scale;
+}

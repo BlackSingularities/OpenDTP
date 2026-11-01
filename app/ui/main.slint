@@ -1,0 +1,705 @@
+// Okno główne OpenDTP: pasek tytułu z paskiem szybkiego dostępu i paletą poleceń, wstążka,
+// płótno, panele wysuwane, pasek stanu i nakładki (menu Plik, menu kontekstowe, okna).
+
+import { ListView, ScrollView, TextEdit } from "std-widgets.slint";
+import { Theme } from "theme.slint";
+import { Icons } from "icons.slint";
+import { App, PageV, BoxV, NodeV, ItemV, StyleV, NavV, RecentV } from "state.slint";
+import { Tip, TipArea, IconButton, Field, Spin, Switch, MenuItem, MenuSep, Card, Segmented, Label, Dim, Button, Slider } from "widgets.slint";
+import { RibbonTabs, RibbonBody, Menus, MenuButton } from "ribbon.slint";
+import { Canvas } from "canvas.slint";
+import { LeftPanel, RightPanel } from "panels.slint";
+import { Backstage } from "backstage.slint";
+
+export { App, Theme, Icons, Tip, PageV, BoxV, NodeV, ItemV, StyleV, NavV, RecentV }
+
+component TopBar inherits Rectangle {
+    height: 38px * Theme.scale;
+    background: Theme.panel;
+    HorizontalLayout {
+        padding-left: 10px;
+        padding-right: 8px;
+        spacing: 2px;
+        Image {
+            source: @image-url("../icon.png");
+            width: 18px;
+            height: 18px;
+            y: (parent.height - self.height) / 2;
+        }
+        Rectangle {
+            width: 8px;
+        }
+        for q in App.qat: IconButton {
+            icon: q.icon;
+            tip: q.hint != "" ? q.label + " (" + q.hint + ")" : q.label;
+            y: (parent.height - self.height) / 2;
+            clicked => {
+                App.cmd(q.id, "");
+            }
+        }
+        IconButton {
+            icon: Icons.chevron-down;
+            size: 20px;
+            icon-size: 12px;
+            tip: @tr("Dostosuj pasek szybkiego dostępu");
+            y: (parent.height - self.height) / 2;
+            clicked => {
+                App.cmd("customize", "qat");
+            }
+        }
+        Rectangle {
+            horizontal-stretch: 1;
+            Text {
+                text: App.doc-name + (App.dirty ? " •" : "");
+                font-family: Theme.font;
+                font-size: Theme.fs;
+                color: Theme.text-dim;
+                overflow: elide;
+                width: parent.width - 20px;
+                horizontal-alignment: center;
+            }
+        }
+        Rectangle {
+            width: 260px * Theme.scale;
+            height: 26px * Theme.scale;
+            y: (parent.height - self.height) / 2;
+            border-radius: Theme.r-small;
+            background: pta.has-hover ? Theme.higher : Theme.raised;
+            border-width: 1px;
+            border-color: Theme.line;
+            HorizontalLayout {
+                padding-left: 9px;
+                padding-right: 8px;
+                spacing: 8px;
+                Image {
+                    source: Icons.search;
+                    width: 14px;
+                    height: 14px;
+                    y: (parent.height - self.height) / 2;
+                    colorize: Theme.text-faint;
+                }
+                Text {
+                    text: @tr("Szukaj poleceń…");
+                    font-family: Theme.font;
+                    font-size: Theme.fs-small;
+                    color: Theme.text-faint;
+                    vertical-alignment: center;
+                    horizontal-stretch: 1;
+                }
+                Text {
+                    text: "Ctrl+K";
+                    font-family: Theme.font;
+                    font-size: 10px;
+                    color: Theme.text-faint;
+                    vertical-alignment: center;
+                }
+            }
+            pta := TipArea {
+                tip: @tr("Paleta poleceń – wszystkie funkcje programu (Ctrl+K)");
+                clicked => {
+                    App.cmd("palette", "");
+                }
+            }
+        }
+        Rectangle {
+            width: 6px;
+        }
+        IconButton {
+            icon: Icons.wand-sparkles;
+            tint: Theme.accent;
+            tip: @tr("Generuj dokument z AI");
+            y: (parent.height - self.height) / 2;
+            clicked => {
+                App.cmd("ai", "");
+            }
+        }
+        IconButton {
+            icon: Theme.mode == 2 ? Icons.moon : Icons.sun;
+            tip: @tr("Przełącz motyw: AMOLED / grafit / jasny");
+            y: (parent.height - self.height) / 2;
+            clicked => {
+                App.cmd("theme", Theme.mode == 2 ? 0 : Theme.mode + 1);
+            }
+        }
+        IconButton {
+            icon: App.ribbon-collapsed ? Icons.chevron-down : Icons.chevron-up;
+            tip: App.ribbon-collapsed ? @tr("Rozwiń wstążkę (Ctrl+F1)") : @tr("Zwiń wstążkę (Ctrl+F1)");
+            y: (parent.height - self.height) / 2;
+            clicked => {
+                App.cmd("ribbon-collapse", "");
+            }
+        }
+    }
+}
+
+component StatusBar inherits Rectangle {
+    height: 26px * Theme.scale;
+    background: Theme.panel;
+    Rectangle {
+        y: 0;
+        height: 1px;
+        background: Theme.line;
+    }
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 8px;
+        spacing: 16px;
+        Dim {
+            text: App.page-info;
+        }
+        Dim {
+            text: App.words;
+            TipArea {
+                tip: @tr("Statystyka dokumentu");
+                clicked => {
+                    App.cmd("stats", "");
+                }
+            }
+        }
+        Dim {
+            text: App.spell-state;
+            TipArea {
+                tip: @tr("Następny błąd pisowni (F7)");
+                clicked => {
+                    App.cmd("spell-next", "");
+                }
+            }
+        }
+        Dim {
+            text: App.status;
+            horizontal-stretch: 1;
+        }
+        IconButton {
+            icon: Icons.list-tree;
+            size: 22px;
+            icon-size: 13px;
+            active: App.left-panel == "nav";
+            tip: @tr("Nawigator");
+            y: (parent.height - self.height) / 2;
+            clicked => {
+                App.cmd("panel", "nav");
+            }
+        }
+        IconButton {
+            icon: Icons.pilcrow;
+            size: 22px;
+            icon-size: 13px;
+            active: App.marks;
+            tip: @tr("Znaki formatowania");
+            y: (parent.height - self.height) / 2;
+            clicked => {
+                App.cmd("marks", "");
+            }
+        }
+        HorizontalLayout {
+            spacing: 4px;
+            IconButton {
+                icon: Icons.minus;
+                size: 22px;
+                icon-size: 12px;
+                tip: @tr("Pomniejsz");
+                y: (parent.height - self.height) / 2;
+                clicked => {
+                    App.cmd("zoom-out", "");
+                }
+            }
+            Slider {
+                width: 110px;
+                y: (parent.height - self.height) / 2;
+                value: (App.zoom - 25) / 375;
+                tip: @tr("Powiększenie");
+                moved(v) => {
+                    App.cmd("zoom", round(25 + v * 375));
+                }
+            }
+            IconButton {
+                icon: Icons.plus;
+                size: 22px;
+                icon-size: 12px;
+                tip: @tr("Powiększ");
+                y: (parent.height - self.height) / 2;
+                clicked => {
+                    App.cmd("zoom-in", "");
+                }
+            }
+            MenuButton {
+                icon: Icons.zoom-in;
+                label: App.zoom + "%";
+                tip: @tr("Powiększenie");
+                items: Menus.zooms;
+                menu-w: 160px;
+                y: (parent.height - self.height) / 2;
+                picked(id) => {
+                    App.cmd("zoom", id);
+                }
+            }
+        }
+    }
+}
+
+component Palette inherits Rectangle {
+    background: #00000066;
+    TouchArea {
+        clicked => {
+            App.palette-open = false;
+        }
+    }
+    Card {
+        x: (parent.width - self.width) / 2;
+        y: 70px;
+        width: 560px;
+        height: min(440px, vl.preferred-height);
+        TouchArea {}
+        vl := VerticalLayout {
+            padding: 10px;
+            spacing: 8px;
+            q := Field {
+                w: 540px;
+                placeholder: @tr("Wpisz polecenie, np. „kolumny”, „kształt”, „PDF”…");
+                edited(t) => {
+                    App.palette-query(t);
+                }
+                accepted(t) => {
+                    if (App.palette-items.length > 0) {
+                        App.palette-open = false;
+                        App.cmd(App.palette-items[0].id, "");
+                    }
+                }
+            }
+            ListView {
+                height: min(380px, App.palette-items.length * 30px + 4px);
+                for c in App.palette-items: MenuItem {
+                    label: c.label;
+                    hint: c.hint;
+                    icon: c.icon;
+                    clicked => {
+                        App.palette-open = false;
+                        App.cmd(c.id, "");
+                    }
+                }
+            }
+        }
+        init => {
+            q.focus-input();
+        }
+    }
+}
+
+component ContextMenu inherits Rectangle {
+    TouchArea {
+        clicked => {
+            App.ctx-open = false;
+        }
+        pointer-event(e) => {
+            if (e.kind == PointerEventKind.down && e.button == PointerEventButton.right) {
+                App.ctx-open = false;
+            }
+        }
+    }
+    Card {
+        x: min(App.ctx-x, parent.width - self.width - 8px);
+        y: min(App.ctx-y, parent.height - self.height - 8px);
+        width: 250px;
+        height: vl.preferred-height;
+        TouchArea {}
+        vl := VerticalLayout {
+            padding: 5px;
+            for it in App.ctx-items: Rectangle {
+                height: it.id == "-" ? 9px : 28px * Theme.scale;
+                if it.id == "-": MenuSep {
+                    width: parent.width;
+                }
+                if it.id != "-": MenuItem {
+                    width: parent.width;
+                    label: it.label;
+                    hint: it.hint;
+                    icon: it.icon;
+                    checked: it.checked;
+                    font-family: it.font != "" ? it.font : Theme.font;
+                    enabled: it.id != "";
+                    clicked => {
+                        App.ctx-open = false;
+                        App.cmd(it.id, "");
+                    }
+                }
+            }
+        }
+    }
+}
+
+component Dialog inherits Rectangle {
+    in property <string> title;
+    in property <length> w: 420px;
+    background: #00000080;
+    TouchArea {}
+    Card {
+        x: (parent.width - self.width) / 2;
+        y: max(40px, (parent.height - self.height) / 2.4);
+        width: root.w;
+        height: vl.preferred-height;
+        vl := VerticalLayout {
+            padding: 18px;
+            spacing: 12px;
+            HorizontalLayout {
+                Label {
+                    text: root.title;
+                    font-size: Theme.fs-big;
+                    font-weight: 600;
+                    horizontal-stretch: 1;
+                }
+                IconButton {
+                    icon: Icons.x;
+                    tip: @tr("Zamknij (Esc)");
+                    clicked => {
+                        App.dialog = "";
+                    }
+                }
+            }
+            @children
+        }
+    }
+}
+
+component Customize inherits Dialog {
+    in property <string> target;
+    w: 460px;
+    title: root.target == "qat" ? @tr("Pasek szybkiego dostępu") : @tr("Moja karta");
+    Dim {
+        text: @tr("Zaznacz polecenia, które mają być pod ręką.");
+    }
+    ListView {
+        height: 380px;
+        for c in App.all-commands: MenuItem {
+            label: c.label;
+            hint: c.hint;
+            checked: c.checked;
+            clicked => {
+                App.cmd(root.target == "qat" ? "qat-toggle" : "tab-toggle", c.id);
+            }
+        }
+    }
+    HorizontalLayout {
+        alignment: end;
+        spacing: 8px;
+        Button {
+            label: @tr("Przywróć domyślne");
+            clicked => {
+                App.cmd(root.target == "qat" ? "qat-reset" : "tab-reset", "");
+            }
+        }
+        Button {
+            label: @tr("Gotowe");
+            primary: true;
+            clicked => {
+                App.dialog = "";
+            }
+        }
+    }
+}
+
+export component AppWindow inherits Window {
+    title: App.title;
+    icon: @image-url("../icon.png");
+    background: Theme.bg;
+    preferred-width: 1440px;
+    preferred-height: 920px;
+    min-width: 900px;
+    min-height: 560px;
+    default-font-family: Theme.font;
+    property <int> tip-shown: -1;
+
+    callback close-requested();
+
+    VerticalLayout {
+        TopBar {}
+        RibbonTabs {
+            background: Theme.panel;
+        }
+        if !App.ribbon-collapsed: RibbonBody {}
+        Rectangle {
+            height: 1px;
+            background: Theme.line;
+        }
+        Rectangle {
+            vertical-stretch: 1;
+            canvas := Canvas {
+                width: parent.width;
+                height: parent.height;
+            }
+            if App.ribbon-collapsed && App.ribbon-peek: Rectangle {
+                y: 0;
+                height: Theme.ribbon-h + 2px;
+                background: Theme.panel;
+                drop-shadow-blur: 16px;
+                drop-shadow-color: #00000080;
+                RibbonBody {}
+            }
+            if App.left-panel != "": LeftPanel {
+                x: 10px;
+                y: 10px;
+                height: parent.height - 20px;
+            }
+            if App.right-panel != "": RightPanel {
+                x: parent.width - self.width - 10px;
+                y: 10px;
+                height: parent.height - 20px;
+            }
+        }
+        StatusBar {}
+    }
+
+    if App.backstage: Backstage {
+        width: parent.width;
+        height: parent.height;
+    }
+    if App.ctx-open: ContextMenu {
+        width: parent.width;
+        height: parent.height;
+    }
+    if App.palette-open: Palette {
+        width: parent.width;
+        height: parent.height;
+    }
+    if App.dialog == "link": Dialog {
+        width: parent.width;
+        height: parent.height;
+        title: @tr("Hiperłącze");
+        lf := Field {
+            w: 384px;
+            text <=> App.link-url;
+            placeholder: "https://";
+            accepted(t) => {
+                App.cmd("link-apply", t);
+            }
+        }
+        HorizontalLayout {
+            alignment: end;
+            spacing: 8px;
+            Button {
+                label: @tr("Usuń łącze");
+                clicked => {
+                    App.cmd("link-apply", "");
+                }
+            }
+            Button {
+                label: @tr("Wstaw");
+                primary: true;
+                clicked => {
+                    App.cmd("link-apply", App.link-url);
+                }
+            }
+        }
+        init => {
+            lf.focus-input();
+        }
+    }
+    if App.dialog == "ai": Dialog {
+        width: parent.width;
+        height: parent.height;
+        w: 620px;
+        title: @tr("Generuj dokument z AI");
+        Dim {
+            text: @tr("Opisz, jaki dokument ma powstać – temat, odbiorców, układ, ton. AI napisze treść i złoży ją z formatowaniem: nagłówki, listy, wykresy, kształty tekstu, kolumny.");
+            wrap: word-wrap;
+            height: 34px;
+        }
+        TextEdit {
+            height: 170px;
+            text <=> App.ai-prompt;
+            font-size: 13px;
+            enabled: !App.ai-busy;
+        }
+        HorizontalLayout {
+            spacing: 12px;
+            Segmented {
+                items: [@tr("Krótki"), @tr("Średni"), @tr("Obszerny")];
+                current: App.ai-length;
+                tip: @tr("Długość dokumentu");
+                picked(i) => {
+                    App.ai-length = i;
+                }
+            }
+            Segmented {
+                items: [@tr("Nowy dokument"), @tr("Wstaw w miejscu kursora")];
+                current: App.ai-insert ? 1 : 0;
+                tip: @tr("Gdzie umieścić wynik");
+                picked(i) => {
+                    App.ai-insert = i == 1;
+                }
+            }
+        }
+        HorizontalLayout {
+            spacing: 6px;
+            for ex in [@tr("Raport kwartalny firmy z wykresami"), @tr("Ulotka na otwarcie kawiarni"), @tr("Gazetka szkolna w trzech kolumnach")]: Rectangle {
+                width: ext.preferred-width + 18px;
+                height: 24px;
+                border-radius: 12px;
+                background: exa.has-hover ? Theme.hover : Theme.raised;
+                border-width: 1px;
+                border-color: Theme.line;
+                ext := Text {
+                    text: ex;
+                    font-size: Theme.fs-small;
+                    color: Theme.text-dim;
+                }
+                exa := TipArea {
+                    tip: @tr("Wstaw przykład");
+                    clicked => {
+                        App.ai-prompt = ex;
+                    }
+                }
+            }
+        }
+        HorizontalLayout {
+            spacing: 8px;
+            Dim {
+                text: App.ai-busy ? @tr("Generowanie… to może potrwać do minuty") : App.ai-status;
+                horizontal-stretch: 1;
+                wrap: word-wrap;
+            }
+            Button {
+                label: @tr("Ustawienia AI");
+                icon: Icons.settings;
+                clicked => {
+                    App.dialog = "";
+                    App.cmd("settings", "");
+                }
+            }
+            Button {
+                label: App.ai-busy ? @tr("Generowanie…") : @tr("Generuj");
+                icon: Icons.wand-sparkles;
+                primary: true;
+                enabled: !App.ai-busy && App.ai-prompt != "";
+                clicked => {
+                    App.cmd("ai-generate", "");
+                }
+            }
+        }
+    }
+    if App.dialog == "stats": Dialog {
+        width: parent.width;
+        height: parent.height;
+        title: @tr("Statystyka");
+        Label {
+            text: App.stats-text;
+            wrap: word-wrap;
+            height: 150px;
+            vertical-alignment: top;
+        }
+        HorizontalLayout {
+            alignment: end;
+            Button {
+                label: @tr("Zamknij");
+                primary: true;
+                clicked => {
+                    App.dialog = "";
+                }
+            }
+        }
+    }
+    if App.dialog == "confirm": Dialog {
+        width: parent.width;
+        height: parent.height;
+        title: @tr("Niezapisane zmiany");
+        Label {
+            text: App.confirm-text;
+            wrap: word-wrap;
+            height: 40px;
+        }
+        HorizontalLayout {
+            alignment: end;
+            spacing: 8px;
+            Button {
+                label: @tr("Anuluj");
+                clicked => {
+                    App.dialog = "";
+                }
+            }
+            Button {
+                label: @tr("Nie zapisuj");
+                clicked => {
+                    App.dialog = "";
+                    App.cmd("confirm-discard", App.confirm-id);
+                }
+            }
+            Button {
+                label: @tr("Zapisz");
+                primary: true;
+                clicked => {
+                    App.dialog = "";
+                    App.cmd("confirm-save", App.confirm-id);
+                }
+            }
+        }
+    }
+    if App.dialog == "customize-qat": Customize {
+        width: parent.width;
+        height: parent.height;
+        target: "qat";
+    }
+    if App.dialog == "customize-tab": Customize {
+        width: parent.width;
+        height: parent.height;
+        target: "tab";
+    }
+
+    // Powiadomienie u dołu okna.
+    property <int> toast-seen: -1;
+    toast-timer := Timer {
+        interval: 3200ms;
+        running: App.toast != "" && root.toast-seen != App.toast-serial;
+        triggered => {
+            root.toast-seen = App.toast-serial;
+        }
+    }
+    if App.toast != "" && root.toast-seen != App.toast-serial: Rectangle {
+        x: (parent.width - self.width) / 2;
+        y: parent.height - self.height - 44px;
+        width: tt.preferred-width + 32px;
+        height: 36px;
+        border-radius: 18px;
+        background: Theme.higher;
+        border-width: 1px;
+        border-color: Theme.line-strong;
+        drop-shadow-blur: 18px;
+        drop-shadow-color: #00000080;
+        tt := Text {
+            text: App.toast;
+            font-family: Theme.font;
+            font-size: Theme.fs;
+            color: Theme.text;
+        }
+    }
+
+    // Dymek podpowiedzi po krótkim zatrzymaniu wskaźnika.
+    tip-timer := Timer {
+        interval: 550ms;
+        running: Tip.text != "" && root.tip-shown != Tip.serial;
+        triggered => {
+            root.tip-shown = Tip.serial;
+        }
+    }
+    if Tip.text != "" && root.tip-shown == Tip.serial: Rectangle {
+        property <length> below: Tip.y + 22px;
+        x: max(8px, min(Tip.x - 8px, root.width - self.width - 8px));
+        y: self.below + self.height > root.height - 8px ? Tip.y - self.height - 10px : self.below;
+        width: min(tt2.preferred-width, 380px) + 20px;
+        height: tt2.preferred-height + 12px;
+        border-radius: Theme.r-small;
+        background: Theme.higher;
+        border-width: 1px;
+        border-color: Theme.line-strong;
+        drop-shadow-blur: 12px;
+        drop-shadow-color: #00000066;
+        tt2 := Text {
+            x: 10px;
+            y: 6px;
+            width: min(self.preferred-width, 380px);
+            text: Tip.text;
+            wrap: word-wrap;
+            font-family: Theme.font;
+            font-size: Theme.fs-small;
+            color: Theme.text;
+        }
+    }
+}
