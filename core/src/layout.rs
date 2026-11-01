@@ -1135,6 +1135,7 @@ pub fn apply_anchors(doc: &mut Document, lay: &Layout) -> bool {
         let Some(o) = doc.objects.iter_mut().find(|o| o.id == id) else { continue };
         let mut page = page;
         let mut y = refy + o.anchor_dy;
+        let snapshot = o.clone();
         if let ObjKind::Table { table } = &mut o.kind {
             table.take = None;
             let full = crate::paint::table_height(table, o.w);
@@ -1161,8 +1162,8 @@ pub fn apply_anchors(doc: &mut Document, lay: &Layout) -> bool {
                     let mut ct = table.clone();
                     ct.rows = rest;
                     ct.take = None;
-                    let h = crate::paint::table_height(&ct, o.w);
-                    let mut c = o.clone();
+                    let h = crate::paint::table_height(&ct, snapshot.w);
+                    let mut c = snapshot.clone();
                     c.id = id + 1_000_000_000;
                     c.kind = ObjKind::Table { table: ct };
                     c.page = page + 1;

@@ -426,6 +426,8 @@ pub fn textbook() -> Document {
         accent: navy,
         line: Color::rgb(0x60, 0x70, 0x90),
         numbers_right: false,
+        widths: Vec::new(),
+        take: None,
     };
     let tw = w - d.page.margin_left - d.page.margin_right;
     let th = crate::paint::table_height(&table, tw);
