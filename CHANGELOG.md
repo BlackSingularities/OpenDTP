@@ -1,5 +1,15 @@
 # Zmiany
 
+## 0.5.0
+
+- Obrazy osadzone i linkowane: łącze do pliku na dysku z automatycznym odświeżaniem po zmianie, przełączanie w obie strony, panel Obrazy z rozdzielczością i ostrzeżeniami, pakowanie dokumentu z obrazami.
+- Nawigator: przesuwanie rozdziałów razem z podrozdziałami.
+- Znajdź i zamień: wyrażenia regularne i wyszukiwanie w akapitach wybranego stylu.
+- Biblioteka elementów: zapisane fragmenty tekstu i obiekty do wstawiania w dowolnym dokumencie.
+- PDF do druku: kolory CMYK i dodatkowe (Pantone), spady, znaczniki cięcia.
+- Kolory dokumentu: próbki z dokładnymi wartościami CMYK.
+- Preflight: kontrola przed drukiem (nadmiar tekstu, brakujące pliki i czcionki, rozdzielczość, spady).
+
 ## 0.4.0
 
 - Strony wzorcowe: osobne nagłówki i stopki stron parzystych (układ lustrzany) oraz obrazy, kształty i wykresy powtarzane na wszystkich, nieparzystych albo parzystych stronach.
