@@ -598,7 +598,7 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             toast(st, tr("Dodano pustą stronę – wstaw na nią obrazy, kształty i ramki"));
         }
         "image" => {
-            let Some(p) = rfd::FileDialog::new().set_title(tr("Wstaw obraz")).add_filter(tr("Obrazy"), &["png", "jpg", "jpeg", "webp", "gif", "bmp"]).pick_file() else { return };
+            let Some(p) = rfd::FileDialog::new().set_title(tr("Wstaw obraz")).add_filter(tr("Obrazy"), &["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"]).pick_file() else { return };
             match std::fs::read(&p) {
                 Ok(b) => insert_image_bytes(st, b),
                 Err(e) => toast(st, &e.to_string()),
@@ -606,7 +606,7 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             return;
         }
         "replace-image" => {
-            let Some(p) = rfd::FileDialog::new().set_title(tr("Zmień obraz")).add_filter(tr("Obrazy"), &["png", "jpg", "jpeg", "webp", "gif", "bmp"]).pick_file() else { return };
+            let Some(p) = rfd::FileDialog::new().set_title(tr("Zmień obraz")).add_filter(tr("Obrazy"), &["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"]).pick_file() else { return };
             let Some(asset) = std::fs::read(&p).ok().and_then(io::odtp::asset_from) else {
                 toast(st, tr("Nieobsługiwany format obrazu"));
                 return;

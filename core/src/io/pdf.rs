@@ -147,6 +147,27 @@ pub fn export(doc: &Document, layout: &Layout) -> Result<Vec<u8>, String> {
                     }
                     s.set_stroke(None);
                 }
+                Op::Image { asset, rect, clip, opacity } if doc.assets.get(asset).is_some_and(|a| a.mime == "image/svg+xml") => {
+                    use krilla_svg::{SurfaceExt, SvgSettings};
+                    let Some(tree) = doc.assets.get(asset).and_then(|a| usvg::Tree::from_data(&a.data, &usvg::Options::default()).ok()) else { continue };
+                    let mut pushed = 0;
+                    if let Some(c) = clip.as_ref().and_then(path) {
+                        s.push_clip_path(&c, &FillRule::EvenOdd);
+                        pushed += 1;
+                    }
+                    if *opacity < 0.999 {
+                        s.push_opacity(NormalizedF32::new(opacity.clamp(0.0, 1.0)).unwrap_or(NormalizedF32::ONE));
+                        pushed += 1;
+                    }
+                    s.push_transform(&Transform::from_translate(rect.x, rect.y));
+                    pushed += 1;
+                    if let Some(sz) = Size::from_wh(rect.w.max(0.1), rect.h.max(0.1)) {
+                        let _ = s.draw_svg(&tree, sz, SvgSettings::default());
+                    }
+                    for _ in 0..pushed {
+                        s.pop();
+                    }
+                }
                 Op::Image { asset, rect, clip, opacity } => {
                     let img = images
                         .entry(asset.clone())

@@ -647,8 +647,17 @@ fn objects_xml(ctx: &mut Ctx, page: usize) -> String {
         let wrap = wrap_xml(o);
         match &o.kind {
             ObjKind::Image { asset, fit, .. } => {
-                let Some(rel) = ctx.image_rel(asset) else { continue };
                 let a = &doc.assets[asset];
+                let rel = if a.mime == "image/svg+xml" {
+                    let k = 300.0 / 72.0;
+                    match crate::raster::render_svg(&a.data, (o.w * k) as u32, (o.h * k) as u32).and_then(|pm| pm.encode_png().ok()) {
+                        Some(png) => ctx.png_rel(png),
+                        None => continue,
+                    }
+                } else {
+                    let Some(rel) = ctx.image_rel(asset) else { continue };
+                    rel
+                };
                 let (iw, ih) = (a.width.max(1) as f32, a.height.max(1) as f32);
                 // Przycięcie dla „wypełnij” (srcRect w tysięcznych procenta).
                 let src = if *fit == ImageFit::Cover {

@@ -2408,3 +2408,12 @@ msgstr "The table cannot be empty"
 msgid "Wstaw tabelę"
 msgstr "Insert table"
 
+msgid "Podręcznik"
+msgstr "Textbook"
+
+msgid "Rozdział, kolumny, przykłady, tabela, ramki"
+msgstr "Chapter, columns, examples, table, boxes"
+
+msgid "Wstaw obraz z pliku (PNG, JPEG, WebP, GIF, BMP) albo grafikę wektorową SVG"
+msgstr "Insert an image file (PNG, JPEG, WebP, GIF, BMP) or SVG vector graphics"
+

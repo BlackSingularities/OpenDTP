@@ -126,9 +126,9 @@ MOŻLIWOŚCI OPENDTP, z których korzystasz:
 - Motywy dokumentu (kroje i kolory wszystkich stylów): {themes}.
 - Style akapitów: {styles}. Nagłówki tworzą konspekt i spis treści z numerami stron.
 - Akapity: wyrównanie, cieniowanie tła, kolor i rozmiar tekstu, inicjał (duża pierwsza litera na 3 wiersze).
-- Wyróżnienia w tekście: **pogrubienie**, *kursywa*, [łącze](https://adres).
+- Wyróżnienia w tekście: **pogrubienie**, *kursywa*, ==wyróżnienie kolorem== (np. zdania przykładowe), [łącze](https://adres) – działają też w komórkach tabel i w punktach list.
 - Listy punktowane i numerowane.
-- Tabele (wiersze z kolumnami wyrównanymi tabulatorami, pierwszy wiersz jako nagłówek).
+- Tabele z nagłówkiem w kolorze motywu, pasami i obramowaniem; komórki mają formatowany tekst i zawijają się, wysokość wierszy dopasowuje się do treści.
 - Wykresy: column, bar, line, area, pie, doughnut – z tytułem, etykietami i seriami danych.
 - Kształty tekstu: ramka o dowolnym kształcie ({shapes}); tekst wypełnia jej wnętrze, a treść strony opływa kształt. Kolor wypełnienia i obrysu.
 - Ramki tekstowe (np. ramka boczna, ramka z kolumnami) przy lewej albo prawej krawędzi lub na całą szerokość; treść opływa je.
@@ -308,6 +308,7 @@ pub fn build(answer: &str, template: &Document) -> Document {
     let toc_at = if v["toc"].as_bool() == Some(true) { Some(paras.len()) } else { None };
     let mut charts: Vec<(usize, Chart)> = Vec::new();
     let mut extras: Vec<Extra> = Vec::new();
+    let mut tables: Vec<(usize, Vec<Vec<String>>)> = Vec::new();
     let mut page_break = false;
     for b in v["blocks"].as_array().cloned().unwrap_or_default() {
         let typ = b["type"].as_str().unwrap_or("paragraph");
@@ -336,29 +337,13 @@ pub fn build(answer: &str, template: &Document) -> Document {
                     })
                     .unwrap_or_default()
             }
-            "table" => b["rows"]
-                .as_array()
-                .map(|rows| {
-                    rows.iter()
-                        .enumerate()
-                        .map(|(ri, r)| {
-                            let cells: Vec<String> = r.as_array().map(|c| c.iter().map(|x| x.as_str().map(str::to_string).unwrap_or_else(|| x.to_string())).collect()).unwrap_or_default();
-                            let mut p = para("normal", &cells.join("\t"));
-                            let n = cells.len().max(1) as f32;
-                            let w = (d.page.column_spans()[0].1 - d.page.column_spans()[0].0) / n;
-                            p.fmt.tabs = Some((1..cells.len()).map(|k| k as f32 * w).collect());
-                            p.fmt.space_after = Some(2.0);
-                            if ri == 0 {
-                                for r in p.runs.iter_mut() {
-                                    r.fmt.bold = Some(true);
-                                }
-                                p.fmt.shading = Some(Color::rgb(0xee, 0xf1, 0xf5));
-                            }
-                            p
-                        })
-                        .collect()
-                })
-                .unwrap_or_default(),
+            "table" => {
+                let rows: Vec<Vec<String>> = b["rows"].as_array().map(|rows| rows.iter().map(|r| r.as_array().map(|c| c.iter().map(|x| x.as_str().map(str::to_string).unwrap_or_else(|| x.to_string())).collect()).unwrap_or_default()).collect()).unwrap_or_default();
+                if !rows.is_empty() {
+                    tables.push((paras.len(), rows));
+                }
+                Vec::new()
+            }
             "chart" => {
                 let kind = match b["kind"].as_str().unwrap_or("column") {
                     "bar" => ChartKind::Bar,
@@ -463,6 +448,11 @@ pub fn build(answer: &str, template: &Document) -> Document {
                 e.at += n + 1;
             }
         }
+        for t in tables.iter_mut() {
+            if t.0 >= at {
+                t.0 += n + 1;
+            }
+        }
     }
     for (pi, chart) in charts {
         let lay = eng.layout(&d);
@@ -475,6 +465,16 @@ pub fn build(answer: &str, template: &Document) -> Document {
         d.objects.push(o);
     }
     let accent = d.style("heading1").and_then(|s| s.chars.color).unwrap_or(Color::rgb(0x1f, 0x4e, 0x79));
+    for (pi, rows) in tables {
+        let lay = eng.layout(&d);
+        let (page, top) = lay.story_lines(StoryRef::Body).iter().map(|&i| &lay.lines[i]).find(|l| l.para >= pi).map(|l| (l.page, l.top)).unwrap_or((0, d.page.margin_top));
+        let (x0, x1) = d.page.column_spans()[0];
+        let w = if cols > 1 { x1 - x0 } else { d.page.content_width() };
+        let table = Table { rows, accent, font: d.style("normal").and_then(|s| s.chars.font.clone()).unwrap_or_else(|| "Calibri".into()), ..Table::default() };
+        let h = crate::paint::table_height(&table, w);
+        let id = d.new_id();
+        d.objects.push(obj(id, page, x0, top + 4.0, w, h, Shape::rect(), ObjKind::Table { table }, WrapMode::TopBottom));
+    }
     let soft = |c: Color| {
         let mix = |v: u8| (v as f32 * 0.14 + 255.0 * 0.86) as u8;
         Color::rgb(mix(c.r), mix(c.g), mix(c.b))

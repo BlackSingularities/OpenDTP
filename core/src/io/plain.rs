@@ -164,29 +164,40 @@ pub fn from_text(text: &str) -> Document {
 }
 
 /// Wyróżnienia `**`, `*`, `_` i odnośniki `[tekst](adres)` w jednym wierszu Markdown.
+/// Kolor wyróżnienia `==tekst==` (zdania przykładowe, akcenty).
+pub const MARK_COLOR: Color = Color::rgb(0x1f, 0x5f, 0xc0);
+
 pub fn md_inline(s: &str) -> Vec<Run> {
     let mut runs: Vec<Run> = Vec::new();
     let mut bold = false;
     let mut ital = false;
+    let mut mark = false;
     let mut buf = String::new();
     let chars: Vec<char> = s.chars().collect();
-    let flush = |buf: &mut String, runs: &mut Vec<Run>, bold: bool, ital: bool, link: Option<String>| {
+    let flush = |buf: &mut String, runs: &mut Vec<Run>, bold: bool, ital: bool, mark: bool, link: Option<String>| {
         if !buf.is_empty() {
-            let fmt = CharFmt { bold: bold.then_some(true), italic: ital.then_some(true), link: link.clone(), color: link.as_ref().map(|_| Color::rgb(0x05, 0x63, 0xc1)), underline: link.as_ref().map(|_| Underline::Single), ..Default::default() };
+            let color = if link.is_some() { Some(Color::rgb(0x05, 0x63, 0xc1)) } else if mark { Some(MARK_COLOR) } else { None };
+            let fmt = CharFmt { bold: bold.then_some(true), italic: ital.then_some(true), link: link.clone(), color, underline: link.as_ref().map(|_| Underline::Single), ..Default::default() };
             runs.push(Run { text: std::mem::take(buf), fmt, field: None });
         }
     };
     let mut i = 0;
     while i < chars.len() {
         let c = chars[i];
+        if c == '=' && chars.get(i + 1) == Some(&'=') {
+            flush(&mut buf, &mut runs, bold, ital, mark, None);
+            mark = !mark;
+            i += 2;
+            continue;
+        }
         if c == '*' && chars.get(i + 1) == Some(&'*') {
-            flush(&mut buf, &mut runs, bold, ital, None);
+            flush(&mut buf, &mut runs, bold, ital, mark, None);
             bold = !bold;
             i += 2;
             continue;
         }
         if c == '*' || (c == '_' && (i == 0 || !chars[i - 1].is_alphanumeric())) {
-            flush(&mut buf, &mut runs, bold, ital, None);
+            flush(&mut buf, &mut runs, bold, ital, mark, None);
             ital = !ital;
             i += 1;
             continue;
@@ -198,9 +209,9 @@ pub fn md_inline(s: &str) -> Vec<Run> {
                     if let Some(end) = chars[j..].iter().position(|&x| x == ')') {
                         let text: String = chars[i + 1..j].iter().collect();
                         let url: String = chars[j + 2..j + end].iter().collect();
-                        flush(&mut buf, &mut runs, bold, ital, None);
+                        flush(&mut buf, &mut runs, bold, ital, mark, None);
                         buf = text;
-                        flush(&mut buf, &mut runs, bold, ital, Some(url));
+                        flush(&mut buf, &mut runs, bold, ital, mark, Some(url));
                         i = j + end + 1;
                         continue;
                     }
@@ -210,7 +221,7 @@ pub fn md_inline(s: &str) -> Vec<Run> {
         buf.push(c);
         i += 1;
     }
-    flush(&mut buf, &mut runs, bold, ital, None);
+    flush(&mut buf, &mut runs, bold, ital, mark, None);
     if runs.is_empty() {
         runs.push(Run::default());
     }

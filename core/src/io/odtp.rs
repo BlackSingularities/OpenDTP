@@ -69,6 +69,13 @@ pub fn load(path: &Path) -> Result<Document, String> {
 
 /// Obraz z bajtów pliku (rozpoznaje format i wymiary).
 pub fn asset_from(data: Vec<u8>) -> Option<Asset> {
+    // SVG: grafika wektorowa – wymiary z drzewa SVG.
+    let head = String::from_utf8_lossy(&data[..data.len().min(2048)]).to_lowercase();
+    if head.contains("<svg") {
+        let tree = usvg::Tree::from_data(&data, &usvg::Options::default()).ok()?;
+        let s = tree.size();
+        return Some(Asset { mime: "image/svg+xml".into(), data: Arc::new(data), width: s.width().round().max(1.0) as u32, height: s.height().round().max(1.0) as u32 });
+    }
     let fmt = image::guess_format(&data).ok()?;
     let mime = match fmt {
         image::ImageFormat::Png => "image/png",
@@ -89,6 +96,7 @@ pub fn ext_of(mime: &str) -> &'static str {
         "image/gif" => "gif",
         "image/webp" => "webp",
         "image/bmp" => "bmp",
+        "image/svg+xml" => "svg",
         _ => "bin",
     }
 }

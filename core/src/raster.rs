@@ -32,6 +32,18 @@ struct GMask {
 pub struct Raster {
     glyphs: HashMap<GKey, Option<Arc<GMask>>>,
     images: HashMap<String, Option<Arc<Pixmap>>>,
+    svgs: HashMap<(String, u32, u32), Option<Arc<Pixmap>>>,
+}
+
+/// SVG wyrenderowany do mapy pikseli `w`×`h` (resvg ma własną wersję tiny-skia – kopiujemy piksele).
+pub fn render_svg(data: &[u8], w: u32, h: u32) -> Option<Pixmap> {
+    let tree = usvg::Tree::from_data(data, &usvg::Options::default()).ok()?;
+    let (w, h) = (w.clamp(1, 8000), h.clamp(1, 8000));
+    let mut pm = resvg::tiny_skia::Pixmap::new(w, h)?;
+    let s = tree.size();
+    let t = resvg::tiny_skia::Transform::from_scale(w as f32 / s.width().max(1.0), h as f32 / s.height().max(1.0));
+    resvg::render(&tree, t, &mut pm.as_mut());
+    Pixmap::from_vec(pm.take(), tiny_skia::IntSize::from_wh(w, h)?)
 }
 
 struct Outline<'a> {
@@ -129,6 +141,20 @@ impl Raster {
     }
 
     /// Obraz z dokumentu jako mapa tiny-skia (z pamięci podręcznej).
+    /// SVG w rozmiarze w pikselach (z pamięci podręcznej).
+    pub fn svg(&mut self, doc: &Document, id: &str, w: u32, h: u32) -> Option<Arc<Pixmap>> {
+        let key = (id.to_string(), w, h);
+        if let Some(v) = self.svgs.get(&key) {
+            return v.clone();
+        }
+        let pm = doc.assets.get(id).and_then(|a| render_svg(&a.data, w, h)).map(Arc::new);
+        if self.svgs.len() > 64 {
+            self.svgs.clear();
+        }
+        self.svgs.insert(key, pm.clone());
+        pm
+    }
+
     pub fn image(&mut self, doc: &Document, id: &str) -> Option<Arc<Pixmap>> {
         if let Some(v) = self.images.get(id) {
             return v.clone();
@@ -278,7 +304,13 @@ impl Raster {
                 }
                 Op::Glyphs(run) => self.glyphs(pm, run, scale),
                 Op::Image { asset, rect, clip, opacity } => {
-                    let Some(img) = self.image(doc, asset) else { continue };
+                    let is_svg = doc.assets.get(asset).is_some_and(|a| a.mime == "image/svg+xml");
+                    let img = if is_svg {
+                        self.svg(doc, asset, (rect.w * scale).ceil() as u32, (rect.h * scale).ceil() as u32)
+                    } else {
+                        self.image(doc, asset)
+                    };
+                    let Some(img) = img else { continue };
                     let mask = clip.as_ref().and_then(|c| {
                         let p = sk_path(c, scale)?;
                         let mut m = Mask::new(pm.width(), pm.height())?;

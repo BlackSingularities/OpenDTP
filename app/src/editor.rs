@@ -124,6 +124,11 @@ impl Editor {
     /// Po każdej zmianie treści.
     pub fn changed(&mut self) {
         self.dirty = true;
+        for o in self.doc.objects.iter_mut() {
+            if let ObjKind::Table { table } = &o.kind {
+                o.h = opendtp_core::paint::table_height(table, o.w);
+            }
+        }
         self.fix_selection();
         self.relayout();
         if !self.find.is_empty() {

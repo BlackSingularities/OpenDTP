@@ -763,58 +763,128 @@ fn watermark_ops(text: &str, ps: &PageSetup, ops: &mut Vec<Op>) {
     }
 }
 
-/// Tabela w prostokącie ramki: równe wiersze, kolumny dopasowane do treści.
-pub fn table_ops(t: &Table, r: Rect, ops: &mut Vec<Op>) {
-    let rows = t.rows.len().max(1);
+struct CellText {
+    sp: crate::text::ShapedPara,
+    lines: Vec<(usize, usize, f32)>,
+    lh: f32,
+    asc: f32,
+}
+
+/// Tekst komórki (z wyróżnieniami **, *, ==) złamany do szerokości `w`.
+fn cell_text(text: &str, base: &CharProps, w: f32) -> CellText {
+    let p = Paragraph { style: String::new(), fmt: ParaFmt::default(), runs: crate::io::plain::md_inline(text) };
+    let fv = crate::text::FieldValues { page: 1, pages: 1, title: "", author: "" };
+    let sp = crate::text::shape(&p, base, &fv, true);
+    let n = sp.glyphs.len();
+    let mut starts = vec![0usize];
+    starts.extend(sp.breaks.iter().copied());
+    starts.push(n);
+    let mut lines = Vec::new();
+    let (mut ls, mut lw) = (0usize, 0.0f32);
+    for wi in 0..starts.len() - 1 {
+        let (a, b) = (starts[wi], starts[wi + 1]);
+        let ww: f32 = sp.glyphs[a..b].iter().map(|g| g.adv).sum();
+        let trim: f32 = sp.glyphs[a..b].iter().rev().take_while(|g| g.kind == GKind::Space).map(|g| g.adv).sum();
+        if lw > 0.0 && lw + ww - trim > w {
+            lines.push((ls, a, lw));
+            ls = a;
+            lw = 0.0;
+        }
+        lw += ww;
+    }
+    if ls < n || lines.is_empty() {
+        lines.push((ls, n, lw));
+    }
+    let (asc, desc, _) = text::vmetrics(sp.glyphs.first().map(|g| g.font).unwrap_or(0), base.size);
+    CellText { sp, lines, lh: (asc + desc) * 1.12, asc }
+}
+
+fn table_geometry(t: &Table, width: f32) -> (Vec<f32>, f32, CharProps) {
     let cols = t.rows.iter().map(|r| r.len()).max().unwrap_or(1).max(1);
-    let rh = r.h / rows as f32;
-    let fs = t.size.min(rh * 0.6).max(4.0);
-    let props = CharProps { font: t.font.clone(), size: fs, ..CharProps::default() };
-    // Szerokości kolumn proporcjonalnie do najdłuższej treści (z minimum).
-    let mut want = vec![20.0f32; cols];
+    let props = CharProps { font: t.font.clone(), size: t.size, ..CharProps::default() };
+    // Szerokości kolumn proporcjonalne do treści, z minimum i bez przesady dla długich komórek.
+    let mut want = vec![30.0f32; cols];
     for row in &t.rows {
         for (c, cell) in row.iter().enumerate() {
-            let w = text::measure(cell, &props).1 + fs * 1.4;
+            let w = text::measure(&cell.replace("**", "").replace("==", ""), &props).1.min(width * 0.6) + t.size * 1.4;
             want[c] = want[c].max(w);
         }
     }
     let total: f32 = want.iter().sum();
-    let widths: Vec<f32> = want.iter().map(|w| w / total * r.w).collect();
+    (want.iter().map(|w| w / total * width).collect(), t.size * 0.45, props)
+}
+
+/// Wysokość tabeli dla szerokości `width` (wiersze dopasowane do treści).
+pub fn table_height(t: &Table, width: f32) -> f32 {
+    let (widths, pad, props) = table_geometry(t, width);
+    let mut h = 0.0;
+    for (ri, row) in t.rows.iter().enumerate() {
+        let mut base = props.clone();
+        base.bold = t.header && ri == 0;
+        let mut rh = t.size * 1.4;
+        for (c, cell) in row.iter().enumerate() {
+            let ct = cell_text(cell, &base, widths[c] - 2.0 * pad * 1.4);
+            rh = rh.max(ct.lines.len() as f32 * ct.lh);
+        }
+        h += rh + 2.0 * pad;
+    }
+    h.max(10.0)
+}
+
+/// Tabela w prostokącie ramki: kolumny wg treści, formatowany tekst zawijany w komórkach.
+pub fn table_ops(t: &Table, r: Rect, ops: &mut Vec<Op>) {
+    let cols = t.rows.iter().map(|r| r.len()).max().unwrap_or(1).max(1);
+    let (widths, pad, props) = table_geometry(t, r.w);
     let numeric = |c: usize| t.numbers_right && t.rows.iter().skip(if t.header { 1 } else { 0 }).all(|row| row.get(c).is_none_or(|v| v.trim().is_empty() || v.trim().replace([',', '.', ' ', '%', '-', '+'], "").chars().all(|ch| ch.is_ascii_digit() || "złeur$€".contains(ch))));
     let mix = |c: Color, k: f32| Color::rgb((c.r as f32 * k + 255.0 * (1.0 - k)) as u8, (c.g as f32 * k + 255.0 * (1.0 - k)) as u8, (c.b as f32 * k + 255.0 * (1.0 - k)) as u8);
+    let mut y = r.y;
+    let mut hlines = Vec::new();
     for (ri, row) in t.rows.iter().enumerate() {
-        let y = r.y + ri as f32 * rh;
         let head = t.header && ri == 0;
+        let mut base = props.clone();
+        base.bold = head;
+        base.color = if head { Color::WHITE } else { Color::rgb(0x22, 0x22, 0x22) };
+        let cells: Vec<CellText> = (0..cols).map(|c| cell_text(row.get(c).map(|s| s.as_str()).unwrap_or(""), &base, widths[c] - 2.0 * pad * 1.4)).collect();
+        let rh = cells.iter().map(|ct| ct.lines.len() as f32 * ct.lh).fold(t.size * 1.4, f32::max) + 2.0 * pad;
         let bg = if head { Some(t.accent) } else if t.stripes && ri % 2 == 0 { Some(mix(t.accent, 0.07)) } else { None };
         if let Some(bg) = bg {
             ops.push(Op::Fill { path: Path::rect(Rect::new(r.x, y, r.w, rh)), paint: Paint::Solid(bg), opacity: 1.0 });
         }
         let mut x = r.x;
-        for c in 0..cols {
-            let cell = row.get(c).map(|s| s.as_str()).unwrap_or("");
+        for (c, ct) in cells.iter().enumerate() {
             let w = widths[c];
-            let pad = fs * 0.6;
+            let inner = pad * 1.4;
             let right = numeric(c) && !head;
-            let color = if head { Color::WHITE } else { Color::rgb(0x22, 0x22, 0x22) };
-            label(ops, cell, if right { x + w - pad } else { x + pad }, y + rh / 2.0 + fs * 0.35, fs, color, &t.font, if right { 1.0 } else { 0.0 }, head);
+            let total_h = ct.lines.len() as f32 * ct.lh;
+            let mut ly = y + (rh - total_h) / 2.0 + ct.asc;
+            for &(a, b, lw) in &ct.lines {
+                let mut px = if right { x + w - inner - lw } else { x + inner };
+                let mut run = Vec::new();
+                for g in &ct.sp.glyphs[a..b] {
+                    run.push(PGlyph { g: *g, x: px, y: ly - ct.sp.style(g).rise(), adv: g.adv, leader: false });
+                    px += g.adv;
+                }
+                let styles = &ct.sp.styles;
+                push_runs(&run, &base, "", ops, |si| styles[si].clone());
+                ly += ct.lh;
+            }
             x += w;
         }
+        y += rh;
+        if ri + 1 < t.rows.len() {
+            hlines.push(PathCmd::M(r.x, y));
+            hlines.push(PathCmd::L(r.right(), y));
+        }
     }
-    // Linie: poziome między wierszami, ramka dookoła i delikatne pionowe.
-    let mut p = Vec::new();
-    for ri in 1..rows {
-        let y = r.y + ri as f32 * rh;
-        p.push(PathCmd::M(r.x, y));
-        p.push(PathCmd::L(r.right(), y));
-    }
+    let bottom = y;
     let mut x = r.x;
     for w in widths.iter().take(cols - 1) {
         x += w;
-        p.push(PathCmd::M(x, r.y));
-        p.push(PathCmd::L(x, r.bottom()));
+        hlines.push(PathCmd::M(x, r.y));
+        hlines.push(PathCmd::L(x, bottom));
     }
-    ops.push(Op::Stroke { path: Path(p), color: t.line, width: 0.5, dash: vec![], opacity: 1.0 });
-    ops.push(Op::Stroke { path: Path::rect(r), color: t.line, width: 0.75, dash: vec![], opacity: 1.0 });
+    ops.push(Op::Stroke { path: Path(hlines), color: t.line, width: 0.5, dash: vec![], opacity: 1.0 });
+    ops.push(Op::Stroke { path: Path::rect(Rect::new(r.x, r.y, r.w, bottom - r.y)), color: t.line, width: 0.75, dash: vec![], opacity: 1.0 });
 }
 
 fn nice(span: f32) -> f32 {

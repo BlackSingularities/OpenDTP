@@ -161,6 +161,7 @@ fn frame(story: Story, padding: f32, valign: VAlign) -> ObjKind {
 pub fn template(id: &str) -> Document {
     match id {
         "welcome" => welcome(),
+        "textbook" => textbook(),
         "report" => {
             let mut d = Document::new();
             d.meta.title = "Raport".into();
@@ -287,4 +288,161 @@ pub fn template(id: &str) -> Document {
         }
         _ => Document::new(),
     }
+}
+
+/// Podręcznik: rozdział z numerem w ukośnym polu, dwie kolumny, przykłady w kolorze, ramki
+/// wyróżnień, tabela z formatowanymi komórkami i ramka „Pamiętaj!”.
+pub fn textbook() -> Document {
+    let mut d = Document::new();
+    d.meta.title = "Present Tenses".into();
+    crate::styles::apply_theme(&mut d, &crate::styles::THEMES[0]);
+    let navy = Color::rgb(0x1f, 0x3a, 0x6e);
+    for s in d.styles.iter_mut() {
+        match s.id.as_str() {
+            "normal" => {
+                s.chars.size = Some(9.5);
+                s.para.space_after = Some(3.0);
+                s.para.line = Some(LineSpacing::Multiple(1.08));
+            }
+            "heading2" => {
+                s.chars.color = Some(navy);
+                s.chars.bold = Some(true);
+                s.chars.size = Some(12.0);
+                s.para.space_before = Some(8.0);
+            }
+            "list" => s.para.space_after = Some(1.0),
+            _ => {}
+        }
+    }
+    d.page.margin_top = 92.0;
+    d.page.margin_left = 48.0;
+    d.page.margin_right = 40.0;
+    d.page.columns = 2;
+    d.page.column_gap = 16.0;
+    d.page.color = Color::rgb(0xfd, 0xfb, 0xf4);
+    let bullet = |t: &str| {
+        let mut p = Paragraph { style: "list".into(), fmt: ParaFmt::default(), runs: crate::io::plain::md_inline(t) };
+        p.fmt.list = Some(Some(ListFmt { kind: ListKind::Bullet, level: 0, start: None }));
+        p
+    };
+    let example = |t: &str| {
+        let mut p = Paragraph { style: "normal".into(), fmt: ParaFmt::default(), runs: crate::io::plain::md_inline(t) };
+        p.fmt.indent_left = Some(18.0);
+        for r in p.runs.iter_mut() {
+            r.fmt.italic = Some(true);
+            if r.fmt.color.is_none() {
+                r.fmt.color = Some(crate::io::plain::MARK_COLOR);
+            }
+        }
+        p
+    };
+    let rich = |style: &str, t: &str| Paragraph { style: style.into(), fmt: ParaFmt::default(), runs: crate::io::plain::md_inline(t) };
+    let gray = |t: &str| {
+        let mut p = rich("normal", t);
+        p.fmt.shading = Some(Color::rgb(0xe3, 0xe3, 0xe3));
+        p.fmt.border = Some(Some(BoxBorder { width: 0.0, color: Color::NONE, radius: 0.0, padding: 4.0 }));
+        p.fmt.space_before = Some(6.0);
+        p.fmt.space_after = Some(8.0);
+        p
+    };
+    let mut paras = vec![
+        rich("heading2", "Present Simple"),
+        rich("normal", "We use the **present simple** for:"),
+        bullet("facts and permanent states."),
+        example("Heather and Pat **live** in the centre of the city."),
+        bullet("general truths and laws of nature."),
+        example("The earth goes **round** the sun."),
+        bullet("habits and routines (with **always**, **usually**, etc.)."),
+        example("Bob always **walks** to school."),
+        bullet("timetables and programmes (in the future)."),
+        example("Our plane **arrives** at midnight."),
+        bullet("feelings and thoughts."),
+        example("I **like** James Bond films. They**’re** full of action."),
+        gray("**The time expressions we use with the present simple are:** *usually, often, always, every day/week/month/year, etc., in the morning/afternoon/evening, at night/the weekend, on Fridays, etc.*"),
+    ];
+    let mut pc = rich("heading2", "Present Continuous");
+    pc.fmt.break_before = Some(Break::Column);
+    paras.push(pc);
+    paras.extend([
+        rich("normal", "We use the **present continuous** (**to be** + verb **-ing**):"),
+        bullet("for actions taking place at or around the moment of speaking."),
+        example("Tracy **is making** a lot of noise at the moment."),
+        bullet("for temporary situations."),
+        example("Ted **is learning** to play the drums."),
+        bullet("for fixed arrangements in the near future."),
+        example("Jonathan and I **are going** bowling on Saturday."),
+        bullet("for currently changing and developing situations."),
+        example("More and more people **are exercising** these days."),
+        bullet("with adverbs such as **always** to express anger or irritation at a repeated action."),
+        example("You**’re** always **forgetting** to tidy your room."),
+        gray("**The time expressions we use with the present continuous are:** *now, at the moment, at present, these days, nowadays, still, today, tonight, etc.*"),
+    ]);
+    let mut sv = rich("heading2", "Stative Verbs");
+    sv.fmt.break_before = Some(Break::Column);
+    paras.push(sv);
+    paras.push(rich("normal", "Stative verbs are verbs which describe a state rather than an action, and so do not usually have a continuous tense. These verbs are:"));
+    paras.push(bullet("verbs of the senses (**see, hear, smell, taste, feel, look, sound, seem, appear**, etc.). ==David **looks** tired.=="));
+    paras.push(bullet("verbs of perception (**know, believe, understand, realise, remember, forget**, etc.). ==I **think** History is interesting.=="));
+    paras.push(bullet("verbs which express feelings and emotions (**like, love, hate, enjoy, prefer, detest, desire, want**, etc.)."));
+    d.body = Story { paras };
+
+    let w = d.page.width;
+    // Nagłówek rozdziału: numer w ukośnym polu i tytuł.
+    let mut num = Paragraph::with_text("normal", "1");
+    num.fmt.align = Some(Align::Center);
+    num.runs[0].fmt = CharFmt { size: Some(34.0), bold: Some(true), italic: Some(true), color: Some(Color::WHITE), font: Some("Calibri".into()), ..Default::default() };
+    let id = d.new_id();
+    d.objects.push(shape_obj(id, 0, (40.0, 22.0, 54.0, 50.0), Shape::polygon(&[(0.2, 0.0), (1.0, 0.0), (0.8, 1.0), (0.0, 1.0)]), frame(Story { paras: vec![num] }, 2.0, VAlign::Center), WrapMode::None, Some(Fill::Solid { color: navy })));
+    let mut title = Paragraph::with_text("normal", "Present Tenses");
+    title.runs[0].fmt = CharFmt { size: Some(28.0), color: Some(navy), font: Some("Calibri".into()), ..Default::default() };
+    let id = d.new_id();
+    d.objects.push(shape_obj(id, 0, (100.0, 26.0, 360.0, 44.0), Shape::rect(), frame(Story { paras: vec![title] }, 2.0, VAlign::Center), WrapMode::None, None));
+    let id = d.new_id();
+    let mut bar = shape_obj(id, 0, (40.0, 76.0, w - 80.0, 3.0), Shape::rect(), ObjKind::Shape, WrapMode::None, Some(Fill::Solid { color: navy }));
+    bar.corner = 1.0;
+    d.objects.push(bar);
+
+    // Tabela czasowników statycznych pod tekstem.
+    let table = Table {
+        rows: vec![
+            vec!["Verb".into(), "Present Simple".into(), "Present Continuous".into()],
+            vec!["**THINK:**".into(), "==I **think** our new Science teacher is very nice.== (= believe)".into(), "==Mum and Dad **are thinking** of buying a new car.== (= are considering)".into()],
+            vec!["**HAVE:**".into(), "==He **has** a pet iguana.== (= own, possess)".into(), "==They **are having** fun ice-skating.== (= are experiencing)".into()],
+            vec!["**SEE:**".into(), "==I **can see** John and Tina in the park.== (= are visible)".into(), "==I**’m seeing** Patrick outside the cinema tonight.== (= am meeting)".into()],
+            vec!["**TASTE:**".into(), "==The meat **tastes** very salty.== (= it is, has the flavour of)".into(), "==Harry **is tasting** the new Chinese dish.== (= is testing)".into()],
+            vec!["**LOOK:**".into(), "==Julia **looks** very pleased.== (= appears)".into(), "==Stephen **is looking** at an advert in the newspaper.== (= is taking a look at)".into()],
+        ],
+        header: true,
+        stripes: false,
+        font: "Calibri".into(),
+        size: 9.0,
+        accent: navy,
+        line: Color::rgb(0x60, 0x70, 0x90),
+        numbers_right: false,
+    };
+    let tw = w - d.page.margin_left - d.page.margin_right;
+    let th = crate::paint::table_height(&table, tw);
+    let id = d.new_id();
+    d.objects.push(shape_obj(id, 0, (d.page.margin_left, 560.0, tw, th), Shape::rect(), ObjKind::Table { table }, WrapMode::TopBottom, Some(Fill::Solid { color: Color::WHITE })));
+
+    // Ramka „Remember!” z etykietą.
+    let mut rem = Paragraph { style: "normal".into(), fmt: ParaFmt::default(), runs: crate::io::plain::md_inline("The verb **enjoy** can be used in continuous tenses to express a specific preference. ==My brother really **enjoys** skateboarding.== (general preference) **BUT** ==They **are really enjoying** the concert.== (specific preference)") };
+    rem.fmt.list = Some(Some(ListFmt { kind: ListKind::Bullet, level: 0, start: None }));
+    let ry = 560.0 + th + 26.0;
+    let id = d.new_id();
+    let mut boxo = shape_obj(id, 0, (d.page.margin_left, ry, tw, 70.0), Shape::rect(), frame(Story { paras: vec![rem] }, 12.0, VAlign::Center), WrapMode::TopBottom, Some(Fill::Solid { color: Color::WHITE }));
+    boxo.corner = 12.0;
+    boxo.stroke = Some(StrokeStyle { color: navy, width: 1.5, dash: vec![] });
+    d.objects.push(boxo);
+    let mut lab = Paragraph::with_text("normal", "Remember!");
+    lab.fmt.align = Some(Align::Center);
+    lab.runs[0].fmt = CharFmt { italic: Some(true), bold: Some(true), color: Some(navy), size: Some(9.0), ..Default::default() };
+    let id = d.new_id();
+    let mut tag = shape_obj(id, 0, (d.page.margin_left + 8.0, ry - 10.0, 76.0, 20.0), Shape::rect(), frame(Story { paras: vec![lab] }, 2.0, VAlign::Center), WrapMode::None, Some(Fill::Solid { color: Color::rgb(0xfd, 0xfb, 0xf4) }));
+    tag.corner = 10.0;
+    tag.stroke = Some(StrokeStyle { color: navy, width: 1.2, dash: vec![] });
+    d.objects.push(tag);
+    d.page.border = Some(StrokeStyle { color: navy, width: 1.0, dash: vec![] });
+    d.page.border_inset = 30.0;
+    d
 }
