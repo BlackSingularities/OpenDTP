@@ -75,6 +75,16 @@ export struct ImgV {
     current: bool,
 }
 
+export struct CommentV {
+    id: string,
+    author: string,
+    date: string,
+    quote: string,
+    text: string,
+    replies: string,
+    resolved: bool,
+}
+
 export struct PreV {
     id: string,
     text: string,
@@ -298,6 +308,12 @@ export global App {
     in-out property <[ItemV]> library;
     in-out property <string> lib-name;
     in-out property <[PreV]> preflight;
+    in-out property <[CommentV]> comments;
+    in-out property <[ItemV]> versions;
+    in-out property <bool> track;
+    in-out property <int> rev-count;
+    in-out property <string> comment-text;
+    in-out property <string> ver-name;
     in-out property <string> preflight-sum;
     in-out property <[SwatchV]> swatches;
     in-out property <string> print-bleed;

@@ -238,6 +238,7 @@ fn sync(st: &mut State, ui: &AppWindow) {
     app.set_has_header(ed.doc.header.is_some());
     app.set_has_footer(ed.doc.footer.is_some());
     app.set_diff_first(ps.different_first);
+    app.set_track(ed.doc.track);
     app.set_odd_even(ps.odd_even);
     app.set_orphans(ed.doc.settings.orphans);
     app.set_baseline_grid(ed.doc.settings.baseline_grid > 0.0);
@@ -509,6 +510,24 @@ fn sync(st: &mut State, ui: &AppWindow) {
         app.set_print_bleed(num(ed.doc.print.bleed / opendtp_core::model::MM).into());
         app.set_print_marks(ed.doc.print.marks);
         app.set_print_cmyk(ed.doc.print.cmyk);
+        app.set_rev_count(ed.doc.rev_count() as i32);
+        let cms: Vec<CommentV> = ed
+            .doc
+            .comments
+            .iter()
+            .map(|c| CommentV {
+                id: c.id.to_string().into(),
+                author: c.author.clone().into(),
+                date: c.date.replace('T', " ").get(..16).unwrap_or("").to_string().into(),
+                quote: c.quote.clone().into(),
+                text: c.text.clone().into(),
+                replies: c.replies.iter().map(|r| format!("↳ {}: {}", r.author, r.text)).collect::<Vec<_>>().join("\n").into(),
+                resolved: c.resolved,
+            })
+            .collect();
+        app.set_comments(ModelRc::new(VecModel::from(cms)));
+        let vers: Vec<ItemV> = ed.doc.versions.iter().rev().map(|v| ItemV { id: v.id.to_string().into(), label: v.name.clone().into(), hint: v.date.replace('T', " ").into(), ..Default::default() }).collect();
+        app.set_versions(ModelRc::new(VecModel::from(vers)));
     }
 }
 

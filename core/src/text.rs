@@ -101,7 +101,7 @@ impl FieldValues<'_> {
             Field::Time => crate::util::now_time(),
             Field::Title => self.title.to_string(),
             Field::Author => self.author.to_string(),
-            Field::Anchor(_) | Field::Bookmark(_) | Field::IndexMark(_) => String::new(),
+            Field::Anchor(_) | Field::Bookmark(_) | Field::IndexMark(_) | Field::Comment(_) => String::new(),
             Field::Running(_) => self.running.to_string(),
             Field::Seq(id, _) => self.seq(id).map(|n| n.to_string()).unwrap_or_else(|| "?".into()),
             Field::Ref(id, kind) => {

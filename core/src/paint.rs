@@ -207,6 +207,25 @@ pub fn page_ops(doc: &Document, layout: &Layout, page: usize, o: &PaintOpts) -> 
     for ob in objs.iter().filter(|ob| ob.wrap.mode != WrapMode::Behind) {
         object_ops(doc, layout, ob, page, o, &mut ops);
     }
+    // Komentarze (tylko na ekranie): żółty dymek w miejscu komentarza.
+    if o.screen && doc.comments.iter().any(|c| !c.resolved) {
+        for (pi, p) in doc.body.paras.iter().enumerate() {
+            let mut off = 0;
+            for r in &p.runs {
+                if let Some(Field::Comment(id)) = r.field {
+                    let open = doc.comments.iter().any(|c| c.id == id && !c.resolved);
+                    if let Some(c) = layout.caret(crate::model::StoryRef::Body, pi, off).filter(|c| c.page == page && open) {
+                        let (x, y) = (c.x - 1.0, c.top - 5.0);
+                        ops.push(Op::Fill { path: Path::round_rect(Rect::new(x, y, 9.0, 7.0), 1.5), paint: Paint::Solid(Color::rgb(0xf2, 0xb8, 0x22)), opacity: 1.0 });
+                        let mut tail = Path(Vec::new());
+                        tail.0.extend([PathCmd::M(x + 1.5, y + 6.5), PathCmd::L(x + 1.5, y + 9.0), PathCmd::L(x + 4.0, y + 6.5), PathCmd::Z]);
+                        ops.push(Op::Fill { path: tail, paint: Paint::Solid(Color::rgb(0xf2, 0xb8, 0x22)), opacity: 1.0 });
+                    }
+                }
+                off += r.text.len();
+            }
+        }
+    }
     // Znaczek obrazu linkowanego (tylko na ekranie): ogniwo łącza, czerwone – brak pliku.
     if o.screen {
         for ob in &objs {

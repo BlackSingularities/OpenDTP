@@ -299,13 +299,57 @@ impl Editor {
 
     // ------------------------------------------------------------ pisanie
 
+    /// Oznaczenie śledzonej zmiany bieżącego użytkownika.
+    pub fn rev_mark(kind: RevKind) -> Rev {
+        let author = std::env::var("USERNAME").unwrap_or_default();
+        Rev { kind, author, date: opendtp_core::util::iso_now() }
+    }
+
+    /// Usuwa tekst `a..b`. Przy śledzeniu zmian tekst zostaje, oznaczony jako usunięty (własne,
+    /// niezaakceptowane wstawienia znikają od razu). Zwraca miejsce, w którym kończy się zakres.
+    fn remove(&mut self, a: At, b: At) -> At {
+        if !self.doc.track {
+            edit::delete(self.story_mut(), a, b);
+            return a;
+        }
+        let mark = Editor::rev_mark(RevKind::Delete);
+        const DROP: &str = "\u{1}";
+        edit::format_chars(self.story_mut(), a, b, &|f| match f.rev.as_ref().map(|r| r.kind) {
+            Some(RevKind::Insert) => f.rev = Some(Rev { kind: RevKind::Insert, author: DROP.into(), date: String::new() }),
+            Some(RevKind::Delete) => {}
+            None => f.rev = Some(mark.clone()),
+        });
+        let is_drop = |r: &Run| r.fmt.rev.as_ref().is_some_and(|x| x.author == DROP);
+        let s = self.story_mut();
+        let mut shift = 0;
+        let last = b.para.min(s.paras.len().saturating_sub(1));
+        for pi in a.para..=last {
+            let p = &mut s.paras[pi];
+            if pi == b.para {
+                let mut off = 0;
+                for r in &p.runs {
+                    let l = r.text.len();
+                    if off + l <= b.off && is_drop(r) {
+                        shift += l;
+                    }
+                    off += l;
+                }
+            }
+            p.runs.retain(|r| !is_drop(r));
+            if p.runs.is_empty() {
+                p.runs.push(Run::default());
+            }
+        }
+        At::new(b.para, b.off.saturating_sub(shift))
+    }
+
     pub fn insert(&mut self, text: &str) {
         self.begin(if text.chars().all(|c| !c.is_whitespace()) || text == " " { Kind::Typing } else { Kind::Other });
         if self.has_sel() {
             let (a, b) = self.range();
-            edit::delete(self.story_mut(), a, b);
-            self.head = a;
+            self.head = self.remove(a, b);
         }
+        let track = self.doc.track;
         let fmt = {
             let s = self.story_ref();
             let mut f = s.paras[self.head.para.min(s.paras.len() - 1)].fmt_at(self.head.off);
@@ -313,6 +357,8 @@ impl Editor {
                 f.merge(t);
             }
             f.link = None.or(f.link);
+            // Nowy tekst nie dziedziczy oznaczenia zmiany po sąsiedzie.
+            f.rev = if track { Some(Editor::rev_mark(RevKind::Insert)) } else { None };
             f
         };
         let at = self.head;
@@ -330,9 +376,10 @@ impl Editor {
             return;
         }
         let a = At::new(h.para, h.off - len);
-        let fmt = self.story_ref().paras[h.para].fmt_at(a.off + 1);
-        edit::delete(self.story_mut(), a, h);
-        let end = edit::insert_text(self.story_mut(), a, with, &fmt);
+        let mut fmt = self.story_ref().paras[h.para].fmt_at(a.off + 1);
+        fmt.rev = if self.doc.track { Some(Editor::rev_mark(RevKind::Insert)) } else { None };
+        let at = self.remove(a, h);
+        let end = edit::insert_text(self.story_mut(), at, with, &fmt);
         self.anchor = end;
         self.head = end;
         self.changed();
@@ -364,7 +411,10 @@ impl Editor {
             self.begin(Kind::Delete);
             let prev_len = self.story_ref().paras[h.para - 1].len();
             let a = At::new(h.para - 1, prev_len);
-            edit::delete(self.story_mut(), a, h);
+            // Przy śledzeniu zmian akapity się nie łączą – kursor przechodzi tylko na koniec poprzedniego.
+            if !self.doc.track {
+                edit::delete(self.story_mut(), a, h);
+            }
             self.anchor = a;
             self.head = a;
             self.changed();
@@ -373,7 +423,7 @@ impl Editor {
         self.begin(Kind::Delete);
         let from = if word { edit::prev_word(&text, h.off) } else { edit::prev_char(&text, h.off) };
         let a = At::new(h.para, from);
-        edit::delete(self.story_mut(), a, h);
+        self.remove(a, h);
         self.anchor = a;
         self.head = a;
         self.changed();
@@ -397,14 +447,22 @@ impl Editor {
         } else {
             At::new(h.para, edit::next_char(&text, h.off))
         };
-        edit::delete(self.story_mut(), h, b);
+        if self.doc.track && b.para != h.para {
+            // Śledzenie zmian: koniec akapitu zostaje, kursor przechodzi dalej.
+            self.anchor = b;
+            self.head = b;
+        } else {
+            let end = self.remove(h, b);
+            self.anchor = end;
+            self.head = end;
+        }
         self.changed();
     }
 
     pub fn delete_sel(&mut self) {
         let (a, b) = self.range();
         self.begin(Kind::Other);
-        edit::delete(self.story_mut(), a, b);
+        self.remove(a, b);
         self.anchor = a;
         self.head = a;
         self.changed();
@@ -1051,6 +1109,68 @@ impl Editor {
         self.anchor = end;
         self.head = end;
         self.changed();
+    }
+
+    /// Zakres śledzonej zmiany w miejscu kursora (ciągłe przebiegi z tym samym oznaczeniem).
+    pub fn rev_at(&self) -> Option<(usize, usize, usize, Rev)> {
+        let h = self.head;
+        let p = self.story_ref().paras.get(h.para)?;
+        let mut off = 0;
+        let mut spans: Vec<(usize, usize, Option<Rev>)> = Vec::new();
+        for r in &p.runs {
+            let l = r.text.len();
+            match spans.last_mut() {
+                Some(last) if last.2 == r.fmt.rev => last.1 = off + l,
+                _ => spans.push((off, off + l, r.fmt.rev.clone())),
+            }
+            off += l;
+        }
+        spans.into_iter().find_map(|(a, b, rev)| {
+            let rev = rev?;
+            (h.off >= a && h.off <= b).then_some((h.para, a, b, rev))
+        })
+    }
+
+    /// Akceptacja albo odrzucenie zmiany w miejscu kursora.
+    pub fn resolve_rev_here(&mut self, accept: bool) -> bool {
+        let Some((p, a, b, rev)) = self.rev_at() else { return false };
+        self.begin(Kind::Other);
+        let remove = (rev.kind == RevKind::Delete) == accept;
+        if remove {
+            edit::delete(self.story_mut(), At::new(p, a), At::new(p, b));
+            self.anchor = At::new(p, a);
+            self.head = At::new(p, a);
+        } else {
+            edit::format_chars(self.story_mut(), At::new(p, a), At::new(p, b), &|f| f.rev = None);
+        }
+        self.changed();
+        true
+    }
+
+    /// Następna śledzona zmiana w bieżącym tekście (od kursora, z zawinięciem) – zaznacza ją.
+    pub fn next_rev(&mut self) -> bool {
+        let h = self.head;
+        let mut hits: Vec<(usize, usize, usize)> = Vec::new();
+        for (pi, p) in self.story_ref().paras.iter().enumerate() {
+            let mut off = 0;
+            let mut prev: Option<&Rev> = None;
+            for r in &p.runs {
+                let l = r.text.len();
+                if r.fmt.rev.is_some() {
+                    match hits.last_mut() {
+                        Some(last) if last.0 == pi && last.2 == off && prev == r.fmt.rev.as_ref() => last.2 = off + l,
+                        _ => hits.push((pi, off, off + l)),
+                    }
+                }
+                prev = r.fmt.rev.as_ref();
+                off += l;
+            }
+        }
+        let next = hits.iter().find(|x| (x.0, x.1) > (h.para, h.off)).or(hits.first()).copied();
+        let Some((p, a, b)) = next else { return false };
+        self.anchor = At::new(p, a);
+        self.head = At::new(p, b);
+        true
     }
 
     pub fn find_run(&mut self, needle: &str, opts: &edit::FindOpts) {

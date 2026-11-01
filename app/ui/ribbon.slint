@@ -2270,6 +2270,103 @@ component RefsTab inherits HorizontalLayout {
 component ReviewTab inherits HorizontalLayout {
     alignment: start;
     Group {
+        title: @tr("Zmiany");
+        BigButton {
+            icon: Icons.pen-line;
+            label: @tr("Śledź zmiany");
+            tip: @tr("Oznaczaj nowy tekst i usunięcia – do akceptacji albo odrzucenia");
+            active: App.track;
+            clicked => {
+                App.cmd("track-toggle", "");
+            }
+        }
+        Col {
+            RowButton {
+                icon: Icons.check;
+                label: @tr("Akceptuj");
+                tip: @tr("Zaakceptuj zmianę w miejscu kursora");
+                clicked => {
+                    App.cmd("rev-accept", "");
+                }
+            }
+            RowButton {
+                icon: Icons.x;
+                label: @tr("Odrzuć");
+                tip: @tr("Odrzuć zmianę w miejscu kursora");
+                clicked => {
+                    App.cmd("rev-reject", "");
+                }
+            }
+            RowButton {
+                icon: Icons.chevron-right;
+                label: App.rev-count > 0 ? @tr("Następna ({})", App.rev-count) : @tr("Następna");
+                tip: @tr("Przejdź do następnej zmiany");
+                clicked => {
+                    App.cmd("rev-next", "");
+                }
+            }
+        }
+        Col {
+            RowButton {
+                icon: Icons.list-checks;
+                label: @tr("Akceptuj wszystkie");
+                tip: @tr("Zaakceptuj wszystkie zmiany w dokumencie");
+                enabled: App.rev-count > 0;
+                clicked => {
+                    App.cmd("rev-accept-all", "");
+                }
+            }
+            RowButton {
+                icon: Icons.eraser;
+                label: @tr("Odrzuć wszystkie");
+                tip: @tr("Odrzuć wszystkie zmiany – wraca tekst sprzed zmian");
+                enabled: App.rev-count > 0;
+                clicked => {
+                    App.cmd("rev-reject-all", "");
+                }
+            }
+        }
+    }
+    Group {
+        title: @tr("Komentarze i wersje");
+        BigButton {
+            icon: Icons.message-square-quote;
+            label: @tr("Komentarz");
+            tip: @tr("Dodaj komentarz do zaznaczonego miejsca");
+            clicked => {
+                App.cmd("comment", "");
+            }
+        }
+        Col {
+            RowButton {
+                icon: Icons.message-square-quote;
+                label: @tr("Komentarze");
+                tip: @tr("Panel komentarzy: odpowiedzi, rozwiązane, przejście do miejsca");
+                active: App.left-panel == "comments";
+                clicked => {
+                    App.cmd("panel", "comments");
+                }
+            }
+            RowButton {
+                icon: Icons.history;
+                label: @tr("Wersje");
+                tip: @tr("Historia wersji zapisana w pliku dokumentu");
+                active: App.left-panel == "versions";
+                clicked => {
+                    App.cmd("panel", "versions");
+                }
+            }
+            RowButton {
+                icon: Icons.save;
+                label: @tr("Zapisz wersję");
+                tip: @tr("Zapamiętaj obecną treść jako wersję (w pliku .odtp)");
+                clicked => {
+                    App.cmd("version-save", "");
+                }
+            }
+        }
+    }
+    Group {
         title: @tr("Druk");
         BigButton {
             icon: Icons.badge-info;

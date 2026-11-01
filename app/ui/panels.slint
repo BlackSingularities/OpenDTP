@@ -4,7 +4,7 @@
 import { ScrollView, ListView, TextEdit } from "std-widgets.slint";
 import { Theme } from "theme.slint";
 import { Icons } from "icons.slint";
-import { App, NavV, StyleV, ImgV, PreV, SwatchV } from "state.slint";
+import { App, NavV, StyleV, ImgV, PreV, SwatchV, CommentV } from "state.slint";
 import { MenuButton } from "ribbon.slint";
 import { TipArea, IconButton, Field, Spin, Switch, MenuItem, MenuSep, Segmented, IconSeg, Toggle, Label, Dim, Button, Slider } from "widgets.slint";
 
@@ -414,6 +414,212 @@ export component LeftPanel inherits Rectangle {
                     tip: @tr("Dodaj jako próbki wszystkie kolory użyte w dokumencie");
                     clicked => {
                         App.cmd("swatch-add-used", "");
+                    }
+                }
+            }
+        }
+        if App.left-panel == "comments": VerticalLayout {
+            PanelHead {
+                title: @tr("Komentarze");
+                icon: Icons.message-square-quote;
+                close => {
+                    App.left-panel = "";
+                }
+            }
+            if App.comments.length == 0: Dim {
+                text: @tr("Brak komentarzy. Zaznacz fragment i wybierz Recenzja → Komentarz.");
+                wrap: word-wrap;
+                x: 14px;
+                width: parent.width - 28px;
+                height: 50px;
+            }
+            ListView {
+                for c in App.comments: Rectangle {
+                    height: cv.preferred-height + 10px;
+                    VerticalLayout {
+                        padding-left: 12px;
+                        padding-right: 8px;
+                        padding-top: 4px;
+                        Rectangle {
+                            border-radius: Theme.r-small;
+                            background: c.resolved ? transparent : Theme.raised;
+                            border-width: 1px;
+                            border-color: Theme.line;
+                            opacity: c.resolved ? 0.6 : 1;
+                            cv := VerticalLayout {
+                                padding: 8px;
+                                spacing: 4px;
+                                HorizontalLayout {
+                                    spacing: 6px;
+                                    Rectangle {
+                                        width: 8px;
+                                        height: 8px;
+                                        y: (parent.height - self.height) / 2;
+                                        border-radius: 4px;
+                                        background: c.resolved ? Theme.text-faint : #f2b822;
+                                    }
+                                    Text {
+                                        text: c.author;
+                                        font-family: Theme.font;
+                                        font-size: Theme.fs-small + 0.5px;
+                                        font-weight: 600;
+                                        color: Theme.text;
+                                        horizontal-stretch: 1;
+                                        overflow: elide;
+                                    }
+                                    Text {
+                                        text: c.date;
+                                        font-family: Theme.font;
+                                        font-size: Theme.fs-small;
+                                        color: Theme.text-faint;
+                                    }
+                                }
+                                if c.quote != "": Text {
+                                    text: "„" + c.quote + "”";
+                                    font-family: Theme.font;
+                                    font-size: Theme.fs-small;
+                                    font-italic: true;
+                                    color: Theme.text-faint;
+                                    wrap: word-wrap;
+                                }
+                                Text {
+                                    text: c.text;
+                                    font-family: Theme.font;
+                                    font-size: Theme.fs;
+                                    color: Theme.text;
+                                    wrap: word-wrap;
+                                }
+                                if c.replies != "": Text {
+                                    text: c.replies;
+                                    font-family: Theme.font;
+                                    font-size: Theme.fs-small + 0.5px;
+                                    color: Theme.text;
+                                    wrap: word-wrap;
+                                }
+                                HorizontalLayout {
+                                    spacing: 2px;
+                                    Field {
+                                        w: 120px;
+                                        horizontal-stretch: 1;
+                                        placeholder: @tr("Odpowiedz…");
+                                        tip: @tr("Odpowiedź – Enter dodaje");
+                                        accepted(t) => {
+                                            App.cmd("comment-reply", c.id + ":" + t);
+                                            self.text = "";
+                                        }
+                                    }
+                                    IconButton {
+                                        icon: Icons.search;
+                                        size: 24px;
+                                        icon-size: 13px;
+                                        tip: @tr("Pokaż miejsce komentarza");
+                                        clicked => {
+                                            App.cmd("comment-goto", c.id);
+                                        }
+                                    }
+                                    IconButton {
+                                        icon: Icons.check;
+                                        size: 24px;
+                                        icon-size: 13px;
+                                        active: c.resolved;
+                                        tip: c.resolved ? @tr("Otwórz ponownie") : @tr("Oznacz jako rozwiązany");
+                                        clicked => {
+                                            App.cmd("comment-resolve", c.id);
+                                        }
+                                    }
+                                    IconButton {
+                                        icon: Icons.trash-2;
+                                        size: 24px;
+                                        icon-size: 13px;
+                                        tip: @tr("Usuń komentarz");
+                                        clicked => {
+                                            App.cmd("comment-delete", c.id);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if App.left-panel == "versions": VerticalLayout {
+            PanelHead {
+                title: @tr("Historia wersji");
+                icon: Icons.history;
+                close => {
+                    App.left-panel = "";
+                }
+            }
+            if App.versions.length == 0: Dim {
+                text: @tr("Brak zapisanych wersji. „Zapisz wersję” zapamiętuje obecną treść w pliku dokumentu – do porównania albo powrotu.");
+                wrap: word-wrap;
+                x: 14px;
+                width: parent.width - 28px;
+                height: 76px;
+            }
+            ListView {
+                for v in App.versions: Rectangle {
+                    height: 42px;
+                    border-radius: Theme.r-small;
+                    background: vta.has-hover ? Theme.hover : transparent;
+                    vta := TipArea {
+                        tip: @tr("Wersja z {}", v.hint);
+                    }
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        padding-right: 6px;
+                        spacing: 6px;
+                        VerticalLayout {
+                            horizontal-stretch: 1;
+                            alignment: center;
+                            Text {
+                                text: v.label;
+                                font-family: Theme.font;
+                                font-size: Theme.fs;
+                                color: Theme.text;
+                                overflow: elide;
+                            }
+                            Text {
+                                text: v.hint;
+                                font-family: Theme.font;
+                                font-size: Theme.fs-small;
+                                color: Theme.text-faint;
+                            }
+                        }
+                        IconButton {
+                            icon: Icons.undo-2;
+                            size: 26px;
+                            icon-size: 13px;
+                            y: (parent.height - self.height) / 2;
+                            tip: @tr("Przywróć tę wersję (obecna treść zostanie zapisana jako wersja)");
+                            clicked => {
+                                App.cmd("version-restore", v.id);
+                            }
+                        }
+                        IconButton {
+                            icon: Icons.trash-2;
+                            size: 26px;
+                            icon-size: 13px;
+                            y: (parent.height - self.height) / 2;
+                            tip: @tr("Usuń wersję");
+                            clicked => {
+                                App.cmd("version-delete", v.id);
+                            }
+                        }
+                    }
+                }
+            }
+            HorizontalLayout {
+                padding-left: 10px;
+                padding-right: 10px;
+                padding-top: 6px;
+                Button {
+                    label: @tr("Zapisz wersję");
+                    icon: Icons.history;
+                    tip: @tr("Zapamiętaj obecną treść jako wersję (w pliku .odtp)");
+                    clicked => {
+                        App.cmd("version-save", "");
                     }
                 }
             }

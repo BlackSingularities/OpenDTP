@@ -120,6 +120,16 @@ pub fn check(doc: &Document, layout: &Layout) -> Vec<Issue> {
         }
     }
 
+    // Recenzja: niezaakceptowane zmiany drukują się jako podkreślenia i przekreślenia.
+    let revs = doc.rev_count();
+    if revs > 0 {
+        out.push(issue(Level::Error, crate::trf!("Niezaakceptowane zmiany: {} – zaakceptuj albo odrzuć je przed drukiem", revs), None, None));
+    }
+    let open = doc.comments.iter().filter(|c| !c.resolved).count();
+    if open > 0 {
+        out.push(issue(Level::Info, crate::trf!("Otwarte komentarze: {} (nie drukują się)", open), None, None));
+    }
+
     // Spis treści i indeks mogą być nieaktualne – przypomnienie.
     if doc.body.paras.iter().any(|p| p.style.starts_with("toc")) {
         out.push(issue(Level::Info, tr("Przed drukiem zaktualizuj spis treści (Odwołania → Aktualizuj)"), None, None));

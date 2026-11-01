@@ -2407,6 +2407,162 @@ pub fn run(st: &mut State, id: &str, arg: &str) {
             }
             st.ed.changed();
         }
+        "track-toggle" => {
+            st.ed.doc.track = !st.ed.doc.track;
+            st.ed.dirty = true;
+            toast(st, if st.ed.doc.track { tr("Śledzenie zmian włączone – nowy tekst i usunięcia są oznaczane") } else { tr("Śledzenie zmian wyłączone") });
+        }
+        "rev-accept" | "rev-reject" => {
+            if !st.ed.resolve_rev_here(base == "rev-accept") {
+                toast(st, tr("W miejscu kursora nie ma śledzonej zmiany – „Następna” przechodzi do kolejnej"));
+            }
+        }
+        "rev-accept-all" | "rev-reject-all" => {
+            let n = st.ed.doc.rev_count();
+            if n == 0 {
+                toast(st, tr("Brak śledzonych zmian"));
+                return;
+            }
+            st.ed.begin(Kind::Other);
+            st.ed.doc.resolve_revs(base == "rev-accept-all");
+            st.ed.fix_selection();
+            st.ed.changed();
+            toast(st, &if base == "rev-accept-all" { opendtp_core::trf!("Zaakceptowano zmiany: {}", n) } else { opendtp_core::trf!("Odrzucono zmiany: {}", n) });
+        }
+        "rev-next" => {
+            if !st.ed.next_rev() {
+                toast(st, tr("Brak śledzonych zmian"));
+            }
+            scroll = true;
+        }
+        "comment" => {
+            if st.ed.story != StoryRef::Body {
+                toast(st, tr("Komentarze wstawia się w treści głównej"));
+                return;
+            }
+            app.set_comment_text("".into());
+            app.set_dialog("comment".into());
+            return;
+        }
+        "comment-apply" => {
+            app.set_dialog("".into());
+            let text = arg.trim().to_string();
+            if text.is_empty() {
+                return;
+            }
+            let quote: String = opendtp_core::edit::fragment_text(&st.ed.fragment()).replace(FIELD_CHAR, "").chars().take(80).collect();
+            let id = st.ed.doc.new_id();
+            let author = std::env::var("USERNAME").unwrap_or_default();
+            st.ed.begin(Kind::Other);
+            st.ed.doc.comments.push(Comment { id, author, date: opendtp_core::util::iso_now(), text, quote: quote.trim().to_string(), resolved: false, replies: Vec::new() });
+            let (_, b) = st.ed.range();
+            st.ed.anchor = b;
+            st.ed.head = b;
+            insert_field_at_caret(st, Field::Comment(id));
+            app.set_left_panel("comments".into());
+        }
+        "comment-reply" | "comment-resolve" | "comment-delete" | "comment-goto" => {
+            let (id, text) = arg.split_once(':').unwrap_or((arg, ""));
+            let Ok(id) = id.parse::<u64>() else { return };
+            match base {
+                "comment-goto" => {
+                    let pos = st.ed.doc.body.paras.iter().enumerate().find_map(|(pi, p)| {
+                        let mut off = 0;
+                        for r in &p.runs {
+                            if r.field == Some(Field::Comment(id)) {
+                                return Some(At::new(pi, off));
+                            }
+                            off += r.text.len();
+                        }
+                        None
+                    });
+                    if let Some(at) = pos {
+                        st.ed.obj = None;
+                        st.ed.story = StoryRef::Body;
+                        st.ed.anchor = at;
+                        st.ed.head = at;
+                        scroll = true;
+                    }
+                }
+                _ => {
+                    st.ed.begin(Kind::Other);
+                    match base {
+                        "comment-reply" => {
+                            if let Some(c) = st.ed.doc.comments.iter_mut().find(|c| c.id == id) {
+                                if !text.trim().is_empty() {
+                                    c.replies.push(Reply { author: std::env::var("USERNAME").unwrap_or_default(), date: opendtp_core::util::iso_now(), text: text.trim().to_string() });
+                                }
+                            }
+                        }
+                        "comment-resolve" => {
+                            if let Some(c) = st.ed.doc.comments.iter_mut().find(|c| c.id == id) {
+                                c.resolved = !c.resolved;
+                            }
+                        }
+                        _ => {
+                            st.ed.doc.comments.retain(|c| c.id != id);
+                            for p in st.ed.doc.body.paras.iter_mut() {
+                                p.runs.retain(|r| r.field != Some(Field::Comment(id)));
+                                if p.runs.is_empty() {
+                                    p.runs.push(Run::default());
+                                }
+                            }
+                            st.ed.fix_selection();
+                        }
+                    }
+                    st.ed.changed();
+                }
+            }
+        }
+        "version-save" => {
+            app.set_ver_name(opendtp_core::trf!("Wersja {}", st.ed.doc.versions.len() + 1).into());
+            app.set_dialog("version".into());
+            return;
+        }
+        "version-save-apply" => {
+            app.set_dialog("".into());
+            match io::odtp::snapshot(&st.ed.doc) {
+                Ok(json) => {
+                    let id = st.ed.doc.new_id();
+                    let name = if arg.trim().is_empty() { opendtp_core::trf!("Wersja {}", st.ed.doc.versions.len() + 1) } else { arg.trim().to_string() };
+                    st.ed.doc.version_data.insert(id, std::sync::Arc::new(json));
+                    st.ed.doc.versions.push(Version { id, name: name.clone(), date: opendtp_core::util::iso_now() });
+                    st.ed.dirty = true;
+                    st.ed.version += 1;
+                    toast(st, &opendtp_core::trf!("Zapisano wersję „{}” – trafi do pliku przy zapisie dokumentu", name));
+                }
+                Err(e) => toast(st, &e),
+            }
+        }
+        "version-restore" => {
+            let Ok(id) = arg.parse::<u64>() else { return };
+            // Bieżący stan najpierw jako wersja – przywrócenie da się cofnąć także z historii.
+            if let Ok(json) = io::odtp::snapshot(&st.ed.doc) {
+                let nid = st.ed.doc.new_id();
+                st.ed.doc.version_data.insert(nid, std::sync::Arc::new(json));
+                st.ed.doc.versions.push(Version { id: nid, name: tr("Przed przywróceniem").to_string(), date: opendtp_core::util::iso_now() });
+            }
+            match io::odtp::restore(&st.ed.doc, id) {
+                Ok(d) => {
+                    st.ed.begin(Kind::Other);
+                    st.ed.doc = d;
+                    st.ed.obj = None;
+                    st.ed.story = StoryRef::Body;
+                    st.ed.fix_selection();
+                    st.ed.changed();
+                    st.view.invalidate();
+                    toast(st, tr("Przywrócono wersję (Ctrl+Z cofa)"));
+                }
+                Err(e) => toast(st, &e),
+            }
+        }
+        "version-delete" => {
+            let Ok(id) = arg.parse::<u64>() else { return };
+            st.ed.doc.versions.retain(|v| v.id != id);
+            st.ed.doc.version_data.remove(&id);
+            st.ed.dirty = true;
+            st.ed.version += 1;
+        }
         "chapter-move" => {
             let (p, dir) = arg.split_once(':').unwrap_or((arg, "down"));
             let Ok(p) = p.parse::<usize>() else { return };

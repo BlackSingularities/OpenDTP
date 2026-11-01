@@ -3743,3 +3743,189 @@ msgstr "Export print PDF"
 
 msgid "Pobierz kolory użyte w dokumencie"
 msgstr "Collect colors used in the document"
+
+msgid "Śledzenie zmian włączone – nowy tekst i usunięcia są oznaczane"
+msgstr "Track changes on – new text and deletions are marked"
+
+msgid "Śledzenie zmian wyłączone"
+msgstr "Track changes off"
+
+msgid "W miejscu kursora nie ma śledzonej zmiany – „Następna” przechodzi do kolejnej"
+msgstr "No tracked change at the cursor – “Next” jumps to the next one"
+
+msgid "Brak śledzonych zmian"
+msgstr "No tracked changes"
+
+msgid "Zaakceptowano zmiany: {}"
+msgstr "Changes accepted: {}"
+
+msgid "Odrzucono zmiany: {}"
+msgstr "Changes rejected: {}"
+
+msgid "Komentarze wstawia się w treści głównej"
+msgstr "Comments go in the main text"
+
+msgid "Zapisano wersję „{}” – trafi do pliku przy zapisie dokumentu"
+msgstr "Version “{}” saved – it goes into the file when you save the document"
+
+msgid "Przed przywróceniem"
+msgstr "Before restore"
+
+msgid "Przywrócono wersję (Ctrl+Z cofa)"
+msgstr "Version restored (Ctrl+Z undoes)"
+
+msgid "Brak treści tej wersji"
+msgstr "This version has no content"
+
+msgid "E-book (.epub)"
+msgstr "E-book (.epub)"
+
+msgid "EPUB 3 na czytniki: rozdziały z nagłówków, spis treści, obrazy z tekstu"
+msgstr "EPUB 3 for e-readers: chapters from headings, table of contents, inline images"
+
+msgid "Nowy komentarz"
+msgstr "New comment"
+
+msgid "Treść komentarza – Enter dodaje"
+msgstr "Comment text – Enter adds"
+
+msgid "Uwaga do zaznaczonego miejsca…"
+msgstr "Note about the selected spot…"
+
+msgid "Zamknij bez dodawania"
+msgstr "Close without adding"
+
+msgid "Dodaj komentarz w miejscu kursora"
+msgstr "Add a comment at the cursor"
+
+msgid "Dodaj"
+msgstr "Add"
+
+msgid "Zapisz wersję"
+msgstr "Save version"
+
+msgid "Nazwa wersji, np. „Po korekcie”"
+msgstr "Version name, e.g. “After proofreading”"
+
+msgid "Zapamiętaj obecną treść jako wersję (w pliku .odtp)"
+msgstr "Keep the current content as a version (inside the .odtp file)"
+
+msgid "Komentarze"
+msgstr "Comments"
+
+msgid "Brak komentarzy. Zaznacz fragment i wybierz Recenzja → Komentarz."
+msgstr "No comments. Select a passage and choose Review → Comment."
+
+msgid "Odpowiedz…"
+msgstr "Reply…"
+
+msgid "Odpowiedź – Enter dodaje"
+msgstr "Reply – Enter adds"
+
+msgid "Pokaż miejsce komentarza"
+msgstr "Show the comment's spot"
+
+msgid "Otwórz ponownie"
+msgstr "Reopen"
+
+msgid "Oznacz jako rozwiązany"
+msgstr "Mark as resolved"
+
+msgid "Usuń komentarz"
+msgstr "Delete comment"
+
+msgid "Historia wersji"
+msgstr "Version history"
+
+msgid "Brak zapisanych wersji. „Zapisz wersję” zapamiętuje obecną treść w pliku dokumentu – do porównania albo powrotu."
+msgstr "No saved versions. “Save version” keeps the current content in the document file – to compare or go back."
+
+msgid "Wersja z {}"
+msgstr "Version from {}"
+
+msgid "Przywróć tę wersję (obecna treść zostanie zapisana jako wersja)"
+msgstr "Restore this version (the current content is saved as a version)"
+
+msgid "Usuń wersję"
+msgstr "Delete version"
+
+msgid "Zmiany"
+msgstr "Changes"
+
+msgid "Śledź zmiany"
+msgstr "Track changes"
+
+msgid "Oznaczaj nowy tekst i usunięcia – do akceptacji albo odrzucenia"
+msgstr "Mark new text and deletions – to accept or reject"
+
+msgid "Akceptuj"
+msgstr "Accept"
+
+msgid "Zaakceptuj zmianę w miejscu kursora"
+msgstr "Accept the change at the cursor"
+
+msgid "Odrzuć"
+msgstr "Reject"
+
+msgid "Odrzuć zmianę w miejscu kursora"
+msgstr "Reject the change at the cursor"
+
+msgid "Następna ({})"
+msgstr "Next ({})"
+
+msgid "Następna"
+msgstr "Next"
+
+msgid "Przejdź do następnej zmiany"
+msgstr "Go to the next change"
+
+msgid "Akceptuj wszystkie"
+msgstr "Accept all"
+
+msgid "Zaakceptuj wszystkie zmiany w dokumencie"
+msgstr "Accept all changes in the document"
+
+msgid "Odrzuć wszystkie"
+msgstr "Reject all"
+
+msgid "Odrzuć wszystkie zmiany – wraca tekst sprzed zmian"
+msgstr "Reject all changes – the original text returns"
+
+msgid "Komentarze i wersje"
+msgstr "Comments and versions"
+
+msgid "Komentarz"
+msgstr "Comment"
+
+msgid "Dodaj komentarz do zaznaczonego miejsca"
+msgstr "Add a comment to the selected spot"
+
+msgid "Panel komentarzy: odpowiedzi, rozwiązane, przejście do miejsca"
+msgstr "Comments panel: replies, resolved, jump to the spot"
+
+msgid "Wersje"
+msgstr "Versions"
+
+msgid "Historia wersji zapisana w pliku dokumentu"
+msgstr "Version history stored in the document file"
+
+msgid "Niezaakceptowane zmiany: {} – zaakceptuj albo odrzuć je przed drukiem"
+msgstr "Unaccepted changes: {} – accept or reject them before printing"
+
+msgid "Otwarte komentarze: {} (nie drukują się)"
+msgstr "Open comments: {} (they don't print)"
+
+msgid "Następna zmiana"
+msgstr "Next change"
+
+msgid "Akceptuj wszystkie zmiany"
+msgstr "Accept all changes"
+
+msgid "Odrzuć wszystkie zmiany"
+msgstr "Reject all changes"
+
+msgid "Eksportuj do EPUB"
+msgstr "Export to EPUB"
+
+msgid "Dokument"
+msgstr "Document"

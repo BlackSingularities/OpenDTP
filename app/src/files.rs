@@ -151,6 +151,7 @@ pub fn export(st: &mut State, kind: &str) {
     let (ext, filter) = match kind {
         "docx" => ("docx", "Microsoft Word"),
         "pdf" | "pdf-print" => ("pdf", "PDF"),
+        "epub" => ("epub", "EPUB"),
         "html" => ("html", "HTML"),
         "md" => ("md", "Markdown"),
         "png" => ("png", "PNG"),
@@ -169,6 +170,7 @@ pub fn export(st: &mut State, kind: &str) {
             "docx" => io::docx::export(doc, lay, &io::docx::DocxOpts { exact_shapes: st.prefs.exact_shapes })?,
             "pdf" => io::pdf::export(doc, lay)?,
             "pdf-print" => io::pdf::export_with(doc, lay, true)?,
+            "epub" => io::epub::export(doc)?,
             "html" => io::plain::to_html(doc).into_bytes(),
             "md" => io::plain::to_markdown(doc).into_bytes(),
             "png" => page_png(st, st.ed.caret_page().map(|c| c.0).unwrap_or(0), 300.0)?,

@@ -158,6 +158,58 @@ pub struct CharFmt {
     /// Funkcje OpenType oddzielone przecinkami, np. „onum,tnum,ss01”.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub features: Option<String>,
+    /// Śledzona zmiana: tekst wstawiony albo usunięty (do akceptacji lub odrzucenia).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rev: Option<Rev>,
+}
+
+/// Rodzaj śledzonej zmiany.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum RevKind {
+    Insert,
+    Delete,
+}
+
+/// Śledzona zmiana w tekście: kto i kiedy.
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Rev {
+    pub kind: RevKind,
+    #[serde(default)]
+    pub author: String,
+    #[serde(default)]
+    pub date: String,
+}
+
+/// Komentarz przypięty do miejsca w treści (pole `Field::Comment`).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Comment {
+    pub id: u64,
+    pub author: String,
+    pub date: String,
+    pub text: String,
+    /// Skomentowany fragment (cytat do panelu).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub quote: String,
+    #[serde(default)]
+    pub resolved: bool,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub replies: Vec<Reply>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Reply {
+    pub author: String,
+    pub date: String,
+    pub text: String,
+}
+
+/// Zapisana wersja dokumentu (treść w archiwum `.odtp`, `versions/<id>.json`).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Version {
+    pub id: u64,
+    pub name: String,
+    pub date: String,
 }
 
 impl CharFmt {
@@ -237,6 +289,18 @@ impl CharProps {
         }
         if let Some(v) = &f.link {
             self.link = if v.is_empty() { None } else { Some(v.clone()) };
+        }
+        // Śledzone zmiany: wstawienia podkreślone na niebiesko, usunięcia przekreślone na czerwono.
+        match f.rev.as_ref().map(|r| r.kind) {
+            Some(RevKind::Insert) => {
+                self.underline = Underline::Single;
+                self.color = Color::rgb(0x1f, 0x6f, 0xd6);
+            }
+            Some(RevKind::Delete) => {
+                self.strike = true;
+                self.color = Color::rgb(0xc8, 0x32, 0x32);
+            }
+            None => {}
         }
     }
 
@@ -536,6 +600,8 @@ pub enum Field {
     IndexMark(u64),
     /// Żywa pagina: nagłówek rozdziału (poziom 1–3) obowiązujący na danej stronie.
     Running(u8),
+    /// Komentarz w tym miejscu (treść w `Document::comments`).
+    Comment(u64),
 }
 
 /// Co pokazuje odsyłacz.
@@ -1464,6 +1530,16 @@ pub struct Document {
     pub swatches: Vec<Swatch>,
     #[serde(default)]
     pub print: PrintSetup,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub comments: Vec<Comment>,
+    /// Śledzenie zmian włączone (nowy tekst i usunięcia zostają oznaczone).
+    #[serde(default)]
+    pub track: bool,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub versions: Vec<Version>,
+    /// Treść zapisanych wersji (JSON dokumentu bez obrazów) – w archiwum osobno.
+    #[serde(skip)]
+    pub version_data: BTreeMap<u64, Arc<String>>,
     /// Obrazy linkowane (klucz jak w `assets`); pozostałe obrazy są osadzone.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub links: BTreeMap<String, ImageLink>,
@@ -1526,6 +1602,10 @@ impl Document {
             missing: Default::default(),
             swatches: Vec::new(),
             print: PrintSetup::default(),
+            comments: Vec::new(),
+            track: false,
+            versions: Vec::new(),
+            version_data: BTreeMap::new(),
         }
     }
 
@@ -1761,6 +1841,51 @@ impl Document {
             let end2 = self.chapter_end(end);
             self.body.paras[i..end2].rotate_left(end - i);
             Some(i + (end2 - end))
+        }
+    }
+
+    /// Liczba śledzonych zmian (ciągłych fragmentów) we wszystkich tekstach.
+    pub fn rev_count(&self) -> usize {
+        let mut n = 0;
+        let mut stories: Vec<&Story> = vec![&self.body];
+        stories.extend(self.objects.iter().filter_map(|o| o.story()));
+        for s in stories {
+            for p in &s.paras {
+                let mut prev: Option<&Rev> = None;
+                for r in &p.runs {
+                    if r.fmt.rev.is_some() && r.fmt.rev.as_ref() != prev {
+                        n += 1;
+                    }
+                    prev = r.fmt.rev.as_ref();
+                }
+            }
+        }
+        n
+    }
+
+    /// Akceptacja (`true`) albo odrzucenie wszystkich zmian: zostaje wersja po zmianach albo sprzed nich.
+    pub fn resolve_revs(&mut self, accept: bool) {
+        let fix = |s: &mut Story| {
+            for p in s.paras.iter_mut() {
+                p.runs.retain(|r| match r.fmt.rev.as_ref().map(|x| x.kind) {
+                    Some(RevKind::Delete) => !accept,
+                    Some(RevKind::Insert) => accept,
+                    None => true,
+                });
+                for r in p.runs.iter_mut() {
+                    r.fmt.rev = None;
+                }
+                if p.runs.is_empty() {
+                    p.runs.push(Run::default());
+                }
+                p.normalize();
+            }
+        };
+        fix(&mut self.body);
+        for o in self.objects.iter_mut() {
+            if let Some(s) = o.story_mut() {
+                fix(s);
+            }
         }
     }
 

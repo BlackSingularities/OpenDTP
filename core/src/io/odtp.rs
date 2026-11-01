@@ -47,9 +47,33 @@ pub fn to_bytes_at(doc: &Document, dir: Option<&Path>) -> Result<Vec<u8>, String
                 z.write_all(&a.data).map_err(|e| e.to_string())?;
             }
         }
+        // Zapisane wersje – osobno, żeby nie powiększały document.json.
+        for (id, json) in &doc.version_data {
+            z.start_file(format!("versions/{id}.json"), deflate).map_err(|e| e.to_string())?;
+            z.write_all(json.as_bytes()).map_err(|e| e.to_string())?;
+        }
         z.finish().map_err(|e| e.to_string())?;
     }
     Ok(buf.into_inner())
+}
+
+/// Migawka treści do historii wersji (bez obrazów i bez samej historii).
+pub fn snapshot(doc: &Document) -> Result<String, String> {
+    let mut d = doc.clone();
+    d.versions.clear();
+    d.version_data.clear();
+    serde_json::to_string(&d).map_err(|e| e.to_string())
+}
+
+/// Dokument przywrócony z wersji `id`: treść z migawki, obrazy i historia – z bieżącego.
+pub fn restore(doc: &Document, id: u64) -> Result<Document, String> {
+    let json = doc.version_data.get(&id).ok_or_else(|| crate::lang::tr("Brak treści tej wersji").to_string())?;
+    let mut d: Document = serde_json::from_str(json).map_err(|e| e.to_string())?;
+    d.assets = doc.assets.clone();
+    d.missing = doc.missing.clone();
+    d.versions = doc.versions.clone();
+    d.version_data = doc.version_data.clone();
+    Ok(d)
 }
 
 pub fn save(doc: &Document, path: &Path) -> Result<(), String> {
@@ -70,6 +94,13 @@ pub fn from_bytes(bytes: &[u8]) -> Result<Document, String> {
     for i in 0..z.len() {
         let mut f = z.by_index(i).map_err(|e| e.to_string())?;
         let name = f.name().to_string();
+        if let Some(v) = name.strip_prefix("versions/").and_then(|v| v.strip_suffix(".json")).and_then(|v| v.parse::<u64>().ok()) {
+            let mut s = String::new();
+            if f.read_to_string(&mut s).is_ok() {
+                doc.version_data.insert(v, Arc::new(s));
+            }
+            continue;
+        }
         let Some(id) = name.strip_prefix("assets/") else { continue };
         let mut data = Vec::new();
         f.read_to_end(&mut data).map_err(|e| e.to_string())?;

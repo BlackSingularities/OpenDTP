@@ -4,14 +4,14 @@
 import { ListView, ScrollView, TextEdit } from "std-widgets.slint";
 import { Theme } from "theme.slint";
 import { Icons } from "icons.slint";
-import { App, TabV, CtxV, PageV, BoxV, NodeV, ItemV, StyleV, NavV, RecentV, ImgV, PreV, SwatchV } from "state.slint";
+import { App, TabV, CtxV, PageV, BoxV, NodeV, ItemV, StyleV, NavV, RecentV, ImgV, PreV, SwatchV, CommentV } from "state.slint";
 import { Splitter, Tip, TipArea, IconButton, Field, Spin, Switch, MenuItem, MenuSep, Card, Segmented, Label, Dim, Button, Slider, Toggle, IconSeg, Pane, IconField, IconSpin, ColorRow } from "widgets.slint";
 import { RibbonTabs, RibbonBody, Menus, MenuButton } from "ribbon.slint";
 import { Canvas } from "canvas.slint";
 import { LeftPanel, RightPanel } from "panels.slint";
 import { Backstage } from "backstage.slint";
 
-export { App, Theme, Icons, Tip, TabV, CtxV, PageV, BoxV, NodeV, ItemV, StyleV, NavV, RecentV, ImgV, PreV, SwatchV }
+export { App, Theme, Icons, Tip, TabV, CtxV, PageV, BoxV, NodeV, ItemV, StyleV, NavV, RecentV, ImgV, PreV, SwatchV, CommentV }
 
 /// Przycisk okna (minimalizuj, maksymalizuj, zamknij) w pasku tytułu.
 component WinButton inherits Rectangle {
@@ -626,6 +626,77 @@ export component AppWindow inherits Window {
         }
         init => {
             lf.focus-input();
+        }
+    }
+    if App.dialog == "comment": Dialog {
+        width: parent.width;
+        height: parent.height;
+        title: @tr("Nowy komentarz");
+        cf := Field {
+            tip: @tr("Treść komentarza – Enter dodaje");
+            w: 420px;
+            text <=> App.comment-text;
+            placeholder: @tr("Uwaga do zaznaczonego miejsca…");
+            accepted(t) => {
+                App.cmd("comment-apply", t);
+            }
+        }
+        HorizontalLayout {
+            alignment: end;
+            spacing: 8px;
+            Button {
+                tip: @tr("Zamknij bez dodawania");
+                label: @tr("Anuluj");
+                clicked => {
+                    App.dialog = "";
+                }
+            }
+            Button {
+                tip: @tr("Dodaj komentarz w miejscu kursora");
+                label: @tr("Dodaj");
+                primary: true;
+                clicked => {
+                    App.cmd("comment-apply", App.comment-text);
+                }
+            }
+        }
+        init => {
+            cf.focus-input();
+        }
+    }
+    if App.dialog == "version": Dialog {
+        width: parent.width;
+        height: parent.height;
+        title: @tr("Zapisz wersję");
+        vf := Field {
+            tip: @tr("Nazwa wersji, np. „Po korekcie”");
+            w: 384px;
+            text <=> App.ver-name;
+            accepted(t) => {
+                App.cmd("version-save-apply", t);
+            }
+        }
+        HorizontalLayout {
+            alignment: end;
+            spacing: 8px;
+            Button {
+                tip: @tr("Zamknij bez zapisywania");
+                label: @tr("Anuluj");
+                clicked => {
+                    App.dialog = "";
+                }
+            }
+            Button {
+                tip: @tr("Zapamiętaj obecną treść jako wersję (w pliku .odtp)");
+                label: @tr("Zapisz");
+                primary: true;
+                clicked => {
+                    App.cmd("version-save-apply", App.ver-name);
+                }
+            }
+        }
+        init => {
+            vf.focus-input();
         }
     }
     if App.dialog == "lib-save": Dialog {

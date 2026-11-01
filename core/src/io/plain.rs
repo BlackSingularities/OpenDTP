@@ -74,12 +74,25 @@ pub fn to_html(doc: &Document) -> String {
     let mut out = String::from("<!doctype html>\n<html lang=\"pl\"><head><meta charset=\"utf-8\">");
     let _ = write!(out, "<title>{}</title>", html_esc(&doc.meta.title));
     out.push_str("<style>body{max-width:46em;margin:3em auto;padding:0 1em;line-height:1.5}</style></head><body>\n");
+    out.push_str(&html_body(doc, 0..doc.body.paras.len(), None));
+    out.push_str("</body></html>\n");
+    out
+}
+
+/// Akapity `range` treści głównej jako HTML (XHTML – poprawny XML). Nagłówki dostają `id="h<akapit>"`.
+/// `images` – folder obrazów (EPUB): obrazy zakotwiczone w akapicie trafiają za niego jako `<img>`.
+pub fn html_body(doc: &Document, range: std::ops::Range<usize>, images: Option<&str>) -> String {
+    let mut out = String::new();
     let mut in_list: Option<bool> = None;
-    for p in &doc.body.paras {
+    let first = range.start;
+    for (k, p) in doc.body.paras[range].iter().enumerate() {
+        let pi = first + k;
+        // Usunięte w śledzeniu zmian nie trafia do eksportu.
+        let p = &Paragraph { runs: p.runs.iter().filter(|r| !matches!(r.fmt.rev.as_ref().map(|x| x.kind), Some(RevKind::Delete))).cloned().collect(), ..p.clone() };
         let (pp, base) = doc.resolve_para(p);
         let mut inner = String::new();
         for r in &p.runs {
-            let t = html_esc(&r.text.replace(FIELD_CHAR, "")).replace('\n', "<br>");
+            let t = html_esc(&r.text.replace(FIELD_CHAR, "")).replace('\n', "<br/>");
             if t.is_empty() {
                 continue;
             }
@@ -140,19 +153,29 @@ pub fn to_html(doc: &Document) -> String {
         if ordered.is_some() {
             let _ = writeln!(out, "<li{align}>{inner}</li>");
         } else if let Some(l) = doc.outline_level(p) {
-            let _ = writeln!(out, "<h{l}{align}>{inner}</h{l}>");
+            let l = l.clamp(1, 6);
+            let _ = writeln!(out, "<h{l} id=\"h{pi}\"{align}>{inner}</h{l}>");
         } else if p.style == "title" {
-            let _ = writeln!(out, "<h1{align}>{inner}</h1>");
+            let _ = writeln!(out, "<h1 id=\"h{pi}\"{align}>{inner}</h1>");
         } else if p.style == "quote" {
             let _ = writeln!(out, "<blockquote{align}>{inner}</blockquote>");
         } else {
             let _ = writeln!(out, "<p{align}>{inner}</p>");
         }
+        if let Some(dir) = images {
+            for r in &p.runs {
+                let Some(Field::Anchor(id)) = r.field else { continue };
+                let Some(ObjKind::Image { asset, .. }) = doc.object(id).map(|o| &o.kind) else { continue };
+                let Some(a) = doc.assets.get(asset) else { continue };
+                if in_list.is_none() {
+                    let _ = writeln!(out, "<p class=\"img\"><img src=\"{dir}/{asset}.{}\" alt=\"\"/></p>", crate::io::odtp::ext_of(&a.mime));
+                }
+            }
+        }
     }
     if let Some(o) = in_list {
         out.push_str(if o { "</ol>\n" } else { "</ul>\n" });
     }
-    out.push_str("</body></html>\n");
     out
 }
 

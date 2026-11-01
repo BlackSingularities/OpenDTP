@@ -402,7 +402,7 @@ fn runs_xml(ctx: &mut Ctx, runs: &[Run], out: &mut String) {
                 Field::Ref(id, RefKind::Page) => format!(r#"PAGEREF _Ref{id} \h"#),
                 Field::Ref(id, _) => format!(r#"REF _Ref{id} \h"#),
                 Field::Running(n) => format!(r#"STYLEREF "heading {}""#, n.clamp(1, 3)),
-                Field::Anchor(_) | Field::Footnote(_) | Field::Bookmark(_) | Field::IndexMark(_) => String::new(),
+                Field::Anchor(_) | Field::Footnote(_) | Field::Bookmark(_) | Field::IndexMark(_) | Field::Comment(_) => String::new(),
             };
             // Podpis jest celem odsyłaczy – numer otaczamy zakładką.
             let mark = match f {
@@ -422,6 +422,16 @@ fn runs_xml(ctx: &mut Ctx, runs: &[Run], out: &mut String) {
         let _ = write!(inner, "<w:r>{rp}");
         text_runs(&r.text, &mut inner);
         inner.push_str("</w:r>");
+        // Śledzone zmiany jako zmiany Worda (Recenzja → Zaakceptuj / Odrzuć).
+        if let Some(rev) = &r.fmt.rev {
+            static NEXT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(1);
+            let id = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            let attrs = format!(r#"w:id="{id}" w:author="{}" w:date="{}""#, esc(&rev.author), esc(&rev.date));
+            inner = match rev.kind {
+                RevKind::Insert => format!("<w:ins {attrs}>{inner}</w:ins>"),
+                RevKind::Delete => format!("<w:del {attrs}>{}</w:del>", inner.replace("<w:t>", "<w:delText>").replace("<w:t xml:space=\"preserve\">", "<w:delText xml:space=\"preserve\">").replace("</w:t>", "</w:delText>")),
+            };
+        }
         match &r.fmt.link {
             Some(url) if !url.is_empty() => {
                 let id = ctx.link_rel(url);

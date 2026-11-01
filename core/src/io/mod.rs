@@ -2,6 +2,7 @@
 
 pub mod docx;
 pub mod docx_in;
+pub mod epub;
 pub mod odtp;
 pub mod pdf;
 pub mod plain;
