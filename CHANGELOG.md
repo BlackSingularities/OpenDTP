@@ -1,5 +1,14 @@
 # Zmiany
 
+## 0.2.0
+
+- Tabele płynące z tekstem: podział na strony z powtórzonym nagłówkiem, scalanie komórek, szerokość kolumn myszą, eksport jako tabela Worda.
+- Obiekty zakotwiczone w tekście, grafika SVG, znak wodny i obramowanie strony.
+- Sekcje (kolumny i orientacja), przypisy dolne i końcowe, eksport do DOCX.
+- Typografia: dzielenie wyrazów, kontrola wdów, funkcje OpenType, linijka, okna Czcionka i Akapit.
+- Nowy wygląd: pasek tytułu scalony z górnym paskiem, renderer Skia, chipy i segmenty z ikonami, ustawienia z ikonami.
+- Szablon Podręcznik, tłumaczenie angielskie.
+
 ## 0.1.0
 
 Pierwsze wydanie OpenDTP – edytora tekstu i programu do składu dokumentów dla Windows 10 i 11.
