@@ -391,7 +391,7 @@ pub fn textbook() -> Document {
     num.fmt.align = Some(Align::Center);
     num.runs[0].fmt = CharFmt { size: Some(34.0), bold: Some(true), italic: Some(true), color: Some(Color::WHITE), font: Some("Calibri".into()), ..Default::default() };
     let id = d.new_id();
-    d.objects.push(shape_obj(id, 0, (40.0, 22.0, 54.0, 50.0), Shape::polygon(&[(0.2, 0.0), (1.0, 0.0), (0.8, 1.0), (0.0, 1.0)]), frame(Story { paras: vec![num] }, 2.0, VAlign::Center), WrapMode::None, Some(Fill::Solid { color: navy })));
+    d.objects.push(shape_obj(id, 0, (40.0, 22.0, 62.0, 52.0), Shape::polygon(&[(0.2, 0.0), (1.0, 0.0), (0.8, 1.0), (0.0, 1.0)]), frame(Story { paras: vec![num] }, 2.0, VAlign::Center), WrapMode::None, Some(Fill::Solid { color: navy })));
     let mut title = Paragraph::with_text("normal", "Present Tenses");
     title.runs[0].fmt = CharFmt { size: Some(28.0), color: Some(navy), font: Some("Calibri".into()), ..Default::default() };
     let id = d.new_id();
