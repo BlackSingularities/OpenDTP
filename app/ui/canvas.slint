@@ -201,10 +201,10 @@ export component Canvas inherits Rectangle {
         fs.focus();
     }
     changed width => {
-        App.viewport(-fl.viewport-x, -fl.viewport-y, self.width, self.height);
+        App.viewport(-fl.content-x, -fl.content-y, self.width, self.height);
     }
     changed height => {
-        App.viewport(-fl.viewport-x, -fl.viewport-y, self.width, self.height);
+        App.viewport(-fl.content-x, -fl.content-y, self.width, self.height);
     }
     property <length> vr: App.ruler-v-on ? 22px : 0px;
     if App.ruler-on: Ruler {
@@ -236,15 +236,15 @@ export component Canvas inherits Rectangle {
             return reject;
         }
         fl := Flickable {
-            viewport-width: App.content-w;
-            viewport-height: App.content-h;
-            viewport-x <=> App.view-x;
-            viewport-y <=> App.view-y;
-            changed viewport-y => {
-                App.viewport(-self.viewport-x, -self.viewport-y, self.width, self.height);
+            content-width: App.content-w;
+            content-height: App.content-h;
+            content-x <=> App.view-x;
+            content-y <=> App.view-y;
+            changed content-y => {
+                App.viewport(-self.content-x, -self.content-y, self.width, self.height);
             }
-            changed viewport-x => {
-                App.viewport(-self.viewport-x, -self.viewport-y, self.width, self.height);
+            changed content-x => {
+                App.viewport(-self.content-x, -self.content-y, self.width, self.height);
             }
             Rectangle {
                 width: App.content-w;

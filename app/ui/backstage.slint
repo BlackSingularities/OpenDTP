@@ -755,54 +755,54 @@ export component Backstage inherits Rectangle {
                         label: @tr("Wygląd");
                         icon: Icons.palette;
                         tip: @tr("Wygląd");
-                        active: -sv.viewport-y < sec1.y - 40px;
+                        active: -sv.content-y < sec1.y - 40px;
                         clicked => {
-                            sv.viewport-y = 0;
+                            sv.content-y = 0;
                         }
                     }
                     NavItem {
                         label: @tr("Pisanie");
                         icon: Icons.pen-line;
                         tip: @tr("Pisanie");
-                        active: -sv.viewport-y >= sec1.y - 40px && -sv.viewport-y < sec2.y - 40px;
+                        active: -sv.content-y >= sec1.y - 40px && -sv.content-y < sec2.y - 40px;
                         clicked => {
-                            sv.viewport-y = max(-sec1.y + 16px, sv.visible-height - sv.viewport-height);
+                            sv.content-y = max(-sec1.y + 16px, sv.visible-height - sv.content-height);
                         }
                     }
                     NavItem {
                         label: @tr("Pliki");
                         icon: Icons.folder-open;
                         tip: @tr("Pliki");
-                        active: -sv.viewport-y >= sec2.y - 40px && -sv.viewport-y < sec3.y - 40px;
+                        active: -sv.content-y >= sec2.y - 40px && -sv.content-y < sec3.y - 40px;
                         clicked => {
-                            sv.viewport-y = max(-sec2.y + 16px, sv.visible-height - sv.viewport-height);
+                            sv.content-y = max(-sec2.y + 16px, sv.visible-height - sv.content-height);
                         }
                     }
                     NavItem {
                         label: @tr("Pasek i wstążka");
                         icon: Icons.panel-top;
                         tip: @tr("Pasek i wstążka");
-                        active: -sv.viewport-y >= sec3.y - 40px && -sv.viewport-y < sec4.y - 40px;
+                        active: -sv.content-y >= sec3.y - 40px && -sv.content-y < sec4.y - 40px;
                         clicked => {
-                            sv.viewport-y = max(-sec3.y + 16px, sv.visible-height - sv.viewport-height);
+                            sv.content-y = max(-sec3.y + 16px, sv.visible-height - sv.content-height);
                         }
                     }
                     NavItem {
                         label: @tr("Sztuczna inteligencja");
                         icon: Icons.sparkles;
                         tip: @tr("Sztuczna inteligencja");
-                        active: -sv.viewport-y >= sec4.y - 40px && -sv.viewport-y < sec5.y - 40px;
+                        active: -sv.content-y >= sec4.y - 40px && -sv.content-y < sec5.y - 40px;
                         clicked => {
-                            sv.viewport-y = max(-sec4.y + 16px, sv.visible-height - sv.viewport-height);
+                            sv.content-y = max(-sec4.y + 16px, sv.visible-height - sv.content-height);
                         }
                     }
                     NavItem {
                         label: @tr("Aktualizacje");
                         icon: Icons.cloud-download;
                         tip: @tr("Aktualizacje");
-                        active: -sv.viewport-y >= sec5.y - 40px && true;
+                        active: -sv.content-y >= sec5.y - 40px && true;
                         clicked => {
-                            sv.viewport-y = max(-sec5.y + 16px, sv.visible-height - sv.viewport-height);
+                            sv.content-y = max(-sec5.y + 16px, sv.visible-height - sv.content-height);
                         }
                     }
                 }
