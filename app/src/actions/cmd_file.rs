@@ -144,6 +144,10 @@ pub(super) fn handle(st: &mut State, ui: &crate::AppWindow, app: &App, unit: i32
             let _ = open::that(opendtp_core::AUTHOR_URL);
             return Flow::Skip;
         }
+        "email" => {
+            let _ = open::that("mailto:kontakt@redzikowski.com");
+            return Flow::Skip;
+        }
         "support" => {
             let _ = open::that(opendtp_core::SUPPORT_URL);
             return Flow::Skip;

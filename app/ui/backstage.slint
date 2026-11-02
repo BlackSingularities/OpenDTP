@@ -1371,6 +1371,14 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     Button {
+                        label: "kontakt@redzikowski.com";
+                        icon: Icons.mail;
+                        tip: @tr("Napisz do autora");
+                        clicked => {
+                            App.cmd("email", "");
+                        }
+                    }
+                    Button {
                         label: @tr("Postaw kawę");
                         icon: Icons.coffee;
                         primary: true;
