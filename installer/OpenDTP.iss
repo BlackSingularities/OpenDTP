@@ -43,10 +43,20 @@ VersionInfoDescription=OpenDTP – edytor tekstu i skład dokumentów
 Name: "pl"; MessagesFile: "compiler:Languages\Polish.isl"
 Name: "en"; MessagesFile: "compiler:Default.isl"
 
+[CustomMessages]
+pl.AssocGroup=Skojarzenia plików:
+pl.AssocOdtp=Otwieraj pliki .odtp w OpenDTP
+pl.AssocDocx=Dodaj OpenDTP do „Otwórz za pomocą” dla .docx, .txt i .md
+pl.DocType=Dokument OpenDTP
+en.AssocGroup=File associations:
+en.AssocOdtp=Open .odtp files with OpenDTP
+en.AssocDocx=Add OpenDTP to “Open with” for .docx, .txt and .md
+en.DocType=OpenDTP document
+
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
-Name: "assocodtp"; Description: "Otwieraj pliki .odtp w OpenDTP"; GroupDescription: "Skojarzenia plików:"
-Name: "assocdocx"; Description: "Dodaj OpenDTP do „Otwórz za pomocą” dla .docx, .txt i .md"; GroupDescription: "Skojarzenia plików:"
+Name: "assocodtp"; Description: "{cm:AssocOdtp}"; GroupDescription: "{cm:AssocGroup}"
+Name: "assocdocx"; Description: "{cm:AssocDocx}"; GroupDescription: "{cm:AssocGroup}"
 
 [Files]
 Source: "..\dist\OpenDTP.exe"; DestDir: "{app}"; Flags: ignoreversion
@@ -57,7 +67,7 @@ Name: "{autodesktop}\OpenDTP"; Filename: "{app}\OpenDTP.exe"; Tasks: desktopicon
 
 [Registry]
 Root: HKA; Subkey: "Software\Classes\.odtp"; ValueType: string; ValueData: "OpenDTP.Document"; Flags: uninsdeletevalue; Tasks: assocodtp
-Root: HKA; Subkey: "Software\Classes\OpenDTP.Document"; ValueType: string; ValueData: "Dokument OpenDTP"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\Classes\OpenDTP.Document"; ValueType: string; ValueData: "{cm:DocType}"; Flags: uninsdeletekey
 Root: HKA; Subkey: "Software\Classes\OpenDTP.Document\DefaultIcon"; ValueType: string; ValueData: "{app}\OpenDTP.exe,0"
 Root: HKA; Subkey: "Software\Classes\OpenDTP.Document\shell\open\command"; ValueType: string; ValueData: """{app}\OpenDTP.exe"" ""%1"""
 Root: HKA; Subkey: "Software\Classes\Applications\OpenDTP.exe\shell\open\command"; ValueType: string; ValueData: """{app}\OpenDTP.exe"" ""%1"""; Flags: uninsdeletekey
