@@ -1,6 +1,6 @@
 [package]
 name = "opendtp"
-version = "0.8.0"
+version = "0.8.1"
 description = "OpenDTP – edytor tekstu i skład dokumentów dla Windows"
 authors = ["Adam Rędzikowski"]
 edition = "2021"

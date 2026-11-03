@@ -1,5 +1,10 @@
 # Zmiany
 
+## 0.8.1
+
+- Wstążka nie ma już pętli w obliczaniu układu (galeria stylów i szerokość wstążki), przed którą ostrzegał Slint – mniejsze ryzyko awarii przy zmianie rozmiaru okna.
+- Porządki w kodzie: polecenia programu podzielone na moduły według grup, usunięty nieużywany kod.
+
 ## 0.8.0
 
 - Rdzeń podzielony na osobne moduły (`crates/`): podstawa, dokument, tekst, format, skład, wymiana plików, AI, aktualizacje.

@@ -1577,6 +1577,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "gbm"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ce852e998d3ca5e4a97014fb31c940dc5ef344ec7d364984525fd11e8a547e6a"
+dependencies = [
+ "bitflags 2.13.2",
+ "drm",
+ "drm-fourcc",
+ "gbm-sys",
+ "libc",
+]
+
+[[package]]
+name = "gbm-sys"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c13a5f2acc785d8fb6bf6b7ab6bfb0ef5dad4f4d97e8e70bb8e470722312f76f"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "generic-array"
 version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1873,17 +1895,19 @@ version = "1.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0f519a8611a4982921e46e391015e5e40ceac5cc63813333ef91ada77df180d8"
 dependencies = [
- "bytemuck",
  "calloop 0.14.5",
  "cfg_aliases",
  "drm",
+ "gbm",
+ "glutin",
  "i-slint-common",
  "i-slint-core",
- "i-slint-renderer-software",
+ "i-slint-renderer-skia",
  "input",
  "libseat",
  "memmap2",
  "nix",
+ "raw-window-handle",
  "xkbcommon",
 ]
 
@@ -1901,6 +1925,7 @@ dependencies = [
  "i-slint-common",
  "i-slint-core",
  "i-slint-core-macros",
+ "i-slint-renderer-skia",
 ]
 
 [[package]]
@@ -1912,7 +1937,7 @@ dependencies = [
  "cfg_aliases",
  "i-slint-common",
  "i-slint-core",
- "i-slint-renderer-software",
+ "i-slint-renderer-skia",
  "vtable",
 ]
 
@@ -1926,7 +1951,6 @@ dependencies = [
  "accesskit_winit",
  "arboard",
  "block2 0.6.2",
- "bytemuck",
  "cfg-if",
  "cfg_aliases",
  "futures",
@@ -1936,8 +1960,6 @@ dependencies = [
  "i-slint-core",
  "i-slint-core-macros",
  "i-slint-renderer-skia",
- "i-slint-renderer-software",
- "imgref",
  "lyon_path",
  "muda",
  "objc2 0.6.5",
@@ -1947,7 +1969,6 @@ dependencies = [
  "objc2-ui-kit 0.3.2",
  "pin-weak",
  "raw-window-handle",
- "rgb",
  "scoped-tls-hkt",
  "scopeguard",
  "softbuffer",
@@ -2432,12 +2453,6 @@ name = "imagesize"
 version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "65b27460c2c92b037f3f94c538ed9a3342f3fdf923606781629ccb35f82d042a"
-
-[[package]]
-name = "imgref"
-version = "1.12.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e44b0a4eaa4c82f441d50a963f2d5f05a787240aeee097597033e72accfd22f"
 
 [[package]]
 name = "indexmap"
@@ -3398,7 +3413,7 @@ dependencies = [
 
 [[package]]
 name = "opendtp"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "arboard",
  "barcoders",
@@ -3421,7 +3436,7 @@ dependencies = [
 
 [[package]]
 name = "opendtp-ai"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "opendtp-base",
  "opendtp-doc",
@@ -3433,7 +3448,7 @@ dependencies = [
 
 [[package]]
 name = "opendtp-base"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "dirs",
  "parking_lot",
@@ -3442,7 +3457,7 @@ dependencies = [
 
 [[package]]
 name = "opendtp-core"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "opendtp-ai",
  "opendtp-base",
@@ -3458,7 +3473,7 @@ dependencies = [
 
 [[package]]
 name = "opendtp-doc"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "i_overlay",
  "opendtp-base",
@@ -3470,7 +3485,7 @@ dependencies = [
 
 [[package]]
 name = "opendtp-format"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "base64 0.22.1",
  "image",
@@ -3486,7 +3501,7 @@ dependencies = [
 
 [[package]]
 name = "opendtp-io"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "image",
  "krilla",
@@ -3505,7 +3520,7 @@ dependencies = [
 
 [[package]]
 name = "opendtp-render"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "image",
  "opendtp-base",
@@ -3521,7 +3536,7 @@ dependencies = [
 
 [[package]]
 name = "opendtp-text"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "dirs",
  "fontdb 0.23.0",
@@ -3538,7 +3553,7 @@ dependencies = [
 
 [[package]]
 name = "opendtp-tools"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "opendtp-base",
  "opendtp-doc",
@@ -3546,7 +3561,7 @@ dependencies = [
 
 [[package]]
 name = "opendtp-update"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "opendtp-base",
  "serde_json",
@@ -4666,6 +4681,7 @@ dependencies = [
  "i-slint-common",
  "i-slint-core",
  "i-slint-core-macros",
+ "i-slint-renderer-skia",
  "i-slint-renderer-software",
  "num-traits",
  "once_cell",
@@ -4788,6 +4804,7 @@ checksum = "aac18da81ebbf05109ab275b157c22a653bb3c12cf884450179942f81bcbf6c3"
 dependencies = [
  "as-raw-xcb-connection",
  "bytemuck",
+ "drm",
  "fastrand",
  "js-sys",
  "memmap2",
