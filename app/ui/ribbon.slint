@@ -3084,6 +3084,9 @@ export component RibbonBody inherits Rectangle {
     property <length> need0;
     property <length> need1;
     property <length> need2;
+    // Szerokość dla galerii stylów przepisywana w obsłudze zmian, a nie wiązaniem:
+    // liczba kolumn galerii wpływa na szerokość wstążki, więc wiązanie dałoby pętlę układu.
+    property <length> avail;
     function fit() {
         if (root.need > root.width + 1px && Theme.ribbon-level < 3) {
             if (Theme.ribbon-level == 0) {
@@ -3108,9 +3111,11 @@ export component RibbonBody inherits Rectangle {
         root.fit();
     }
     changed width => {
+        root.avail = root.width;
         root.fit();
     }
     init => {
+        root.avail = root.width;
         root.fit();
     }
     Flickable {
@@ -3123,7 +3128,7 @@ export component RibbonBody inherits Rectangle {
             padding-right: 30px;
             alignment: start;
             if App.tab == 0: HomeTab {
-                avail: root.width;
+                avail: root.avail;
             }
             if App.tab == 1: InsertTab {}
             if App.tab == 3: LayoutTab {}
