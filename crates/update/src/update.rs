@@ -9,9 +9,7 @@ use std::path::PathBuf;
 
 use sha2::{Digest, Sha256};
 
-const FEED: &str = "https://redzikowski.com/api/github/repos/BlackSingularities/OpenDTP/releases/latest";
-/// Zapas, gdy portfolio nie odpowiada – publiczne API (bez klucza).
-const FEED_FALLBACK: &str = "https://api.github.com/repos/BlackSingularities/OpenDTP/releases/latest";
+const FEED: &str = "https://redzikowski.com/api/releases/repos/BlackSingularities/OpenDTP/releases/latest";
 const UA: &str = "OpenDTP";
 
 fn get(url: &str, accept: &str) -> Result<ureq::Response, String> {
@@ -45,13 +43,7 @@ pub fn newer(a: &str, b: &str) -> bool {
 
 /// Najnowsze wydanie, jeśli nowsze od tej wersji.
 pub fn check() -> Result<Option<Release>, String> {
-    let r: serde_json::Value = match get(FEED, "application/vnd.github+json") {
-        Ok(v) => v.into_json().map_err(|e| e.to_string())?,
-        Err(e) => match get(FEED_FALLBACK, "application/vnd.github+json") {
-            Ok(v) => v.into_json().map_err(|e| e.to_string())?,
-            Err(_) => return Err(e),
-        },
-    };
+    let r: serde_json::Value = get(FEED, "application/json")?.into_json().map_err(|e| e.to_string())?;
     let version = r["tag_name"].as_str().unwrap_or_default().trim_start_matches('v').to_string();
     if version.is_empty() || !newer(&version, crate::version()) {
         return Ok(None);

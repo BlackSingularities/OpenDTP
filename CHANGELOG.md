@@ -1,5 +1,9 @@
 # Zmiany
 
+## 0.8.2
+
+- Bez żadnych wzmianek o GitHubie w aplikacji: nowy adres serwera aktualizacji, komunikaty błędów bez nazw zewnętrznych serwerów.
+
 ## 0.8.1
 
 - Wstążka nie ma już pętli w obliczaniu układu (galeria stylów i szerokość wstążki), przed którą ostrzegał Slint – mniejsze ryzyko awarii przy zmianie rozmiaru okna.
