@@ -380,6 +380,12 @@ msgstr "Author's website"
 msgid "Postaw kawę"
 msgstr "Buy me a coffee"
 
+msgid "Zgłoś błąd lub sugestię"
+msgstr "Report a problem or suggest a feature"
+
+msgid "Wyślij autorowi opis błędu albo pomysł na funkcję"
+msgstr "Send the author a bug description or a feature idea"
+
 msgid "Sprawdź aktualizacje"
 msgstr "Check for updates"
 

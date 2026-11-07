@@ -6,6 +6,7 @@
 mod actions;
 mod commands;
 mod editor;
+mod feedback;
 mod files;
 mod input;
 mod settings;
@@ -767,6 +768,8 @@ pub fn sync_ai(st: &State, ui: &AppWindow) {
 
 fn main() {
     opendtp_core::log::install_panic_hook();
+    let crash_dir = std::env::var_os("LOCALAPPDATA").map(std::path::PathBuf::from).unwrap_or_else(std::env::temp_dir).join("OpenDTP");
+    feedback::install("opendtp", "OpenDTP", opendtp_core::version(), crash_dir, || opendtp_core::lang::current() == "pl", true);
     opendtp_core::log::info("start");
     let prefs = Prefs::load();
     let code = opendtp_core::lang::init(&prefs.lang);
@@ -933,6 +936,7 @@ fn main() {
         });
     }
     ui.show().expect("okno");
+    feedback::offer_pending_crash();
     {
         let sh = shared.clone();
         let w = ui.as_weak();

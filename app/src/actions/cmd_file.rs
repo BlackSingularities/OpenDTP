@@ -156,6 +156,10 @@ pub(super) fn handle(st: &mut State, ui: &crate::AppWindow, app: &App, unit: i32
             check_update(true);
             return Flow::Skip;
         }
+        "feedback" => {
+            crate::feedback::open_form();
+            return Flow::Skip;
+        }
         "install-update" => {
             install_update(st);
             return Flow::Skip;

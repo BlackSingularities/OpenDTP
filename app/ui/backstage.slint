@@ -1379,6 +1379,14 @@ export component Backstage inherits Rectangle {
                         }
                     }
                     Button {
+                        label: @tr("Zgłoś błąd lub sugestię");
+                        icon: Icons.bug;
+                        tip: @tr("Wyślij autorowi opis błędu albo pomysł na funkcję");
+                        clicked => {
+                            App.cmd("feedback", "");
+                        }
+                    }
+                    Button {
                         label: @tr("Postaw kawę");
                         icon: Icons.coffee;
                         primary: true;

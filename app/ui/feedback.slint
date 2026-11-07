@@ -1,0 +1,171 @@
+// Okno zgłoszeń do redzikowski.com: błąd / sugestia funkcji (formularz) albo raport o awarii
+// z poprzedniego uruchomienia. Osobne okno systemowe – nie zależy od dialogów programu.
+// Plik wspólny dla aplikacji Slint (OpenMP, OpenDTP, PowerDesk) – zmieniaj go we wszystkich.
+
+import { Button, LineEdit, TextEdit, CheckBox, ScrollView } from "std-widgets.slint";
+
+export component FeedbackWindow inherits Window {
+    in property <bool> pl: true;
+    in property <string> app-name;
+    in property <bool> crash-mode: false;
+    in property <string> crash-text;
+    in-out property <bool> feature: false;
+    in-out property <string> message;
+    in-out property <string> email;
+    in-out property <bool> include-device: true;
+    in property <bool> busy;
+    in property <bool> sent;
+    in property <string> error;
+    property <bool> show-details: false;
+    callback send();
+    callback dismiss();
+
+    title: crash-mode
+        ? (pl ? "Raport o błędzie – " : "Error report – ") + app-name
+        : (pl ? "Zgłoś błąd lub sugestię – " : "Report a problem or suggest a feature – ") + app-name;
+    preferred-width: 500px;
+    min-width: 420px;
+    min-height: 360px;
+
+    VerticalLayout {
+        padding: 18px;
+        spacing: 10px;
+
+        if sent: VerticalLayout {
+            spacing: 10px;
+            alignment: center;
+            Text {
+                text: crash-mode ? (pl ? "Dziękuję! Raport został wysłany." : "Thank you! The report has been sent.")
+                    : (pl ? "Dziękuję! Zgłoszenie dotarło." : "Thank you! Your message has arrived.");
+                font-size: 16px;
+                font-weight: 700;
+                wrap: word-wrap;
+            }
+            Text {
+                text: email == ""
+                    ? (pl ? "Przeczytam je i wezmę pod uwagę przy kolejnych wersjach." : "I'll read it and take it into account in future versions.")
+                    : (pl ? "Przeczytam je i odezwę się na podany adres, jeśli będzie trzeba." : "I'll read it and reply to the address you gave if needed.");
+                wrap: word-wrap;
+                opacity: 0.8;
+            }
+            HorizontalLayout {
+                alignment: end;
+                Button {
+                    text: pl ? "Zamknij" : "Close";
+                    primary: true;
+                    clicked => { root.dismiss(); }
+                }
+            }
+        }
+
+        if !sent && crash-mode: VerticalLayout {
+            spacing: 10px;
+            Text {
+                text: pl ? "Program został nieoczekiwanie zamknięty" : "The program closed unexpectedly";
+                font-size: 16px;
+                font-weight: 700;
+                wrap: word-wrap;
+            }
+            Text {
+                text: pl
+                    ? "Czy wysłać raport, żeby można było naprawić błąd? Zawiera opis błędu, wersję programu i systemu – żadnych Twoich plików."
+                    : "Send a report so the bug can be fixed? It contains the error description and the app and system version – none of your files.";
+                wrap: word-wrap;
+                opacity: 0.85;
+            }
+            CheckBox {
+                text: pl ? "Pokaż szczegóły" : "Show details";
+                checked <=> root.show-details;
+            }
+            if show-details: ScrollView {
+                min-height: 120px;
+                max-height: 180px;
+                Text {
+                    text: crash-text;
+                    font-family: "Consolas";
+                    font-size: 11px;
+                    wrap: no-wrap;
+                }
+            }
+            Text { text: pl ? "Co robiłeś(-aś) przed awarią? (opcjonalnie)" : "What were you doing before the crash? (optional)"; }
+            TextEdit {
+                text <=> root.message;
+                min-height: 70px;
+                wrap: word-wrap;
+            }
+        }
+
+        if !sent && !crash-mode: VerticalLayout {
+            spacing: 10px;
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: start;
+                Button {
+                    text: pl ? "Błąd" : "Bug";
+                    checkable: true;
+                    checked: !root.feature;
+                    clicked => { root.feature = false; }
+                }
+                Button {
+                    text: pl ? "Sugestia funkcji" : "Feature idea";
+                    checkable: true;
+                    checked: root.feature;
+                    clicked => { root.feature = true; }
+                }
+            }
+            Text {
+                text: feature
+                    ? (pl ? "Czego brakuje albo co można zrobić lepiej?" : "What's missing or could work better?")
+                    : (pl ? "Co się stało? Co robiłeś(-aś) tuż przed błędem?" : "What happened? What were you doing right before?");
+                wrap: word-wrap;
+            }
+            TextEdit {
+                text <=> root.message;
+                min-height: 130px;
+                vertical-stretch: 1;
+                wrap: word-wrap;
+            }
+            CheckBox {
+                text: pl ? "Dołącz wersję programu i systemu" : "Include app and system version";
+                checked <=> root.include-device;
+            }
+        }
+
+        if !sent: VerticalLayout {
+            spacing: 6px;
+            Text { text: pl ? "Twój e-mail (opcjonalnie – jeśli chcesz odpowiedź)" : "Your e-mail (optional – if you'd like a reply)"; }
+            LineEdit {
+                text <=> root.email;
+                placeholder-text: pl ? "np. jan@example.com" : "e.g. jane@example.com";
+                input-type: text;
+            }
+            if error != "": Text {
+                text: error;
+                color: #e5484d;
+                wrap: word-wrap;
+            }
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: end;
+                Text {
+                    text: pl ? "Trafi do autora przez redzikowski.com" : "Goes to the author via redzikowski.com";
+                    opacity: 0.6;
+                    font-size: 11px;
+                    vertical-alignment: center;
+                    horizontal-stretch: 1;
+                }
+                Button {
+                    text: crash-mode ? (pl ? "Nie wysyłaj" : "Don't send") : (pl ? "Anuluj" : "Cancel");
+                    enabled: !root.busy;
+                    clicked => { root.dismiss(); }
+                }
+                Button {
+                    text: root.busy ? (pl ? "Wysyłanie…" : "Sending…") : crash-mode ? (pl ? "Wyślij raport" : "Send report") : (pl ? "Wyślij" : "Send");
+                    primary: true;
+                    enabled: !root.busy && (root.crash-mode || root.message.character-count >= 3);
+                    clicked => { root.send(); }
+                }
+            }
+        }
+    }
+}
