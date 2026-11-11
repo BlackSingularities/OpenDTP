@@ -1,5 +1,13 @@
 # OpenDTP
 
+<!-- posters:start -->
+<p align="center">
+  <img src="docs/posters/windows.png" alt="OpenDTP – Windows" width="460">
+</p>
+
+<p align="center"><a href="https://redzikowski.com/portfolio/opendtp">redzikowski.com/portfolio/opendtp</a></p>
+<!-- posters:end -->
+
 Edytor tekstu i program do składu dokumentów dla Windows 10 i 11. Natywny program w Rust ze Slint i własnym silnikiem składu: tekst w dowolnych kształtach, opływanie, kolumny, wykresy, generowanie dokumentów przez AI i eksport 1:1 do Worda i PDF.
 
 ## Najważniejsze

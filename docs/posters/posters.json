@@ -1,0 +1,37 @@
+{
+  "slug": "opendtp",
+  "name": "OpenDTP",
+  "label": "edytor tekstu i skład dokumentów",
+  "icon": "icon.png",
+  "url": "https://redzikowski.com/portfolio/opendtp",
+  "posters": [
+    {
+      "platform": "windows",
+      "file": "windows.png",
+      "title": "Tekst *w dowolnym kształcie*",
+      "lead": "Edytor i program do składu: tekst w kształtach z węzłów, opływanie, kolumny, wykresy i eksport do Worda oraz PDF.",
+      "shots": [
+        {
+          "src": "../screenshots/windows/01.png",
+          "caption": "Kształty tekstu"
+        },
+        {
+          "src": "../screenshots/windows/02.png",
+          "caption": "Kolumny"
+        },
+        {
+          "src": "../screenshots/windows/03.png",
+          "caption": "Ulotka"
+        }
+      ],
+      "features": [
+        "opływanie po konturze",
+        "kolumny i inicjały",
+        "polskie sierotki",
+        "dokumenty z AI",
+        "eksport DOCX i PDF 1:1"
+      ],
+      "meta": "Windows 10 i 11"
+    }
+  ]
+}
